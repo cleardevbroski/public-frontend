@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, X, Search, Star, TrendingUp } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import StatusControls from "@/components/admin/StatusControls";
 import { fetchInsights, createInsight, updateInsight, deleteInsight } from "@/lib/api";
 
 type Insight = {
@@ -13,6 +14,7 @@ type Insight = {
   yoy: string;
   image: string;
   href: string;
+  status?: string;
 };
 
 type FormState = Omit<Insight, "_id">;
@@ -87,6 +89,11 @@ export default function AdminInsights() {
     load();
   };
 
+  const setStatus = async (id: string, status: "pending" | "approved" | "rejected") => {
+    await updateInsight(id, { status });
+    load();
+  };
+
   const filtered = items.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()));
 
   const input = "w-full h-11 px-3.5 rounded-xl border border-[#D5DEF2] focus:border-[#C9A24E] outline-none text-[14px] text-[#1E3A8A] bg-white";
@@ -133,11 +140,12 @@ export default function AdminInsights() {
                 <th className="px-6 py-4 font-medium">Price / sqft</th>
                 <th className="px-6 py-4 font-medium">YoY</th>
                 <th className="px-6 py-4 font-medium">Rating</th>
+                <th className="px-6 py-4 font-medium">Status</th>
                 <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#D5DEF2]/30">
-              {loading && <tr><td colSpan={5} className="px-6 py-8 text-center text-[#6E7488]">Loading...</td></tr>}
+              {loading && <tr><td colSpan={6} className="px-6 py-8 text-center text-[#6E7488]">Loading...</td></tr>}
               {!loading && filtered.map((i) => (
                 <tr key={i._id} className="hover:bg-[#F8FAFC]/50 transition-colors">
                   <td className="px-6 py-4">
@@ -159,6 +167,9 @@ export default function AdminInsights() {
                       <Star className="size-3.5 fill-[#C9A24E]" /> {i.rating}
                     </span>
                   </td>
+                  <td className="px-6 py-4">
+                    <StatusControls status={i.status} onChange={(s) => setStatus(i._id, s)} />
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button onClick={() => startEdit(i)} className="p-2 text-[#6E7488] hover:text-[#C9A24E] hover:bg-[#F1F5FF] rounded-lg transition-colors">
@@ -173,7 +184,7 @@ export default function AdminInsights() {
               ))}
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-[#6E7488] text-[14px]">
+                  <td colSpan={6} className="px-6 py-8 text-center text-[#6E7488] text-[14px]">
                     No insights found.
                   </td>
                 </tr>

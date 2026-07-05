@@ -1,11 +1,18 @@
 "use client";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Quote, Star, Sparkles } from "lucide-react";
-import { testimonials } from "./mock-data";
+import { testimonials as fallbackTestimonials } from "./mock-data";
+import { fetchTestimonials } from "@/lib/api";
 
 export default function Testimonials() {
   const ref = useRef<HTMLDivElement>(null);
   const scrollBy = (d: 1 | -1) => ref.current?.scrollBy({ left: d * 360, behavior: "smooth" });
+  const [items, setItems] = useState(fallbackTestimonials);
+  useEffect(() => {
+    fetchTestimonials({ status: "approved" })
+      .then((rows: any[]) => { if (Array.isArray(rows) && rows.length) setItems(rows); })
+      .catch(() => {});
+  }, []);
 
   return (
     <section className="bg-gradient-to-b from-white to-[#F1F5FF]/25 py-16">
@@ -50,9 +57,9 @@ export default function Testimonials() {
             ref={ref}
             className="flex gap-5 overflow-x-auto no-scrollbar pb-6 pt-2 scroll-smooth"
           >
-            {testimonials.map((t) => (
+            {items.map((t) => (
               <div
-                key={t.name}
+                key={(t as any)._id ?? t.name}
                 className="shrink-0 w-[350px] bg-white border border-[#D5DEF2]/35 hover:border-[#D4AF37]/50 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 relative overflow-hidden group"
               >
                 {/* Gold-Green gradient bar */}

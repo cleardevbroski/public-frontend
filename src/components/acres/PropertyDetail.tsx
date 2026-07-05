@@ -56,7 +56,7 @@ import {
   getPropertiesByBuilder,
   builderSlug,
 } from "@/lib/propertyStore";
-import { getDealers, type Dealer } from "@/lib/dealerStore";
+import { getPublishedDealers, type Dealer } from "@/lib/dealerStore";
 import { useAuth } from "./AuthContext";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 import { embedUrl, isDirectVideo } from "@/lib/video";
@@ -197,7 +197,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const [listedBy, setListedBy] = useState<Dealer | null>(null);
   const [propertyDealers, setPropertyDealers] = useState<Dealer[]>([]);
   useEffect(() => {
-    const dealers = getDealers();
+    const dealers = getPublishedDealers();
     if (dealers.length === 0) return;
     const hash = property.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
     setListedBy(dealers[hash % dealers.length]);

@@ -141,6 +141,10 @@ export async function togglePublish(id: string, currentState?: boolean): Promise
   return updateProperty(id, { published: !isPublished });
 }
 
+export async function setPropertyStatus(id: string, status: string): Promise<Property | null> {
+  return updateProperty(id, { status });
+}
+
 export async function toggleFeatured(id: string, currentState?: boolean): Promise<Property | null> {
   let isFeatured = currentState;
   if (isFeatured === undefined) {

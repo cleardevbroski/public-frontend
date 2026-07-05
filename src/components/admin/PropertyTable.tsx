@@ -17,7 +17,8 @@ import {
   CircleOff,
   UserRound,
 } from "lucide-react";
-import { deleteProperty, togglePublish, toggleFeatured } from "@/lib/propertyStore";
+import { deleteProperty, togglePublish, toggleFeatured, setPropertyStatus } from "@/lib/propertyStore";
+import StatusControls from "@/components/admin/StatusControls";
 import type { Property } from "@/components/acres/mock-data";
 
 interface PropertyTableProps {
@@ -57,7 +58,7 @@ export default function PropertyTable({
       p.builder?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter =
       filter === "all" ||
-      (filter === "pending" && p.published === false) ||
+      (filter === "pending" && (p.status ? p.status !== "approved" : p.published === false)) ||
       (filter === "admin" && adminIds.has(p.id)) ||
       (filter === "mock" && !adminIds.has(p.id));
     return matchesSearch && matchesFilter;
@@ -116,7 +117,7 @@ export default function PropertyTable({
         </div>
         <div className="flex gap-2 flex-wrap">
           {(["all", "pending", "admin", "mock"] as const).map((f) => {
-            const pendingCount = properties.filter((p) => p.published === false).length;
+            const pendingCount = properties.filter((p) => (p.status ? p.status !== "approved" : p.published === false)).length;
             const label =
               f === "all" ? "All" : f === "pending" ? "Pending" : f === "admin" ? "Admin Posted" : "Mock Data";
             return (
@@ -240,29 +241,10 @@ export default function PropertyTable({
 
                 {/* Status */}
                 <div>
-                  {isAdmin ? (
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold ${
-                        property.published !== false
-                          ? "bg-green-50 text-green-600"
-                          : "bg-amber-50 text-amber-600"
-                      }`}
-                    >
-                      {property.published !== false ? (
-                        <>
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Live
-                        </>
-                      ) : (
-                        <>
-                          <CircleOff className="w-3.5 h-3.5" /> Pending
-                        </>
-                      )}
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-green-50 text-green-600">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Live
-                    </span>
-                  )}
+                  <StatusControls
+                    status={property.status || (property.published !== false ? "approved" : "pending")}
+                    onChange={(s) => setPropertyStatus(property.id, s).then(onPropertyDeleted)}
+                  />
                   {property.featured && (
                     <p className="text-[10px] text-[#C9A24E] font-bold mt-0.5 flex items-center gap-0.5">
                       <Star className="w-3 h-3 fill-[#C9A24E]" /> Featured
@@ -281,21 +263,6 @@ export default function PropertyTable({
                   </Link>
                   {isAdmin && (
                     <>
-                      <button
-                        onClick={() => handlePublish(property.id, property.published !== false)}
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border ${
-                          property.published !== false
-                            ? "bg-amber-50 hover:bg-amber-100 border-amber-100"
-                            : "bg-green-50 hover:bg-green-100 border-green-100"
-                        }`}
-                        title={property.published !== false ? "Unpublish (hide from site)" : "Approve & publish"}
-                      >
-                        {property.published !== false ? (
-                          <CircleOff className="w-4 h-4 text-amber-600" />
-                        ) : (
-                          <CheckCircle2 className="w-4 h-4 text-green-600" />
-                        )}
-                      </button>
                       <button
                         onClick={() => handleFeature(property.id, !!property.featured)}
                         className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border ${

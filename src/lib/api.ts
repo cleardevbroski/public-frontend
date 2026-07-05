@@ -279,8 +279,8 @@ export async function searchProperties(params: Record<string, unknown> = {}) {
 }
 
 // ─── CMS: Testimonials ──────────────────────────────────────────
-export async function fetchTestimonials() {
-  return readJson(await apiFetch("/api/cms/testimonials"), "Failed to fetch testimonials");
+export async function fetchTestimonials(params: Record<string, unknown> = {}) {
+  return readJson(await apiFetch(`/api/cms/testimonials${toQuery(params)}`), "Failed to fetch testimonials");
 }
 export async function createTestimonial(data: Record<string, unknown>) {
   return readJson(await apiFetch("/api/cms/testimonials", { method: "POST", body: JSON.stringify(data) }), "Failed to create testimonial");
@@ -293,8 +293,8 @@ export async function deleteTestimonial(id: string) {
 }
 
 // ─── CMS: Lawyers ───────────────────────────────────────────────
-export async function fetchLawyers() {
-  return readJson(await apiFetch("/api/cms/lawyers"), "Failed to fetch lawyers");
+export async function fetchLawyers(params: Record<string, unknown> = {}) {
+  return readJson(await apiFetch(`/api/cms/lawyers${toQuery(params)}`), "Failed to fetch lawyers");
 }
 export async function createLawyer(data: Record<string, unknown>) {
   return readJson(await apiFetch("/api/cms/lawyers", { method: "POST", body: JSON.stringify(data) }), "Failed to create lawyer");
@@ -307,8 +307,8 @@ export async function deleteLawyer(id: string) {
 }
 
 // ─── CMS: Insights ──────────────────────────────────────────────
-export async function fetchInsights() {
-  return readJson(await apiFetch("/api/cms/insights"), "Failed to fetch insights");
+export async function fetchInsights(params: Record<string, unknown> = {}) {
+  return readJson(await apiFetch(`/api/cms/insights${toQuery(params)}`), "Failed to fetch insights");
 }
 export async function createInsight(data: Record<string, unknown>) {
   return readJson(await apiFetch("/api/cms/insights", { method: "POST", body: JSON.stringify(data) }), "Failed to create insight");
@@ -318,5 +318,13 @@ export async function updateInsight(id: string, data: Record<string, unknown>) {
 }
 export async function deleteInsight(id: string) {
   return readJson(await apiFetch(`/api/cms/insights/${id}`, { method: "DELETE" }), "Failed to delete insight");
+}
+
+// ─── Leads: status + delete ────────────────────────────────────
+export async function updateLeadStatus(id: string, status: string) {
+  return readJson(await apiFetch(`/api/leads/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }), "Failed to update lead status");
+}
+export async function deleteLead(id: string) {
+  return readJson(await apiFetch(`/api/leads/${id}`, { method: "DELETE" }), "Failed to delete lead");
 }
 

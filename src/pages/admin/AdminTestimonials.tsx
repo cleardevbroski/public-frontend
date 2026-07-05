@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, X, Search, Star, Quote } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import StatusControls from "@/components/admin/StatusControls";
 import { fetchTestimonials, createTestimonial, updateTestimonial, deleteTestimonial } from "@/lib/api";
 
 type Testimonial = {
@@ -11,6 +12,7 @@ type Testimonial = {
   role: string;
   quote: string;
   rating: number;
+  status?: string;
 };
 
 type FormState = Omit<Testimonial, "_id">;
@@ -85,6 +87,11 @@ export default function AdminTestimonials() {
     load();
   };
 
+  const setStatus = async (id: string, status: "pending" | "approved" | "rejected") => {
+    await updateTestimonial(id, { status });
+    load();
+  };
+
   const filtered = items.filter(
     (t) => t.name.toLowerCase().includes(search.toLowerCase()) || t.role.toLowerCase().includes(search.toLowerCase())
   );
@@ -132,11 +139,12 @@ export default function AdminTestimonials() {
                 <th className="px-6 py-4 font-medium">Name / Role</th>
                 <th className="px-6 py-4 font-medium">Quote</th>
                 <th className="px-6 py-4 font-medium">Rating</th>
+                <th className="px-6 py-4 font-medium">Status</th>
                 <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#D5DEF2]/30">
-              {loading && <tr><td colSpan={4} className="px-6 py-8 text-center text-[#6E7488]">Loading...</td></tr>}
+              {loading && <tr><td colSpan={5} className="px-6 py-8 text-center text-[#6E7488]">Loading...</td></tr>}
               {!loading && filtered.map((t) => (
                 <tr key={t._id} className="hover:bg-[#F8FAFC]/50 transition-colors">
                   <td className="px-6 py-4">
@@ -153,6 +161,9 @@ export default function AdminTestimonials() {
                       <Star className="size-3.5 fill-[#C9A24E]" /> {t.rating}
                     </span>
                   </td>
+                  <td className="px-6 py-4">
+                    <StatusControls status={t.status} onChange={(s) => setStatus(t._id, s)} />
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button onClick={() => startEdit(t)} className="p-2 text-[#6E7488] hover:text-[#C9A24E] hover:bg-[#F1F5FF] rounded-lg transition-colors">
@@ -167,7 +178,7 @@ export default function AdminTestimonials() {
               ))}
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-[#6E7488] text-[14px]">
+                  <td colSpan={5} className="px-6 py-8 text-center text-[#6E7488] text-[14px]">
                     No testimonials found.
                   </td>
                 </tr>

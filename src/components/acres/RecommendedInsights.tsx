@@ -1,13 +1,21 @@
 "use client";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "@/components/Link";
 import { ChevronLeft, ChevronRight, Map, BarChart3 } from "lucide-react";
-import { localityInsights } from "./mock-data";
+import { localityInsights as fallbackInsights } from "./mock-data";
+import { fetchInsights } from "@/lib/api";
 
 export default function RecommendedInsights() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const scrollBy = (dir: 1 | -1) =>
     scrollerRef.current?.scrollBy({ left: dir * 600, behavior: "smooth" });
+  const [items, setItems] = useState(fallbackInsights);
+
+  useEffect(() => {
+    fetchInsights({ status: "approved" })
+      .then((rows: any[]) => { if (Array.isArray(rows) && rows.length) setItems(rows); })
+      .catch(() => {});
+  }, []);
 
   return (
     <section className="bg-white py-14">
@@ -31,8 +39,8 @@ export default function RecommendedInsights() {
             <ChevronLeft className="size-5 text-[#1E3A8A]" />
           </button>
           <div ref={scrollerRef} className="flex gap-5 overflow-x-auto no-scrollbar pb-3 scroll-smooth">
-            {localityInsights.map((l) => (
-              <Link key={l.name} href={l.href} className="group shrink-0 w-[280px]">
+            {items.map((l) => (
+              <Link key={(l as any)._id ?? l.name} href={l.href} className="group shrink-0 w-[280px]">
                 <div className="relative h-[200px] rounded-2xl overflow-hidden bg-[#E2E9FB] border border-[#D5DEF2]/60">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,#E7F0FA,transparent),radial-gradient(circle_at_70%_70%,#F4EFE3,transparent)]" />
                   <span className="absolute top-3 right-3 size-7 rounded-md bg-white/80 flex items-center justify-center text-[#6E7488]">

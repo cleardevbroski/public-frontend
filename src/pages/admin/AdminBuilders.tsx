@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, X, Search, ShieldCheck, Star } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import StatusControls from "@/components/admin/StatusControls";
 import { fetchBuilders, createBuilder, updateBuilder, deleteBuilder } from "@/lib/api";
 
 type Builder = {
@@ -16,6 +17,7 @@ type Builder = {
   projectCount: number;
   verified: boolean;
   featured: boolean;
+  status?: string;
 };
 
 type FormState = Omit<Builder, "_id" | "slug">;
@@ -99,6 +101,11 @@ export default function AdminBuilders() {
     load();
   };
 
+  const setStatus = async (id: string, status: "pending" | "approved" | "rejected") => {
+    await updateBuilder(id, { status });
+    load();
+  };
+
   const filtered = builders.filter((b) => b.name.toLowerCase().includes(search.toLowerCase()));
 
   const input = "w-full h-11 px-3.5 rounded-xl border border-[#D5DEF2] focus:border-[#C9A24E] outline-none text-[14px] text-[#1E3A8A] bg-white";
@@ -145,11 +152,12 @@ export default function AdminBuilders() {
                 <th className="px-6 py-4 font-medium">City</th>
                 <th className="px-6 py-4 font-medium">Projects</th>
                 <th className="px-6 py-4 font-medium">Status</th>
+                <th className="px-6 py-4 font-medium">Moderation</th>
                 <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#D5DEF2]/30">
-              {loading && <tr><td colSpan={5} className="px-6 py-8 text-center text-[#6E7488]">Loading...</td></tr>}
+              {loading && <tr><td colSpan={6} className="px-6 py-8 text-center text-[#6E7488]">Loading...</td></tr>}
               {!loading && filtered.map((b) => (
                 <tr key={b._id} className="hover:bg-[#F8FAFC]/50 transition-colors">
                   <td className="px-6 py-4">
@@ -171,6 +179,9 @@ export default function AdminBuilders() {
                       {b.featured && <span className="flex items-center gap-1 text-[11px] font-bold text-[#C9A24E] bg-[#C9A24E]/10 px-2 py-1 rounded"><Star className="size-3" /> Featured</span>}
                     </div>
                   </td>
+                  <td className="px-6 py-4">
+                    <StatusControls status={b.status} onChange={(s) => setStatus(b._id, s)} />
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button onClick={() => startEdit(b)} className="p-2 text-[#6E7488] hover:text-[#C9A24E] hover:bg-[#F1F5FF] rounded-lg transition-colors">
@@ -185,7 +196,7 @@ export default function AdminBuilders() {
               ))}
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-[#6E7488] text-[14px]">
+                  <td colSpan={6} className="px-6 py-8 text-center text-[#6E7488] text-[14px]">
                     No builders found.
                   </td>
                 </tr>

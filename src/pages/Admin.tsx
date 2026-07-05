@@ -32,7 +32,7 @@ export default function AdminDashboard() {
       const adminProps = properties.filter((p) => p.postedBy?.role === "admin" || (!p.postedBy && p.source === "admin"));
       setAdminProperties(adminProps);
 
-      const published = properties.filter((p) => p.published !== false).length;
+      const published = properties.filter((p) => p.status === "approved" || (!p.status && p.published !== false)).length;
       setCounts({
         total: properties.length,
         admin: adminProps.length,

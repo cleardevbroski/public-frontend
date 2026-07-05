@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, X, Search, Star, Scale } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import StatusControls from "@/components/admin/StatusControls";
 import { fetchLawyers, createLawyer, updateLawyer, deleteLawyer } from "@/lib/api";
 
 type Lawyer = {
@@ -14,6 +15,7 @@ type Lawyer = {
   cases: string;
   specialty: string;
   image: string;
+  status?: string;
 };
 
 type FormState = Omit<Lawyer, "_id">;
@@ -88,6 +90,11 @@ export default function AdminLawyers() {
     load();
   };
 
+  const setStatus = async (id: string, status: "pending" | "approved" | "rejected") => {
+    await updateLawyer(id, { status });
+    load();
+  };
+
   const filtered = items.filter(
     (l) => l.name.toLowerCase().includes(search.toLowerCase()) || l.specialty.toLowerCase().includes(search.toLowerCase())
   );
@@ -137,11 +144,12 @@ export default function AdminLawyers() {
                 <th className="px-6 py-4 font-medium">Experience</th>
                 <th className="px-6 py-4 font-medium">Bar Council</th>
                 <th className="px-6 py-4 font-medium">Rating</th>
+                <th className="px-6 py-4 font-medium">Status</th>
                 <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#D5DEF2]/30">
-              {loading && <tr><td colSpan={6} className="px-6 py-8 text-center text-[#6E7488]">Loading...</td></tr>}
+              {loading && <tr><td colSpan={7} className="px-6 py-8 text-center text-[#6E7488]">Loading...</td></tr>}
               {!loading && filtered.map((l) => (
                 <tr key={l._id} className="hover:bg-[#F8FAFC]/50 transition-colors">
                   <td className="px-6 py-4">
@@ -163,6 +171,9 @@ export default function AdminLawyers() {
                       <Star className="size-3.5 fill-[#C9A24E]" /> {l.rating}
                     </span>
                   </td>
+                  <td className="px-6 py-4">
+                    <StatusControls status={l.status} onChange={(s) => setStatus(l._id, s)} />
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button onClick={() => startEdit(l)} className="p-2 text-[#6E7488] hover:text-[#C9A24E] hover:bg-[#F1F5FF] rounded-lg transition-colors">
@@ -177,7 +188,7 @@ export default function AdminLawyers() {
               ))}
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-[#6E7488] text-[14px]">
+                  <td colSpan={7} className="px-6 py-8 text-center text-[#6E7488] text-[14px]">
                     No lawyers found.
                   </td>
                 </tr>

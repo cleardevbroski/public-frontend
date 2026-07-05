@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Scale, CheckCircle2, ShieldCheck, Clock, UserCheck, Star, Send } from "lucide-react";
 import { verifiedLawyers, type Lawyer } from "./mock-data";
-import { submitConsultationLead } from "@/lib/api";
+import { submitConsultationLead, fetchLawyers } from "@/lib/api";
 
 const liveFeedData = [
   { text: "Whitefield Survey #43 JDA deeds approved", time: "12 mins ago", lawyer: "Adv. Srinivasan" },
@@ -13,10 +13,17 @@ const liveFeedData = [
 
 export default function LegalConsultationConsole() {
   const [activeLawyer, setActiveLawyer] = useState<Lawyer>(verifiedLawyers[0]);
+  const [lawyers, setLawyers] = useState<Lawyer[]>(verifiedLawyers);
   const [query, setQuery] = useState("");
   const [contact, setContact] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [category, setCategory] = useState("Title Check");
+
+  useEffect(() => {
+    fetchLawyers({ status: "approved" })
+      .then((rows: any[]) => { if (Array.isArray(rows) && rows.length) { setLawyers(rows); setActiveLawyer(rows[0]); } })
+      .catch(() => {});
+  }, []);
   
   // Rotating live feed ticker index
   const [feedIndex, setFeedIndex] = useState(0);
@@ -79,7 +86,7 @@ export default function LegalConsultationConsole() {
 
               {/* Roster List */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mb-6">
-                {verifiedLawyers.map((lawyer) => (
+                {lawyers.map((lawyer) => (
                   <button
                     key={lawyer.id}
                     onClick={() => setActiveLawyer(lawyer)}

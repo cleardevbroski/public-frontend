@@ -5,11 +5,11 @@ import { Award, Search, UserPlus, ChevronRight } from "lucide-react";
 import Header from "@/components/acres/Header";
 import Footer from "@/components/acres/Footer";
 import DealerCard from "@/components/acres/DealerCard";
-import { getDealers, type Dealer } from "@/lib/dealerStore";
+import { getPublishedDealers, type Dealer } from "@/lib/dealerStore";
 import { useLiveData } from "@/lib/useLiveProperties";
 
 export default function DealersPage() {
-  const dealers = useLiveData(() => getDealers(), [] as Dealer[], ["cleartitle:dealers-changed"]);
+  const dealers = useLiveData(() => getPublishedDealers(), [] as Dealer[], ["cleartitle:dealers-changed"]);
   const [query, setQuery] = useState("");
 
   const filtered = dealers.filter((d) => {

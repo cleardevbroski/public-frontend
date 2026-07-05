@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, X, Search, Phone, Mail } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import StatusControls from "@/components/admin/StatusControls";
 import { getDealers, registerDealer, editDealer, removeDealer, type Dealer } from "@/lib/dealerStore";
 import { useLiveData } from "@/lib/useLiveProperties";
 
@@ -73,6 +74,10 @@ export default function AdminDealers() {
     await removeDealer(id);
   };
 
+  const setStatus = async (id: string, status: "pending" | "approved" | "rejected") => {
+    await editDealer(id, { status });
+  };
+
   const filtered = dealers.filter((d) => {
     const q = search.toLowerCase();
     return d.name.toLowerCase().includes(q) || d.agency.toLowerCase().includes(q);
@@ -121,6 +126,7 @@ export default function AdminDealers() {
                 <th className="px-6 py-4 font-medium">Dealer / Agency</th>
                 <th className="px-6 py-4 font-medium">Contact</th>
                 <th className="px-6 py-4 font-medium">Deal Types</th>
+                <th className="px-6 py-4 font-medium">Status</th>
                 <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
@@ -152,6 +158,9 @@ export default function AdminDealers() {
                       ))}
                     </div>
                   </td>
+                  <td className="px-6 py-4">
+                    <StatusControls status={(d as any).status} onChange={(s) => setStatus(d.id, s)} />
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button onClick={() => startEdit(d)} className="p-2 text-[#6E7488] hover:text-[#C9A24E] hover:bg-[#F1F5FF] rounded-lg transition-colors">
@@ -166,7 +175,7 @@ export default function AdminDealers() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-[#6E7488] text-[14px]">
+                  <td colSpan={5} className="px-6 py-8 text-center text-[#6E7488] text-[14px]">
                     No dealers found.
                   </td>
                 </tr>

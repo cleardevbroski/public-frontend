@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageSquare, Calendar, Phone, Mail, Filter } from "lucide-react";
+import { MessageSquare, Calendar, Phone, Mail, Filter, Trash2 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { fetchLeads } from "@/lib/api";
+import StatusControls from "@/components/admin/StatusControls";
+import { fetchLeads, updateLeadStatus, deleteLead } from "@/lib/api";
 
 type Lead = {
   _id: string;
@@ -13,7 +14,7 @@ type Lead = {
   phone: string;
   message: string;
   category: string;
-  status: "new" | "contacted" | "closed";
+  status: "pending" | "approved" | "rejected";
   createdAt: string;
 };
 
@@ -40,6 +41,16 @@ export default function AdminLeads() {
   }, []);
 
   const filtered = leads.filter((l) => filterType === "all" || l.type === filterType);
+
+  const setStatus = async (id: string, status: "pending" | "approved" | "rejected") => {
+    await updateLeadStatus(id, status);
+    load();
+  };
+  const remove = async (id: string) => {
+    if (!window.confirm("Delete this lead?")) return;
+    await deleteLead(id);
+    load();
+  };
 
   if (!mounted) return null;
 
@@ -110,9 +121,12 @@ export default function AdminLeads() {
                     </p>
                   </td>
                   <td className="px-6 py-4 align-top text-right">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#E2E9FB] text-[#1E3A8A] capitalize">
-                      {l.status}
-                    </span>
+                    <div className="flex items-center justify-end gap-2">
+                      <StatusControls status={l.status} onChange={(s) => setStatus(l._id, s)} />
+                      <button onClick={() => remove(l._id)} className="ml-2 p-1.5 text-[#6E7488] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete lead">
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

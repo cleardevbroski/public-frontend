@@ -28,6 +28,7 @@ export type Dealer = {
   /** Property ids this dealer is linked to (for user-registered dealers). */
   propertyIds?: string[];
   source: "curated" | "user";
+  status?: string;
 };
 
 const DEALERS_EVENT = "cleartitle:dealers-changed";
@@ -48,6 +49,11 @@ export function dealerSlug(name: string, agency: string): string {
 /** All dealers from the backend. */
 export function getDealers(): Dealer[] {
   return cache.get();
+}
+
+/** Only approved dealers for the public site. (Legacy records without status are treated as approved). */
+export function getPublishedDealers(): Dealer[] {
+  return getDealers().filter((d) => !("status" in d) || (d as any).status === "approved");
 }
 
 export function getDealerBySlug(slug: string): Dealer | undefined {

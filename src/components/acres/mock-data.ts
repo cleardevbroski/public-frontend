@@ -54,6 +54,7 @@ export type Property = {
   // Admin workflow: only published listings appear on the public site
   published?: boolean;
   featured?: boolean;
+  status?: string;
   source?: "admin" | "mock" | "public";
   submittedBy?: "user" | "admin";
   postedBy?: {

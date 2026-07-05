@@ -2,13 +2,13 @@
 import { useRef } from "react";
 import Link from "@/components/Link";
 import { ChevronLeft, ChevronRight, Award } from "lucide-react";
-import { getDealers, type Dealer } from "@/lib/dealerStore";
+import { getPublishedDealers, type Dealer } from "@/lib/dealerStore";
 import { useLiveData } from "@/lib/useLiveProperties";
 import DealerCard from "./DealerCard";
 
 export default function FeaturedDealers() {
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const dealers = useLiveData(() => getDealers(), [] as Dealer[], ["cleartitle:dealers-changed"]);
+  const dealers = useLiveData(() => getPublishedDealers(), [] as Dealer[], ["cleartitle:dealers-changed"]);
 
   const scrollBy = (dir: 1 | -1) =>
     scrollerRef.current?.scrollBy({ left: dir * 700, behavior: "smooth" });
