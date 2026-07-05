@@ -131,16 +131,24 @@ export async function updateProperty(id: string, updates: Partial<Property>): Pr
   return data.property as Property;
 }
 
-export async function togglePublish(id: string): Promise<Property | null> {
-  const current = getPropertyById(id);
-  if (!current) return null;
-  return updateProperty(id, { published: !(current.published !== false) });
+export async function togglePublish(id: string, currentState?: boolean): Promise<Property | null> {
+  let isPublished = currentState;
+  if (isPublished === undefined) {
+    const current = getPropertyById(id);
+    if (!current) return null;
+    isPublished = current.published !== false;
+  }
+  return updateProperty(id, { published: !isPublished });
 }
 
-export async function toggleFeatured(id: string): Promise<Property | null> {
-  const current = getPropertyById(id);
-  if (!current) return null;
-  return updateProperty(id, { featured: !current.featured });
+export async function toggleFeatured(id: string, currentState?: boolean): Promise<Property | null> {
+  let isFeatured = currentState;
+  if (isFeatured === undefined) {
+    const current = getPropertyById(id);
+    if (!current) return null;
+    isFeatured = !!current.featured;
+  }
+  return updateProperty(id, { featured: !isFeatured });
 }
 
 export async function deleteProperty(id: string): Promise<boolean> {

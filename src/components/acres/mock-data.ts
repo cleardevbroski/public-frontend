@@ -54,8 +54,14 @@ export type Property = {
   // Admin workflow: only published listings appear on the public site
   published?: boolean;
   featured?: boolean;
-  source?: "admin" | "mock";
+  source?: "admin" | "mock" | "public";
   submittedBy?: "user" | "admin";
+  postedBy?: {
+    _id?: string;
+    id?: string;
+    name?: string;
+    role?: string;
+  };
 };
 
 const baseImages = [

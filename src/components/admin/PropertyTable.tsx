@@ -57,7 +57,7 @@ export default function PropertyTable({
       p.builder?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter =
       filter === "all" ||
-      (filter === "pending" && adminIds.has(p.id) && p.published === false) ||
+      (filter === "pending" && p.published === false) ||
       (filter === "admin" && adminIds.has(p.id)) ||
       (filter === "mock" && !adminIds.has(p.id));
     return matchesSearch && matchesFilter;
@@ -75,13 +75,13 @@ export default function PropertyTable({
     onPropertyDeleted();
   };
 
-  const handlePublish = async (id: string) => {
-    await togglePublish(id);
+  const handlePublish = async (id: string, currentState: boolean) => {
+    await togglePublish(id, currentState);
     onPropertyDeleted();
   };
 
-  const handleFeature = async (id: string) => {
-    await toggleFeatured(id);
+  const handleFeature = async (id: string, currentState: boolean) => {
+    await toggleFeatured(id, currentState);
     onPropertyDeleted();
   };
 
@@ -116,7 +116,7 @@ export default function PropertyTable({
         </div>
         <div className="flex gap-2 flex-wrap">
           {(["all", "pending", "admin", "mock"] as const).map((f) => {
-            const pendingCount = adminProperties.filter((p) => p.published === false).length;
+            const pendingCount = properties.filter((p) => p.published === false).length;
             const label =
               f === "all" ? "All" : f === "pending" ? "Pending" : f === "admin" ? "Admin Posted" : "Mock Data";
             return (
@@ -282,7 +282,7 @@ export default function PropertyTable({
                   {isAdmin && (
                     <>
                       <button
-                        onClick={() => handlePublish(property.id)}
+                        onClick={() => handlePublish(property.id, property.published !== false)}
                         className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border ${
                           property.published !== false
                             ? "bg-amber-50 hover:bg-amber-100 border-amber-100"
@@ -297,7 +297,7 @@ export default function PropertyTable({
                         )}
                       </button>
                       <button
-                        onClick={() => handleFeature(property.id)}
+                        onClick={() => handleFeature(property.id, !!property.featured)}
                         className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border ${
                           property.featured
                             ? "bg-[#FAF3E2] hover:bg-[#F5EACC] border-[#E8C66A]/40"

@@ -12,11 +12,7 @@ import {
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PropertyTable from "@/components/admin/PropertyTable";
-import {
-  getAllProperties,
-  getAdminPostedProperties,
-  getPropertyCount,
-} from "@/lib/propertyStore";
+import { fetchAdminProperties } from "@/lib/api";
 import type { Property } from "@/components/acres/mock-data";
 
 export default function AdminDashboard() {
@@ -24,19 +20,38 @@ export default function AdminDashboard() {
   const [adminProperties, setAdminProperties] = useState<Property[]>([]);
   const [counts, setCounts] = useState({ total: 0, admin: 0, mock: 0, published: 0, pending: 0 });
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const loadData = () => {
-    setAllProperties(getAllProperties());
-    setAdminProperties(getAdminPostedProperties());
-    setCounts(getPropertyCount());
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchAdminProperties({ limit: 1000 });
+      const properties: Property[] = data.properties;
+      setAllProperties(properties);
+      
+      const adminProps = properties.filter((p) => p.postedBy?.role === "admin" || (!p.postedBy && p.source === "admin"));
+      setAdminProperties(adminProps);
+
+      const published = properties.filter((p) => p.published !== false).length;
+      setCounts({
+        total: properties.length,
+        admin: adminProps.length,
+        mock: 0,
+        published,
+        pending: properties.length - published,
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    loadData();
-    setMounted(true);
+    loadData().then(() => setMounted(true));
   }, []);
 
-  if (!mounted) {
+  if (!mounted || loading) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-64">

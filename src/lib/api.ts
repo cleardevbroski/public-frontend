@@ -135,14 +135,38 @@ export async function fetchPropertyById(id: string) {
   return data;
 }
 
-export async function createProperty(propertyData: Record<string, unknown>) {
-  const res = await apiFetch("/api/properties", {
-    method: "POST",
-    body: JSON.stringify(propertyData),
+export async function fetchAdminProperties(filters: PropertyFilters = {}) {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      params.set(key, String(value));
+    }
   });
+
+  const res = await apiFetch(`/api/properties/admin?${params.toString()}`);
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to create property");
+  if (!res.ok) throw new Error(data.error || "Failed to fetch admin properties");
   return data;
+}
+
+export async function createProperty(propertyData: Record<string, unknown>) {
+  return readJson(
+    await apiFetch("/api/properties", {
+      method: "POST",
+      body: JSON.stringify(propertyData),
+    }),
+    "Failed to create property"
+  );
+}
+
+export async function createPublicProperty(propertyData: Record<string, unknown>) {
+  return readJson(
+    await apiFetch("/api/properties/public", {
+      method: "POST",
+      body: JSON.stringify(propertyData),
+    }),
+    "Failed to submit property"
+  );
 }
 
 export async function updateProperty(id: string, updates: Record<string, unknown>) {

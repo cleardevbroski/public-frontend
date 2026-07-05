@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import MediaUploader from "./MediaUploader";
 import { addProperty } from "@/lib/propertyStore";
+import { createPublicProperty } from "@/lib/api";
 import type { Property } from "@/components/acres/mock-data";
 
 const steps = [
@@ -188,21 +189,27 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const property = await addProperty({
+      const propertyPayload = {
         ...formData,
         image: formData.images?.[0] || "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80",
-        // Public submissions go to the admin's pending queue; admin posts go live.
-        published: !isPublic,
+        // Additional metadata
         submittedBy: isPublic ? "user" : "admin",
-      });
-      await new Promise((r) => setTimeout(r, 1200)); // simulate delay
+      };
+
       if (isPublic) {
+        // Public submissions go to the pending queue via public API
+        await createPublicProperty(propertyPayload as any);
         setSubmitted(true);
         window.scrollTo({ top: 0, behavior: "smooth" });
-      } else if (property) {
-        navigate(`/admin?posted=${property.id}`);
+      } else {
+        // Admin posts go live via admin API
+        const property = await addProperty({ ...propertyPayload, published: true } as any);
+        if (property) {
+          navigate(`/admin?posted=${property.id}`);
+        }
       }
-    } catch {
+    } catch (error) {
+      console.error(error);
       setIsSubmitting(false);
     }
   };
