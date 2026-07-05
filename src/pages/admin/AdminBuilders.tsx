@@ -44,7 +44,7 @@ export default function AdminBuilders() {
   const load = async () => {
     try {
       const res = await fetchBuilders();
-      setBuilders(res.data || []);
+      setBuilders(res.builders || []);
     } catch {
       // Ignore
     } finally {

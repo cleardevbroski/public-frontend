@@ -26,7 +26,7 @@ export default function AdminLeads() {
   const load = async () => {
     try {
       const res = await fetchLeads();
-      setLeads(res.data || []);
+      setLeads(res.leads || []);
     } catch {
       // Ignore
     } finally {
