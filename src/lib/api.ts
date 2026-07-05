@@ -278,3 +278,45 @@ export async function searchProperties(params: Record<string, unknown> = {}) {
   return readJson(await apiFetch(`/api/search${toQuery(params)}`), "Search failed");
 }
 
+// ─── CMS: Testimonials ──────────────────────────────────────────
+export async function fetchTestimonials() {
+  return readJson(await apiFetch("/api/cms/testimonials"), "Failed to fetch testimonials");
+}
+export async function createTestimonial(data: Record<string, unknown>) {
+  return readJson(await apiFetch("/api/cms/testimonials", { method: "POST", body: JSON.stringify(data) }), "Failed to create testimonial");
+}
+export async function updateTestimonial(id: string, data: Record<string, unknown>) {
+  return readJson(await apiFetch(`/api/cms/testimonials/${id}`, { method: "PUT", body: JSON.stringify(data) }), "Failed to update testimonial");
+}
+export async function deleteTestimonial(id: string) {
+  return readJson(await apiFetch(`/api/cms/testimonials/${id}`, { method: "DELETE" }), "Failed to delete testimonial");
+}
+
+// ─── CMS: Lawyers ───────────────────────────────────────────────
+export async function fetchLawyers() {
+  return readJson(await apiFetch("/api/cms/lawyers"), "Failed to fetch lawyers");
+}
+export async function createLawyer(data: Record<string, unknown>) {
+  return readJson(await apiFetch("/api/cms/lawyers", { method: "POST", body: JSON.stringify(data) }), "Failed to create lawyer");
+}
+export async function updateLawyer(id: string, data: Record<string, unknown>) {
+  return readJson(await apiFetch(`/api/cms/lawyers/${id}`, { method: "PUT", body: JSON.stringify(data) }), "Failed to update lawyer");
+}
+export async function deleteLawyer(id: string) {
+  return readJson(await apiFetch(`/api/cms/lawyers/${id}`, { method: "DELETE" }), "Failed to delete lawyer");
+}
+
+// ─── CMS: Insights ──────────────────────────────────────────────
+export async function fetchInsights() {
+  return readJson(await apiFetch("/api/cms/insights"), "Failed to fetch insights");
+}
+export async function createInsight(data: Record<string, unknown>) {
+  return readJson(await apiFetch("/api/cms/insights", { method: "POST", body: JSON.stringify(data) }), "Failed to create insight");
+}
+export async function updateInsight(id: string, data: Record<string, unknown>) {
+  return readJson(await apiFetch(`/api/cms/insights/${id}`, { method: "PUT", body: JSON.stringify(data) }), "Failed to update insight");
+}
+export async function deleteInsight(id: string) {
+  return readJson(await apiFetch(`/api/cms/insights/${id}`, { method: "DELETE" }), "Failed to delete insight");
+}
+
