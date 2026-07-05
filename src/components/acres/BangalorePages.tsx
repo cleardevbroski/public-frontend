@@ -1,0 +1,821 @@
+"use client";
+
+import Image from "@/components/Image";
+import Link from "@/components/Link";
+import { useState } from "react";
+import {
+  ArrowRight,
+  Building2,
+  CheckCircle2,
+  ChevronDown,
+  Heart,
+  IndianRupee,
+  MapPin,
+  Search,
+  SlidersHorizontal,
+  Star,
+  School,
+  Hospital,
+  Train,
+  Building,
+  ShieldCheck,
+  TrendingUp,
+} from "lucide-react";
+import Header from "./Header";
+import Footer from "./Footer";
+import CookieBanner from "./CookieBanner";
+import PostPropertyRail from "./PostPropertyRail";
+import {
+  bangaloreLocalities,
+  bangaloreZones,
+  getListingsByKind,
+  type BangaloreListing,
+  type BangaloreRoute,
+  type BangaloreZone,
+  getLocalitiesByZone,
+  getLocalityByName,
+  bangaloreRoutes,
+} from "./bangalore-data";
+import PropertyCard from "./PropertyCard";
+import { getPublishedProperties } from "@/lib/propertyStore";
+import { useLiveProperties } from "@/lib/useLiveProperties";
+import type { Property } from "./mock-data";
+
+/** Admin-posted, published listings surfaced at the top of every listing page. */
+function AdminPostedStrip() {
+  const adminPosted = useLiveProperties<Property[]>(
+    () => getPublishedProperties().filter((p) => p.source === "admin"),
+    []
+  );
+  if (adminPosted.length === 0) return null;
+  return (
+    <div className="mb-6 bg-white border border-[#D4AF37]/30 rounded-2xl p-5 shadow-sm">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="size-2 rounded-full bg-[#D4AF37] animate-pulse" />
+        <h3 className="text-[15px] font-bold text-[#1E3A8A]">Newly posted on ClearTitle One</h3>
+        <span className="text-[11px] text-[#6E7488]">({adminPosted.length})</span>
+      </div>
+      <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+        {adminPosted.map((p) => (
+          <PropertyCard key={p.id} p={p} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const filterGroups = [
+  ["Verified Only", "Direct Owner", "RERA Mandated", "With Photos"],
+  ["1 BHK", "2 BHK", "3 BHK", "4 BHK", "Villa Portfolio"],
+  ["Ready To Move", "Under Construction", "New Project Launch"],
+  ["Power Backup", "Swimming Pool", "Parking Spot", "Gymnasium"],
+];
+
+const featureLinks = bangaloreRoutes.filter((route) =>
+  [
+    "property-in-bangalore-ffid",
+    "property-for-rent-in-bangalore-ffid",
+    "new-projects-in-bangalore-ffid",
+    "residential-land-in-bangalore-ffid",
+    "pg-in-bangalore-ffid",
+    "commercial-property-in-bangalore-ffid",
+    "commercial-property-for-rent-in-bangalore-ffid",
+    "property-rates-and-price-trends-in-bangalore-prffid",
+    "postproperty",
+  ].includes(route.slug)
+);
+
+function ListingCard({ item }: { item: BangaloreListing }) {
+  return (
+    <Link href={`/property/blr-${item.id.split('-')[1]}`} className="block bg-white rounded-2xl border border-[#D5DEF2]/30 hover:border-[#D4AF37]/50 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group">
+      <article className="grid md:grid-cols-[250px_1fr] gap-0">
+        
+        {/* Left Thumbnail Media */}
+        <div className="relative h-[220px] md:h-full min-h-[220px] bg-[#E2E9FB] overflow-hidden">
+          <Image
+            src={item.image}
+            alt={item.project}
+            fill
+            sizes="250px"
+            className="object-cover group-hover:scale-103 transition-transform duration-500"
+          />
+          <div className="absolute left-3 top-3 flex flex-wrap gap-1.5 z-10">
+            <span className="flex items-center gap-1.5 bg-white/95 backdrop-blur-sm pl-1 pr-2.5 py-1 rounded-full shadow-md border border-[#D4AF37]/40">
+              <span className="size-5 rounded-full bg-gradient-to-br from-[#E0B84A] to-[#D4AF37] flex items-center justify-center">
+                <ShieldCheck className="size-3 text-[#1E3A8A]" strokeWidth={2.5} />
+              </span>
+              <span className="text-[9px] font-extrabold tracking-wide text-[#1E3A8A] uppercase">
+                Clear Title Verified
+              </span>
+            </span>
+            {item.tags.slice(0, 1).map((tag) => (
+              <span
+                key={tag}
+                className="bg-[#C9A24E] text-white text-[9px] font-bold px-2.5 py-1 rounded-md shadow-sm"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+          <button
+            className="absolute right-3 top-3 size-8 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white flex items-center justify-center shadow"
+            aria-label="Shortlist property"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            <Heart className="size-4 text-[#1E3A8A] hover:text-red-500 transition-colors" />
+          </button>
+        </div>
+
+        {/* Right Info Box */}
+        <div className="p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] text-[#6E7488] font-extrabold uppercase tracking-widest">
+                  {item.project}
+                </p>
+                <h2 className="text-[18px] font-bold text-[#1E3A8A] mt-1 group-hover:text-[#C9A24E] transition-colors leading-snug">
+                  {item.title}
+                </h2>
+                <p className="text-[13px] text-[#243559]/80 mt-1 flex items-center gap-1">
+                  <MapPin className="size-4 text-[#C9A24E]" />
+                  {item.locality}, {item.microMarket}
+                </p>
+              </div>
+              <span className="text-[11px] text-[#C9A24E] font-bold bg-[#E2E9FB] border border-[#D5DEF2]/30 px-3 py-1 rounded-full shrink-0 flex items-center gap-1">
+                <Star className="size-3 fill-[#C9A24E] text-transparent" />
+                4.{item.id.length % 5 + 1} Rating
+              </span>
+            </div>
+
+            {/* Core Spec Attributes */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5 border-y border-[#E2E9FB]/55 py-3.5 text-left">
+              <div>
+                <span className="text-[9px] text-[#6E7488] font-bold uppercase tracking-wider block">Estimated Price</span>
+                <span className="text-[16px] font-extrabold text-[#C9A24E] block mt-0.5">{item.price}</span>
+                <span className="text-[11px] text-[#6E7488] block mt-0.5">{item.priceSubtext}</span>
+              </div>
+              <div>
+                <span className="text-[9px] text-[#6E7488] font-bold uppercase tracking-wider block">Carpet Area</span>
+                <span className="text-[14px] font-bold text-[#1E3A8A] block mt-0.5">{item.area}</span>
+              </div>
+              <div>
+                <span className="text-[9px] text-[#6E7488] font-bold uppercase tracking-wider block">Configuration</span>
+                <span className="text-[14px] font-bold text-[#1E3A8A] block mt-0.5">{item.configuration}</span>
+              </div>
+              <div>
+                <span className="text-[9px] text-[#6E7488] font-bold uppercase tracking-wider block">Status</span>
+                <span className="text-[14px] font-bold text-[#1E3A8A] block mt-0.5">{item.status}</span>
+              </div>
+            </div>
+
+            {/* Highlights Grid */}
+            <div className="flex flex-wrap gap-1.5 mt-4">
+              {item.highlights.map((h) => (
+                <span
+                  key={h}
+                  className="text-[11px] font-medium text-[#243559]/90 bg-[#F1F5FF] border border-[#D5DEF2]/30 px-3 py-0.5 rounded-lg"
+                >
+                  {h}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer Listing Details */}
+          <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-4 border-t border-[#E2E9FB]/40">
+            <p className="text-[12px] text-[#6E7488]">
+              Listed by: <span className="font-bold text-[#1E3A8A]">{item.postedBy}</span>
+            </p>
+            <div className="flex gap-2.5 w-full sm:w-auto">
+              <button
+                className="flex-1 sm:flex-none h-10 px-4 rounded-xl border border-[#C9A24E] text-[#C9A24E] hover:bg-[#E2E9FB] text-[13px] font-bold transition-colors"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              >
+                View Number
+              </button>
+              <button
+                className="flex-1 sm:flex-none h-10 px-5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E8C66A] hover:from-[#C5A55A] hover:to-[#D4AF37] text-white text-[13px] font-bold shadow-sm hover:shadow transition-all"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              >
+                Submit Enquiry
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </article>
+    </Link>
+  );
+}
+
+function extractZoneFromSlug(slug: string): BangaloreZone | null {
+  if (slug.includes("east")) return "East";
+  if (slug.includes("west")) return "West";
+  if (slug.includes("north")) return "North";
+  if (slug.includes("south")) return "South";
+  if (slug.includes("central")) return "Central";
+  return null;
+}
+
+function extractLocalityFromSlug(slug: string): string | null {
+  const match = slug.match(/property-in-([a-z-]+)-bangalore/);
+  if (match) {
+    return match[1].replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+  return null;
+}
+
+function ListingPage({ route }: { route: BangaloreRoute }) {
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const zone = extractZoneFromSlug(route.slug);
+  const localityName = extractLocalityFromSlug(route.slug);
+
+  let listings = getListingsByKind(route.kind);
+  let zoneInfo = zone ? bangaloreZones[zone] : null;
+  let localityInfo = localityName ? getLocalityByName(localityName) : null;
+  let filteredLocalities = zone ? getLocalitiesByZone(zone) : bangaloreLocalities;
+
+  // Filter listings based on zone or locality
+  if (localityInfo) {
+    listings = listings.filter(
+      (l) =>
+        l.locality.toLowerCase().includes(localityInfo!.name.toLowerCase()) ||
+        l.microMarket.toLowerCase().includes(localityInfo!.name.toLowerCase())
+    );
+  } else if (zoneInfo) {
+    const zoneLocalityNames = zoneInfo.localities.map((l) => l.toLowerCase());
+    listings = listings.filter((l) =>
+      zoneLocalityNames.some(
+        (zl) =>
+          l.locality.toLowerCase().includes(zl) ||
+          l.microMarket.toLowerCase().includes(zl)
+      )
+    );
+  }
+
+  // Apply active filters
+  if (activeFilters.length > 0) {
+    listings = listings.filter(l => {
+      const searchStr = JSON.stringify(l).toLowerCase();
+      return activeFilters.every(f => {
+        let term = f.toLowerCase();
+        if (term === "verified only") term = "verified";
+        if (term === "direct owner") term = "owner";
+        if (term === "rera mandated") term = "rera";
+        if (term === "with photos") term = "photos";
+        return searchStr.includes(term);
+      });
+    });
+  }
+
+  return (
+    <>
+      <Header />
+      <main className="bg-slate-50 min-h-screen pb-16">
+        
+        {/* Listings Sub-Header */}
+        <div className="bg-white border-b border-[#E2E9FB]/65">
+          <div className="max-w-[1200px] mx-auto px-4 py-6">
+            <div className="text-[12px] text-[#6E7488] font-bold uppercase tracking-wider mb-2">
+              <Link href="/" className="text-[#C9A24E] hover:underline">Home</Link>
+              <span className="mx-2 text-[#6E7488]/60">›</span>
+              {zone && (
+                <>
+                  <Link href="/property-in-bangalore-ffid" className="text-[#C9A24E] hover:underline">Bangalore</Link>
+                  <span className="mx-2 text-[#6E7488]/60">›</span>
+                  <span>{zone} Region</span>
+                </>
+              )}
+              {localityInfo && (
+                <>
+                  <Link href="/property-in-bangalore-ffid" className="text-[#C9A24E] hover:underline">Bangalore</Link>
+                  <span className="mx-2 text-[#6E7488]/60">›</span>
+                  <span>{localityInfo.name} Locality</span>
+                </>
+              )}
+              {!zone && !localityInfo && <span>{route.title}</span>}
+            </div>
+
+            <div className="flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
+              <div>
+                <p className="text-[13px] text-[#6E7488] font-semibold">
+                  {route.resultCount || listings.length} Verified results found
+                </p>
+                <h1 className="text-[28px] font-bold text-[#1E3A8A] mt-1" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
+                  {route.title}
+                </h1>
+                <p className="text-[14px] text-[#243559]/80 mt-1.5 max-w-3xl leading-relaxed">
+                  {route.subtitle}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 bg-[#E2E9FB] border border-[#D5DEF2]/40 px-4 py-2.5 rounded-xl text-[#C9A24E] text-[13px] font-bold shadow-sm">
+                <ShieldCheck className="size-4.5 text-[#C9A24E]" />
+                RERA Title Checks Mandated
+              </div>
+            </div>
+
+            {/* Quick Search Row */}
+            <form action="/property-in-bangalore-ffid" className="mt-6 flex items-center bg-white rounded-xl border border-[#D5DEF2]/50 shadow-sm overflow-hidden max-w-3xl">
+              <div className="relative h-12 flex items-center border-r border-[#D5DEF2]/40 bg-slate-50 cursor-pointer">
+                <select name="type" className="appearance-none outline-none bg-transparent pl-4.5 pr-8 text-[13px] font-bold text-[#1E3A8A] cursor-pointer h-full w-full">
+                  <option value="buy">Buy</option>
+                  <option value="rent">Rent</option>
+                  <option value="lease">Lease</option>
+                  <option value="projects">New Projects</option>
+                  <option value="commercial">Commercial</option>
+                  <option value="plots">Plots</option>
+                </select>
+                <ChevronDown className="size-4 text-[#6E7488] absolute right-2.5 pointer-events-none" />
+              </div>
+              <input
+                name="q"
+                className="flex-1 h-12 outline-none px-4 text-[13.5px] placeholder:text-[#6E7488]/80"
+                placeholder={`Search builders, projects, or localities in ${zone || localityInfo?.name || "Bangalore"}...`}
+              />
+              <button type="submit" className="h-12 px-6 bg-[#1E3A8A] text-[#E8C66A] hover:bg-[#C9A24E] hover:text-white font-bold text-[14px] flex items-center gap-2 transition-colors">
+                <Search className="size-4.5" />
+                Find Spaces
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Mobile filter toggle */}
+        <div className="max-w-[1200px] mx-auto px-4 mt-6 lg:hidden">
+          <button
+            onClick={() => setShowFilters((v) => !v)}
+            className="w-full flex items-center justify-center gap-2 h-11 rounded-xl bg-white border border-[#D5DEF2] text-[#1E3A8A] font-bold text-[14px] shadow-sm"
+          >
+            <SlidersHorizontal className="size-4.5 text-[#C9A24E]" />
+            {showFilters ? "Hide Filters" : "Show Filters"}
+            {activeFilters.length > 0 && (
+              <span className="ml-1 bg-[#C9A24E] text-white text-[11px] font-bold px-2 py-0.5 rounded-full">{activeFilters.length}</span>
+            )}
+          </button>
+        </div>
+
+        {/* Listings Section Layout */}
+        <div className="max-w-[1200px] mx-auto px-4 mt-4 lg:mt-8 grid lg:grid-cols-[300px_1fr] gap-6 lg:gap-8">
+
+          {/* Left Filters Sidebar */}
+          <aside className={`${showFilters ? "block" : "hidden"} lg:block space-y-6`}>
+            <div className="bg-white border border-[#D5DEF2]/30 rounded-2xl p-5 lg:sticky lg:top-24 shadow-sm">
+              <h3 className="text-[16px] font-bold text-[#1E3A8A] flex items-center gap-2 border-b border-[#E2E9FB]/65 pb-3">
+                <SlidersHorizontal className="size-4.5 text-[#C9A24E]" />
+                Filter Portfolio
+              </h3>
+              <div className="mt-5 space-y-6">
+                {filterGroups.map((group, idx) => (
+                  <div key={idx}>
+                    <p className="text-[11px] text-[#6E7488] font-bold uppercase tracking-wider mb-2.5">
+                      {["Source Type", "Unit Configuration", "Development Status", "Key Amenities"][idx]}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {group.map((filter) => {
+                        const isActive = activeFilters.includes(filter);
+                        return (
+                          <button
+                            key={filter}
+                            onClick={() => setActiveFilters(prev => prev.includes(filter) ? prev.filter(f => f !== filter) : [...prev, filter])}
+                            className={`text-[12px] font-semibold border ${isActive ? "border-[#C9A24E] text-white bg-[#C9A24E]" : "border-[#D5DEF2]/40 text-[#243559]/85 hover:border-[#C9A24E] hover:text-[#C9A24E] bg-white"} rounded-xl px-3 py-1.5 transition-all shadow-sm`}
+                          >
+                            {filter}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Region Links */}
+              {(zone || localityInfo) && (
+                <div className="mt-6 pt-5 border-t border-[#E2E9FB]/65">
+                  <p className="text-[11px] text-[#6E7488] font-bold uppercase tracking-wider mb-2.5">
+                    {zone ? "Explore Zone Localities" : "Nearby Territory Sites"}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {filteredLocalities.slice(0, 6).map((loc) => (
+                      <Link
+                        key={loc.name}
+                        href={`/property-in-${loc.name.toLowerCase().replace(/\s+/g, "-")}-bangalore-ffid`}
+                        className="text-[11px] border border-[#D5DEF2]/40 text-[#243559]/80 rounded-lg px-2.5 py-1 hover:border-[#C9A24E] hover:text-[#C9A24E] bg-slate-50 transition-all"
+                      >
+                        {loc.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </aside>
+
+          {/* Right Listings Feed */}
+          <section className="space-y-6">
+            
+            {/* Locality Profile Summary */}
+            {localityInfo && (
+              <div className="bg-white border border-[#D5DEF2]/30 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-start justify-between flex-wrap gap-3">
+                  <div>
+                    <h2 className="text-[18px] font-bold text-[#1E3A8A]">{localityInfo.name} Market Profile</h2>
+                    <p className="text-[13px] text-[#6E7488] mt-1">
+                      Zone: {localityInfo.zone} Bangalore • Liveability score: {localityInfo.rating} ★
+                    </p>
+                  </div>
+                  <div className="text-left md:text-right bg-[#F1F5FF] border border-[#D5DEF2]/20 rounded-xl p-3">
+                    <p className="text-[20px] font-extrabold text-[#C9A24E] leading-none">{localityInfo.avgPrice}</p>
+                    <p className="text-[11px] text-[#6E7488] mt-1 font-semibold">Avg rent: {localityInfo.rent}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5 pt-5 border-t border-[#E2E9FB]/65 text-left">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-[#F1F5FF] flex items-center justify-center">
+                      <School className="size-4.5 text-[#C9A24E]" />
+                    </div>
+                    <span className="text-[12px] font-bold text-[#1E3A8A]">{localityInfo.schools.length}+ Academies</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-[#FFF5F3] flex items-center justify-center">
+                      <Hospital className="size-4.5 text-orange-500" />
+                    </div>
+                    <span className="text-[12px] font-bold text-[#1E3A8A]">{localityInfo.hospitals.length}+ Hospitals</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-[#F1F5FF] flex items-center justify-center">
+                      <Building className="size-4.5 text-[#C9A24E]" />
+                    </div>
+                    <span className="text-[12px] font-bold text-[#1E3A8A]">{localityInfo.itParks.length}+ IT Parks</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-[#FFF9EC] flex items-center justify-center">
+                      <Train className="size-4.5 text-[#D4AF37]" />
+                    </div>
+                    <span className="text-[12px] font-bold text-[#1E3A8A]">{localityInfo.metroStations.length} Transit nodes</span>
+                  </div>
+                </div>
+                <div className="mt-4 text-[12px] text-[#C9A24E] font-bold flex items-center gap-1">
+                  <TrendingUp className="size-3.5" />
+                  {localityInfo.appreciation} Rate Appreciation tracked YoY
+                </div>
+              </div>
+            )}
+
+            {/* Zone Overview Summary */}
+            {zone && zoneInfo && (
+              <div className="bg-white border border-[#D5DEF2]/30 rounded-2xl p-6 shadow-sm">
+                <h2 className="text-[18px] font-bold text-[#1E3A8A]">{zoneInfo.name} Regional Overview</h2>
+                <p className="text-[13.5px] text-[#243559]/85 mt-1.5 leading-relaxed">{zoneInfo.description}</p>
+                <div className="mt-4 pt-4 border-t border-[#E2E9FB]/60">
+                  <span className="text-[11px] text-[#6E7488] uppercase font-bold tracking-wider block mb-2.5">Core Tech Hubs</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {zoneInfo.localities.slice(0, 8).map((loc) => (
+                      <Link
+                        key={loc}
+                        href={`/property-in-${loc.toLowerCase().replace(/\s+/g, "-")}-bangalore-ffid`}
+                        className="text-[11.5px] bg-[#F1F5FF] text-[#243559] border border-[#D5DEF2]/20 px-3 py-1 rounded-lg hover:border-[#C9A24E] hover:text-[#C9A24E] transition-all font-semibold"
+                      >
+                        {loc}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Active Chips Toolbar */}
+            <div className="flex items-center justify-between bg-white border border-[#D5DEF2]/30 rounded-2xl px-5 py-3.5 shadow-sm">
+              <div className="flex flex-wrap gap-1.5">
+                {["Direct-to-Owner", "Verified Only", "RERA Compliant"].map((chip) => (
+                  <span
+                    key={chip}
+                    className="text-[11.5px] font-bold bg-[#F1F5FF] border border-[#D5DEF2]/20 text-[#243559] px-3.5 py-1 rounded-full shadow-inner"
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </div>
+              <button className="text-[13px] text-[#C9A24E] hover:text-[#A8842C] font-bold flex items-center gap-1">
+                Filter Results
+                <ChevronDown className="size-4" />
+              </button>
+            </div>
+
+            {/* Listings Grid */}
+            <div className="space-y-6">
+              <AdminPostedStrip />
+              {listings.length > 0 ? (
+                listings.map((item) => <ListingCard key={item.id} item={item} />)
+              ) : (
+                <div className="bg-white border border-[#D5DEF2]/30 rounded-2xl p-12 text-center shadow-sm">
+                  <p className="text-[15px] font-bold text-[#1E3A8A]">No Properties Found</p>
+                  <p className="text-[13px] text-[#6E7488] mt-1">There are no matched properties listed in this locality.</p>
+                  <Link
+                    href="/property-in-bangalore-ffid"
+                    className="mt-4 inline-block bg-[#1E3A8A] text-[#E8C66A] px-6 py-2.5 rounded-xl text-[13px] font-bold hover:bg-[#C9A24E] hover:text-white transition-all shadow"
+                  >
+                    Browse All Bangalore Portfolios
+                  </Link>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <Footer />
+      <CookieBanner />
+      <PostPropertyRail />
+    </>
+  );
+}
+
+function CityOverview({ route }: { route: BangaloreRoute }) {
+  return (
+    <>
+      <Header />
+      <main className="bg-white pb-16">
+        
+        {/* Banner Area */}
+        <section className="bg-gradient-to-br from-[#1E3A8A] via-[#25459E] to-[#1E3A8A] text-white py-16 border-b border-[#C9A24E]/25 relative overflow-hidden">
+          <div className="absolute -right-20 -top-20 w-[400px] h-[400px] bg-gradient-to-br from-[#E8C66A]/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="max-w-[1200px] mx-auto px-4 grid md:grid-cols-[1.2fr_0.8fr] gap-8 items-center relative z-10">
+            <div className="text-left">
+              <span className="text-[11px] text-[#D4AF37] font-bold tracking-widest uppercase">ClearTitle One Municipal Guide</span>
+              <h1 className="text-[36px] md:text-[46px] font-bold mt-2 leading-none" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
+                {route.title}
+              </h1>
+              <p className="text-[15px] text-white/80 mt-3.5 max-w-2xl leading-relaxed">
+                {route.subtitle}
+              </p>
+              
+              <div className="mt-6 flex flex-wrap gap-2">
+                {featureLinks.slice(1, 6).map((l) => (
+                  <Link
+                    key={l.slug}
+                    href={`/${l.slug}`}
+                    className="bg-white/10 hover:bg-white/20 border border-white/10 px-4 py-2 rounded-xl text-[12.5px] font-bold transition-all"
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Stat Box */}
+            <div className="bg-white/5 border border-white/10 backdrop-blur-md text-white rounded-3xl p-6 shadow-2xl text-left">
+              <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold block">Aggregated Municipal Data</span>
+              <p className="text-[36px] font-extrabold text-[#E8C66A] mt-2.5 leading-none">{route.heroStat || "52K+ listings"}</p>
+              <p className="text-[12.5px] text-white/70 mt-2">Verified listings monitored across premium East, South, and North Bangalore industrial zones.</p>
+              <div className="grid grid-cols-2 gap-2 mt-5">
+                {["Whitefield Hub", "Hebbal Airport Corridor", "Koramangala Suites", "Bellandur Tech Belt"].map((x) => (
+                  <div key={x} className="bg-white/10 rounded-xl p-2.5 text-[12px] font-bold text-center border border-white/5">{x}</div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Localities Rates Grid */}
+        <section className="max-w-[1200px] mx-auto px-4 py-16">
+          <div className="text-center mb-10">
+            <p className="acres-overline">Price Heatmap</p>
+            <h2 className="text-[26px] font-bold text-[#1E3A8A]" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
+              Municipal Property Benchmarks
+            </h2>
+            <p className="text-[13.5px] text-[#6E7488] mt-1">
+              Check average rates, growth ratios, and average lease demands across key locations.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-4 mt-6 text-left">
+            {bangaloreLocalities.map((loc) => (
+              <div
+                key={loc.name}
+                className="border border-[#D5DEF2]/30 hover:border-[#D4AF37]/40 bg-white rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 group"
+              >
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-[#1E3A8A] group-hover:text-[#C9A24E] transition-colors">{loc.name}</h3>
+                  <span className="text-[11px] font-bold text-[#C9A24E] bg-[#F1F5FF] border border-[#D5DEF2]/30 px-2 py-0.5 rounded-full">{loc.rating} ★</span>
+                </div>
+                <p className="text-[22px] font-extrabold text-[#C9A24E] mt-3">{loc.avgPrice}</p>
+                <p className="text-[12px] text-[#6E7488] mt-0.5 font-semibold">Avg rent: {loc.rent}</p>
+                
+                <div className="mt-4 pt-3 border-t border-[#E2E9FB]/60 flex items-center justify-between text-[11px] text-[#6E7488] font-semibold">
+                  <span>Growth: <span className="text-[#C9A24E]">{loc.appreciation}</span></span>
+                  <span>Demand: <span className="text-[#1E3A8A]">{loc.demand}</span></span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+
+      <Footer />
+      <CookieBanner />
+      <PostPropertyRail />
+    </>
+  );
+}
+
+function ToolsPage({ route }: { route: BangaloreRoute }) {
+  const isLoan = route.kind === "home-loan";
+  const isConverter = route.kind === "area-converter";
+  const isReceipt = route.kind === "rent-receipt";
+  const isPost = route.kind === "post-property";
+
+  return (
+    <>
+      <Header />
+      <main className="bg-slate-50 min-h-screen pb-16">
+        
+        {/* Banner */}
+        <section className="bg-white border-b border-[#E2E9FB]/65">
+          <div className="max-w-[1200px] mx-auto px-4 py-12 grid lg:grid-cols-[1fr_420px] gap-8 items-center text-left">
+            <div>
+              <p className="acres-overline">Calculators & Support</p>
+              <h1 className="text-[32px] font-bold text-[#1E3A8A] mt-1" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
+                {route.title}
+              </h1>
+              <p className="text-[14.5px] text-[#6E7488] mt-2 leading-relaxed max-w-2xl">
+                {route.subtitle}
+              </p>
+              <div className="mt-6 flex gap-3">
+                <Link
+                  href="/property-in-bangalore-ffid"
+                  className="bg-[#1E3A8A] text-[#E8C66A] hover:bg-[#C9A24E] hover:text-white px-5 py-3 rounded-xl font-bold text-[13px] transition-all shadow-md"
+                >
+                  Browse Portfolio
+                </Link>
+                <Link
+                  href="/property-rates-and-price-trends-in-bangalore-prffid"
+                  className="border border-[#C9A24E] text-[#C9A24E] hover:bg-[#E2E9FB]/30 px-5 py-3 rounded-xl font-bold text-[13px] transition-all"
+                >
+                  Market Value Insights
+                </Link>
+              </div>
+            </div>
+
+            <div className="bg-[#1E3A8A] rounded-3xl p-6 text-white border border-[#C9A24E]/25 shadow-xl text-left">
+              <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold block">Tool Spotlight</span>
+              <p className="text-[32px] font-extrabold text-[#E8C66A] mt-2 leading-none">{route.heroStat}</p>
+              <p className="text-[12.5px] text-white/70 mt-2 leading-relaxed">Fully customized for Karnataka layout calculations and RERA compliant guidelines.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Interactive Workspace */}
+        <section className="max-w-[1200px] mx-auto px-4 py-12 grid lg:grid-cols-[1fr_360px] gap-8 text-left">
+          <div className="bg-white border border-[#D5DEF2]/30 rounded-3xl p-6 md:p-8 shadow-sm">
+            <h2 className="text-[20px] font-bold text-[#1E3A8A] mb-4">Interactive Tool Console</h2>
+            
+            <div className="grid md:grid-cols-2 gap-4 mt-6">
+              {(isLoan
+                ? ["Expected Property value (₹)", "Down payment amount (₹)", "Interest rate (%)", "Tenure (Years)"]
+                : isConverter
+                ? ["Sq.ft area value", "From layout unit (sqft)", "To target unit (acres)", "Calculated boundary"]
+                : isReceipt
+                ? ["Tenant Full Name", "Monthly rent paid (₹)", "Mailing address", "Receipt Cycle Month"]
+                : ["Asset details", "Locality bounds", "Expected sale value", "Lister Mobile number"]
+              ).map((field) => (
+                <label key={field} className="block">
+                  <span className="text-[11px] font-bold text-[#243559]/85 uppercase tracking-wider block mb-1">{field}</span>
+                  <input
+                    className="w-full h-11 rounded-xl border border-[#D5DEF2]/40 px-3 outline-none text-[13.5px] focus:border-[#C9A24E] transition-colors bg-slate-50"
+                    placeholder={`Enter ${field.toLowerCase()}`}
+                  />
+                </label>
+              ))}
+            </div>
+            
+            <button className="mt-6 bg-[#1E3A8A] hover:bg-[#C9A24E] text-[#E8C66A] hover:text-white font-bold h-11 px-6 rounded-xl transition-all shadow">
+              {isPost ? "Post Free Layout Ad" : "Execute Calculations"}
+            </button>
+          </div>
+
+          <aside className="space-y-4">
+            {["RERA Monitored Records", "Direct Verification", "Zero Broker loops"].map((x) => (
+              <div
+                key={x}
+                className="bg-white border border-[#D5DEF2]/20 rounded-2xl p-4 flex items-center gap-3 shadow-sm"
+              >
+                <CheckCircle2 className="size-5 text-[#C9A24E]" />
+                <span className="text-[13.5px] font-bold text-[#1E3A8A]">{x}</span>
+              </div>
+            ))}
+          </aside>
+        </section>
+
+      </main>
+      <Footer />
+      <CookieBanner />
+      <PostPropertyRail />
+    </>
+  );
+}
+
+function TrendsPage({ route }: { route: BangaloreRoute }) {
+  return (
+    <>
+      <Header />
+      <main className="bg-slate-50 min-h-screen py-10 text-left">
+        <div className="max-w-[1200px] mx-auto px-4">
+          
+          <div className="bg-white border border-[#D5DEF2]/30 rounded-3xl p-6 md:p-8 shadow-sm">
+            <span className="text-[11px] text-[#D4AF37] font-bold tracking-widest uppercase block">Regulatory Insights</span>
+            <h1 className="text-[32px] font-bold text-[#1E3A8A] mt-2" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
+              {route.title}
+            </h1>
+            <p className="text-[14px] text-[#6E7488] mt-1">{route.subtitle}</p>
+          </div>
+
+          {/* Rates Grid */}
+          <div className="grid md:grid-cols-4 gap-4 mt-6">
+            {bangaloreLocalities.map((loc) => (
+              <div
+                key={loc.name}
+                className="bg-white border border-[#D5DEF2]/30 rounded-2xl p-5 shadow-sm group hover:border-[#D4AF37]/50 hover:shadow-md transition-all duration-300"
+              >
+                <div className="flex justify-between items-start">
+                  <h3 className="font-bold text-[#1E3A8A] group-hover:text-[#C9A24E] transition-colors">{loc.name}</h3>
+                  <Star className="size-4 text-[#D4AF37] fill-[#D4AF37]" />
+                </div>
+                <p className="text-[22px] font-extrabold text-[#C9A24E] mt-3">{loc.avgPrice}</p>
+                <p className="text-[12px] text-[#6E7488] font-semibold">Rent benchmark: {loc.rent}</p>
+                
+                <div className="h-1.5 bg-[#E2E9FB]/60 rounded-full mt-4 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#C9A24E] to-[#E3C25A] rounded-full"
+                    style={{ width: `${62 + loc.name.length * 2}%` }}
+                  />
+                </div>
+                <p className="text-[11px] text-[#6E7488] mt-2 font-bold uppercase tracking-wider">
+                  Demand: {loc.demand}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-6 mt-6">
+            <div className="bg-white border border-[#D5DEF2]/30 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-[18px] font-bold text-[#1E3A8A]">Real Estate Market Summary</h2>
+              <p className="text-[13.5px] text-[#243559]/85 mt-3 leading-relaxed">
+                Whitefield, Hebbal and Sarjapur Road continue to lead municipal buyer searches due to rapid IT corridor expansion, upcoming Namma Metro Phase 2 lines, and stable commercial layouts. North Bangalore corridors near Devanahalli show emerging plotted layout demand.
+              </p>
+            </div>
+            
+            <div className="bg-white border border-[#D5DEF2]/30 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-[18px] font-bold text-[#1E3A8A]">Top Verified Developments</h2>
+              <div className="mt-3.5 space-y-3">
+                {listingsByTrends().slice(0, 5).map((x) => (
+                  <Link
+                    href="/property-in-bangalore-ffid"
+                    key={x.id}
+                    className="flex items-center justify-between border-b border-[#E2E9FB]/45 pb-2 hover:border-[#C9A24E] transition-colors group"
+                  >
+                    <span className="text-[13.5px] font-bold text-[#1E3A8A] group-hover:text-[#C9A24E] transition-colors">
+                      {x.project}
+                    </span>
+                    <span className="text-[12px] text-[#C9A24E] font-bold group-hover:underline">View Project</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+      <Footer />
+      <CookieBanner />
+      <PostPropertyRail />
+    </>
+  );
+}
+
+// Helper filter for listings
+function listingsByTrends() {
+  const listings = getListingsByKind("buy");
+  return listings.filter((x, index, self) =>
+    index === self.findIndex((t) => t.project === x.project)
+  );
+}
+
+export default function BangalorePageRenderer({ route }: { route: BangaloreRoute }) {
+  if (
+    ["buy", "rent", "projects", "plots", "pg", "commercial-sale", "commercial-rent"].includes(
+      route.kind
+    )
+  )
+    return <ListingPage route={route} />;
+  if (route.kind === "city") return <CityOverview route={route} />;
+  if (route.kind === "price-trends" || route.kind === "insights")
+    return <TrendsPage route={route} />;
+  return <ToolsPage route={route} />;
+}
