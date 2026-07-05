@@ -262,27 +262,25 @@ export default function PropertyTable({
                     <Eye className="w-4 h-4 text-[#C9A24E]" />
                   </Link>
                   {isAdmin && (
-                    <>
-                      <button
-                        onClick={() => handleFeature(property.id, !!property.featured)}
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border ${
-                          property.featured
-                            ? "bg-[#FAF3E2] hover:bg-[#F5EACC] border-[#E8C66A]/40"
-                            : "bg-[#F1F5FF] hover:bg-[#E2E9FB] border-[#D5DEF2]/30"
-                        }`}
-                        title={property.featured ? "Remove from featured" : "Mark as featured"}
-                      >
-                        <Star className={`w-4 h-4 ${property.featured ? "fill-[#C9A24E] text-[#C9A24E]" : "text-[#6E7488]"}`} />
-                      </button>
-                      <button
-                        onClick={() => setDeleteModal(property.id)}
-                        className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center hover:bg-red-100 transition-colors border border-red-100"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </button>
-                    </>
+                    <button
+                      onClick={() => handleFeature(property.id, !!property.featured)}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border ${
+                        property.featured
+                          ? "bg-[#FAF3E2] hover:bg-[#F5EACC] border-[#E8C66A]/40"
+                          : "bg-[#F1F5FF] hover:bg-[#E2E9FB] border-[#D5DEF2]/30"
+                      }`}
+                      title={property.featured ? "Remove from featured" : "Mark as featured"}
+                    >
+                      <Star className={`w-4 h-4 ${property.featured ? "fill-[#C9A24E] text-[#C9A24E]" : "text-[#6E7488]"}`} />
+                    </button>
                   )}
+                  <button
+                    onClick={() => setDeleteModal(property.id)}
+                    className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center hover:bg-red-100 transition-colors border border-red-100"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </button>
                 </div>
               </div>
             );
