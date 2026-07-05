@@ -17,6 +17,10 @@ import {
   Images,
   Lock,
   ShieldCheck,
+  Users,
+  HardHat,
+  MessageSquare,
+  LineChart,
 } from "lucide-react";
 import { isAdminAuthed, adminLogin, adminLogout } from "@/lib/adminAuth";
 
@@ -26,6 +30,10 @@ interface AdminLayoutProps {
 
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { label: "Dealers", href: "/admin/dealers", icon: Users },
+  { label: "Builders", href: "/admin/builders", icon: HardHat },
+  { label: "Leads", href: "/admin/leads", icon: MessageSquare },
+  { label: "Analytics", href: "/admin/analytics", icon: LineChart },
   { label: "Post Property", href: "/admin/post", icon: PlusCircle },
   { label: "Hero Showcase", href: "/admin/hero", icon: Images },
 ];

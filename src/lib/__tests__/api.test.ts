@@ -26,9 +26,10 @@ describe("api client", () => {
     vi.stubGlobal("fetch", fetchMock);
     const { createDealer } = await import("@/lib/api");
     await createDealer({ name: "X", slug: "x" });
-    const [, opts] = fetchMock.mock.calls[0];
-    expect((opts as RequestInit).method).toBe("POST");
-    expect((opts!.headers as Record<string, string>)["Authorization"]).toBe("Bearer jwt-xyz");
+    const callArgs = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    const opts = callArgs[1];
+    expect(opts.method).toBe("POST");
+    expect((opts.headers as Record<string, string>)["Authorization"]).toBe("Bearer jwt-xyz");
   });
 
   it("throws the server error message on non-2xx", async () => {

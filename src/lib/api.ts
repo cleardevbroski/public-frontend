@@ -209,6 +209,15 @@ export async function deleteDealer(id: string) {
 export async function fetchBuilders(params: Record<string, unknown> = {}) {
   return readJson(await apiFetch(`/api/builders${toQuery(params)}`), "Failed to fetch builders");
 }
+export async function createBuilder(data: Record<string, unknown>) {
+  return readJson(await apiFetch("/api/builders", { method: "POST", body: JSON.stringify(data) }), "Failed to create builder");
+}
+export async function updateBuilder(id: string, data: Record<string, unknown>) {
+  return readJson(await apiFetch(`/api/builders/${id}`, { method: "PUT", body: JSON.stringify(data) }), "Failed to update builder");
+}
+export async function deleteBuilder(id: string) {
+  return readJson(await apiFetch(`/api/builders/${id}`, { method: "DELETE" }), "Failed to delete builder");
+}
 
 // ─── Hero banners ───────────────────────────────────────────────
 export async function fetchHeroBanners() {
@@ -225,11 +234,19 @@ export async function deleteHeroBanner(id: string) {
 }
 
 // ─── Leads ──────────────────────────────────────────────────────
+export async function fetchLeads(params: Record<string, unknown> = {}) {
+  return readJson(await apiFetch(`/api/leads${toQuery(params)}`), "Failed to fetch leads");
+}
 export async function submitContactLead(data: Record<string, unknown>) {
   return readJson(await apiFetch("/api/leads/contact", { method: "POST", body: JSON.stringify(data) }), "Failed to submit enquiry");
 }
 export async function submitConsultationLead(data: Record<string, unknown>) {
   return readJson(await apiFetch("/api/leads/consultation", { method: "POST", body: JSON.stringify(data) }), "Failed to submit request");
+}
+
+// ─── Analytics ──────────────────────────────────────────────────
+export async function fetchAnalyticsDashboard() {
+  return readJson(await apiFetch("/api/analytics/dashboard"), "Failed to fetch analytics dashboard");
 }
 
 // ─── Search ─────────────────────────────────────────────────────
