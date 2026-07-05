@@ -16,6 +16,9 @@ import AdminDealers from "@/pages/admin/AdminDealers";
 import AdminBuilders from "@/pages/admin/AdminBuilders";
 import AdminLeads from "@/pages/admin/AdminLeads";
 import AdminAnalytics from "@/pages/admin/AdminAnalytics";
+import AdminTestimonials from "@/pages/admin/AdminTestimonials";
+import AdminLawyers from "@/pages/admin/AdminLawyers";
+import AdminInsights from "@/pages/admin/AdminInsights";
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +35,9 @@ export const router = createBrowserRouter([
       { path: "/admin/builders", element: <AdminBuilders /> },
       { path: "/admin/leads", element: <AdminLeads /> },
       { path: "/admin/analytics", element: <AdminAnalytics /> },
+      { path: "/admin/testimonials", element: <AdminTestimonials /> },
+      { path: "/admin/lawyers", element: <AdminLawyers /> },
+      { path: "/admin/insights", element: <AdminInsights /> },
       { path: "/property/:id", element: <Property /> },
       { path: "/dealer/:slug", element: <Dealer /> },
       { path: "/builder/:slug", element: <Builder /> },

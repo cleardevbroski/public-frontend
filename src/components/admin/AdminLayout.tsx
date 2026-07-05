@@ -21,6 +21,9 @@ import {
   HardHat,
   MessageSquare,
   LineChart,
+  Quote,
+  Scale,
+  TrendingUp,
 } from "lucide-react";
 import { isAdminAuthed, adminLogin, adminLogout } from "@/lib/adminAuth";
 
@@ -34,6 +37,9 @@ const navItems = [
   { label: "Builders", href: "/admin/builders", icon: HardHat },
   { label: "Leads", href: "/admin/leads", icon: MessageSquare },
   { label: "Analytics", href: "/admin/analytics", icon: LineChart },
+  { label: "Testimonials", href: "/admin/testimonials", icon: Quote },
+  { label: "Lawyers", href: "/admin/lawyers", icon: Scale },
+  { label: "Insights", href: "/admin/insights", icon: TrendingUp },
   { label: "Post Property", href: "/admin/post", icon: PlusCircle },
   { label: "Hero Showcase", href: "/admin/hero", icon: Images },
 ];
