@@ -2,12 +2,24 @@
 import { useRef } from "react";
 import Link from "@/components/Link";
 import { ChevronLeft, ChevronRight, Heart, ShieldCheck, TrendingUp } from "lucide-react";
-import { searchTrendProjects } from "./mock-data";
+import { getPropertiesBySection } from "@/lib/propertyStore";
+import { useLiveProperties } from "@/lib/useLiveProperties";
+import type { Property } from "./mock-data";
+
+function statusOf(p: Property): string {
+  if (p.possession === "Ready to Move") return "Ready to Move";
+  if (p.ageOfProperty === "Under Construction") return "Under Construction";
+  return p.badges?.[0] || "New Launch";
+}
 
 export default function SearchTrends() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const scrollBy = (dir: 1 | -1) =>
     scrollerRef.current?.scrollBy({ left: dir * 600, behavior: "smooth" });
+
+  const projects = useLiveProperties<Property[]>(() => getPropertiesBySection("Search Trends"), []);
+
+  if (projects.length === 0) return null;
 
   return (
     <section className="bg-white py-14">
@@ -33,12 +45,12 @@ export default function SearchTrends() {
         </div>
 
         <div ref={scrollerRef} className="flex gap-5 overflow-x-auto no-scrollbar pb-3 scroll-smooth">
-          {searchTrendProjects.map((p) => (
-            <Link key={p.id} href="/new-projects-in-bangalore-ffid" className="group shrink-0 w-[360px] max-w-[85vw]">
+          {projects.map((p) => (
+            <Link key={p.id} href={`/property/${p.id}`} className="group shrink-0 w-[360px] max-w-[85vw]">
               <div className="relative h-[210px] overflow-hidden shadow-sm">
-                <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                <img src={p.image} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
-                {p.rera && (
+                {p.reraRegistered && (
                   <span className="absolute top-3 left-3 inline-flex items-center gap-1 bg-white/90 text-[#1E7A46] text-[10px] font-bold px-2 py-1 rounded">
                     <ShieldCheck className="size-3" /> RERA
                   </span>
@@ -46,12 +58,10 @@ export default function SearchTrends() {
                 <button className="absolute top-3 right-3 size-8 rounded-full bg-white/90 flex items-center justify-center shadow hover:text-red-500" aria-label="Shortlist" onClick={(e) => e.preventDefault()}>
                   <Heart className="size-4 text-[#1E3A8A]" />
                 </button>
-                {p.status && (
-                  <span className="absolute bottom-3 left-3 text-white text-[13px] font-bold drop-shadow">{p.status}</span>
-                )}
+                <span className="absolute bottom-3 left-3 text-white text-[13px] font-bold drop-shadow">{statusOf(p)}</span>
               </div>
-              <h3 className="text-[17px] font-bold text-[#1E3A8A] mt-3 group-hover:text-[#D4AF37] transition-colors truncate">{p.name}</h3>
-              <p className="text-[13px] text-[#6E7488] truncate">{p.locality}</p>
+              <h3 className="text-[17px] font-bold text-[#1E3A8A] mt-3 group-hover:text-[#D4AF37] transition-colors truncate">{p.title}</h3>
+              <p className="text-[13px] text-[#6E7488] truncate">{p.subtitle}</p>
               <p className="text-[16px] font-extrabold text-[#1E3A8A] mt-1">{p.price}</p>
             </Link>
           ))}

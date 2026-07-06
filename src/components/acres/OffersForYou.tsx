@@ -1,12 +1,19 @@
 "use client";
 import { useRef } from "react";
+import Link from "@/components/Link";
 import { ChevronLeft, ChevronRight, Gift } from "lucide-react";
-import { offerProjects } from "./mock-data";
+import { getPropertiesBySection } from "@/lib/propertyStore";
+import { useLiveProperties } from "@/lib/useLiveProperties";
+import type { Property } from "./mock-data";
 
 export default function OffersForYou() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const scrollBy = (dir: 1 | -1) =>
     scrollerRef.current?.scrollBy({ left: dir * 560, behavior: "smooth" });
+
+  const projects = useLiveProperties<Property[]>(() => getPropertiesBySection("Offers"), []);
+
+  if (projects.length === 0) return null;
 
   return (
     <section className="bg-[#F1F5FF] py-14">
@@ -32,22 +39,22 @@ export default function OffersForYou() {
         </div>
 
         <div ref={scrollerRef} className="flex gap-5 overflow-x-auto no-scrollbar pb-3 scroll-smooth">
-          {offerProjects.map((p) => (
-            <div key={p.id} className="shrink-0 w-[420px] max-w-[88vw] bg-white border border-[#D5DEF2]/50 shadow-sm overflow-hidden">
+          {projects.map((p) => (
+            <Link key={p.id} href={`/property/${p.id}`} className="block shrink-0 w-[420px] max-w-[88vw] bg-white border border-[#D5DEF2]/50 shadow-sm overflow-hidden">
               <div className="flex items-center gap-4 p-5">
-                <img src={p.image} alt={p.name} className="size-20 rounded-full object-cover border border-[#D5DEF2]" />
+                <img src={p.image} alt={p.title} className="size-20 rounded-full object-cover border border-[#D5DEF2]" />
                 <div className="min-w-0">
-                  <h3 className="text-[18px] font-bold text-[#1E3A8A] truncate">{p.name}</h3>
-                  <p className="text-[13px] text-[#6E7488]">{p.locality}</p>
-                  <p className="text-[13px] text-[#6E7488]">{p.config}</p>
+                  <h3 className="text-[18px] font-bold text-[#1E3A8A] truncate">{p.title}</h3>
+                  <p className="text-[13px] text-[#6E7488]">{p.subtitle}</p>
+                  <p className="text-[13px] text-[#6E7488]">{p.configs?.join(", ")}</p>
                   <p className="text-[16px] font-extrabold text-[#1E3A8A] mt-1">{p.price}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 border-t border-dashed border-[#D5DEF2] px-5 py-3 bg-[#EEF4FB]">
                 <Gift className="size-4 text-[#D4AF37]" />
-                <span className="text-[13px] font-semibold text-[#1E3A8A] truncate">{p.note}</span>
+                <span className="text-[13px] font-semibold text-[#1E3A8A] truncate">{p.description || "Limited period offer"}</span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

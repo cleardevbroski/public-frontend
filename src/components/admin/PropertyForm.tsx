@@ -52,6 +52,16 @@ const facingOptions = ["East", "West", "North", "South", "North-East", "North-We
 const parkingOptions = ["None", "1 Covered", "2 Covered", "1 Open", "2 Open", "1 Covered + 1 Open"];
 const ageOptions = ["Under Construction", "0-1 Years", "1-5 Years", "5-10 Years", "10+ Years"];
 const badgeOptions = ["RERA", "Premium", "New Launch", "Verified", "Hot Deal", "Price Drop"];
+// Values must match the backend Property.websiteSection enum
+const sectionOptions = [
+  { value: "None", label: "None" },
+  { value: "Featured", label: "Featured Projects in Bangalore East" },
+  { value: "Handpicked", label: "Handpicked Projects" },
+  { value: "Recommended Insights", label: "Recommended Insights" },
+  { value: "Search Trends", label: "Based on search trends" },
+  { value: "Offers", label: "Offers for you" },
+  { value: "Newly Launched", label: "Newly Launched" },
+];
 
 const allAmenities = [
   { name: "Power Backup", icon: Zap, color: "#D4AF37" },
@@ -113,6 +123,7 @@ const initialFormData: FormData = {
   },
   reraRegistered: false,
   verified: false,
+  websiteSection: "None",
 };
 
 interface PropertyFormProps {
@@ -631,6 +642,23 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                   </div>
                 </div>
               </div>
+
+              {/* Homepage Placement (admin only) */}
+              {!isPublic && (
+                <div>
+                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Homepage Placement</label>
+                  <select
+                    value={formData.websiteSection || "None"}
+                    onChange={(e) => updateField("websiteSection", e.target.value)}
+                    className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                  >
+                    {sectionOptions.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                  <p className="text-[12px] text-[#6E7488] mt-1.5">Choose which homepage section this property appears in</p>
+                </div>
+              )}
 
               {/* RERA */}
               <div className="flex items-center gap-3 p-4 bg-[#F1F5FF] rounded-xl border border-[#D5DEF2]/30">

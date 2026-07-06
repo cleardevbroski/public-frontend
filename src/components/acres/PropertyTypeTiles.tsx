@@ -2,12 +2,32 @@
 import { useRef } from "react";
 import Link from "@/components/Link";
 import { ChevronLeft, ChevronRight, Building } from "lucide-react";
-import { propertyTypeTiles } from "./mock-data";
+import { getPropertiesByType } from "@/lib/propertyStore";
+import { useLiveProperties } from "@/lib/useLiveProperties";
+
+const typeStyles: Record<string, { image: string; tint: string }> = {
+  Apartment: { image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80", tint: "#FDF3DE" },
+  Villa: { image: "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=600&q=80", tint: "#E9F3EA" },
+  Penthouse: { image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&q=80", tint: "#EDEAF6" },
+  Plot: { image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80", tint: "#FCE9E2" },
+  Commercial: { image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&q=80", tint: "#E2EFF7" },
+  "Independent House": { image: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600&q=80", tint: "#F3EEE4" },
+};
+const fallbackStyle = { image: "https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=600&q=80", tint: "#EEF2FB" };
+
+type Group = { type: string; count: number };
 
 export default function PropertyTypeTiles() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const scrollBy = (dir: 1 | -1) =>
     scrollerRef.current?.scrollBy({ left: dir * 600, behavior: "smooth" });
+
+  const groups = useLiveProperties<Group[]>(
+    () => getPropertiesByType().map(({ type, count }) => ({ type, count })),
+    []
+  );
+
+  if (groups.length === 0) return null;
 
   return (
     <section className="bg-white py-14">
@@ -33,22 +53,27 @@ export default function PropertyTypeTiles() {
         </div>
 
         <div ref={scrollerRef} className="flex gap-5 overflow-x-auto no-scrollbar pb-3 scroll-smooth">
-          {propertyTypeTiles.map((t) => (
-            <Link
-              key={t.label}
-              href={t.href}
-              className="group shrink-0 w-[300px] h-[360px] overflow-hidden relative flex flex-col border border-[#D5DEF2]/50 shadow-sm hover:shadow-xl transition-all"
-              style={{ backgroundColor: t.tint }}
-            >
-              <div className="p-6 relative z-10">
-                <h3 className="text-[24px] font-bold text-[#1E3A8A] leading-tight">{t.label}</h3>
-                <p className="text-[14px] text-[#6E7488] font-semibold mt-1">{t.count}</p>
-              </div>
-              <div className="mt-auto h-[200px] relative">
-                <img src={t.image} alt={t.label} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-              </div>
-            </Link>
-          ))}
+          {groups.map(({ type, count }) => {
+            const style = typeStyles[type] || fallbackStyle;
+            return (
+              <Link
+                key={type}
+                href="/property-in-bangalore-ffid"
+                className="group shrink-0 w-[300px] h-[360px] overflow-hidden relative flex flex-col border border-[#D5DEF2]/50 shadow-sm hover:shadow-xl transition-all"
+                style={{ backgroundColor: style.tint }}
+              >
+                <div className="p-6 relative z-10">
+                  <h3 className="text-[24px] font-bold text-[#1E3A8A] leading-tight">{type}</h3>
+                  <p className="text-[14px] text-[#6E7488] font-semibold mt-1">
+                    {count} {count === 1 ? "Property" : "Properties"}
+                  </p>
+                </div>
+                <div className="mt-auto h-[200px] relative">
+                  <img src={style.image} alt={type} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>

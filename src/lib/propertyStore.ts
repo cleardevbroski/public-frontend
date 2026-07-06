@@ -39,9 +39,31 @@ export function getNewlyListed(limit = 8): Property[] {
 /** Featured published listings (admin-flagged first, then fall back to recent). */
 export function getFeaturedProperties(limit = 6): Property[] {
   const published = getPublishedProperties();
-  const flagged = published.filter((p) => p.featured);
-  const rest = published.filter((p) => !p.featured);
+  const isFeatured = (p: Property) => p.featured || p.websiteSection === "Featured";
+  const flagged = published.filter(isFeatured);
+  const rest = published.filter((p) => !isFeatured(p));
   return [...flagged, ...rest].slice(0, limit);
+}
+
+/** Published listings tagged for a specific homepage section. */
+export function getPropertiesBySection(section: string, limit = 10): Property[] {
+  return getPublishedProperties()
+    .filter((p) => p.websiteSection === section)
+    .slice(0, limit);
+}
+
+/** Group published properties by property type for the browse-by-type tiles. */
+export function getPropertiesByType(): { type: string; count: number; sample: Property }[] {
+  const published = getPublishedProperties();
+  const groups: Record<string, Property[]> = {};
+  for (const p of published) {
+    const type = (p.propertyType || "").trim();
+    if (!type) continue;
+    (groups[type] ||= []).push(p);
+  }
+  return Object.entries(groups)
+    .map(([type, list]) => ({ type, count: list.length, sample: list[0] }))
+    .sort((a, b) => b.count - a.count);
 }
 
 /** Group published properties by their locality zone / city for the explorer. */

@@ -1,13 +1,30 @@
 "use client";
 import { useRef } from "react";
 import Link from "@/components/Link";
-import { ChevronLeft, ChevronRight, Star, TrendingUp, MapPin } from "lucide-react";
-import { localityInsights } from "./mock-data";
+import { ChevronLeft, ChevronRight, Building2, MapPin } from "lucide-react";
+import { getPropertiesByLocality } from "@/lib/propertyStore";
+import { useLiveProperties } from "@/lib/useLiveProperties";
+import type { Property } from "./mock-data";
+
+const localityImages: Record<string, string> = {
+  East: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80",
+  West: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80",
+  North: "https://images.unsplash.com/photo-1494526585095-c41746248156?w=800&q=80",
+  South: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&q=80",
+  Central: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&q=80",
+};
+const fallbackImg = "https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=800&q=80";
+
+type Group = { zone: string; count: number; sample: Property };
 
 export default function LocalitiesYouMayLike() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const scrollBy = (dir: 1 | -1) =>
     scrollerRef.current?.scrollBy({ left: dir * 600, behavior: "smooth" });
+
+  const groups = useLiveProperties<Group[]>(() => getPropertiesByLocality(), []);
+
+  if (groups.length === 0) return null;
 
   return (
     <section className="bg-white py-14">
@@ -35,31 +52,31 @@ export default function LocalitiesYouMayLike() {
         </div>
 
         <div ref={scrollerRef} className="flex gap-5 overflow-x-auto no-scrollbar pb-3 scroll-smooth">
-          {localityInsights.map((l) => (
-            <div key={l.name} className="shrink-0 w-[360px] bg-white border border-[#D5DEF2]/60 shadow-sm hover:shadow-lg transition-all overflow-hidden">
-              <div className="flex items-center gap-4 p-4">
-                <img src={l.image} alt={l.name} className="size-16 rounded-full object-cover border border-[#D5DEF2]" />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-[17px] font-bold text-[#1E3A8A] truncate">{l.name}</h3>
-                    <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-[#1E7A46] bg-[#E6F2EA] px-1.5 py-0.5 rounded">
-                      {l.rating} <Star className="size-3 fill-current" />
-                    </span>
+          {groups.map(({ zone, count, sample }) => {
+            const href = `/property-in-bangalore-${zone.toLowerCase()}-ffid`;
+            return (
+              <div key={zone} className="shrink-0 w-[360px] bg-white border border-[#D5DEF2]/60 shadow-sm hover:shadow-lg transition-all overflow-hidden">
+                <div className="flex items-center gap-4 p-4">
+                  <img src={localityImages[zone] || fallbackImg} alt={zone} className="size-16 rounded-full object-cover border border-[#D5DEF2]" />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-[17px] font-bold text-[#1E3A8A] truncate">{zone} Bangalore</h3>
+                    </div>
+                    <p className="text-[13px] text-[#243559] mt-1 flex items-center gap-1.5">
+                      {sample.pricePerSqft && <span className="font-semibold">{sample.pricePerSqft}</span>}
+                      <span className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-[#1E7A46]">
+                        <Building2 className="size-3.5" /> {count} {count === 1 ? "Property" : "Properties"}
+                      </span>
+                    </p>
                   </div>
-                  <p className="text-[13px] text-[#243559] mt-1 flex items-center gap-1.5">
-                    <span className="font-semibold">{l.pricePerSqft}</span>
-                    <span className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-[#1E7A46]">
-                      <TrendingUp className="size-3.5" /> {l.yoy}
-                    </span>
-                  </p>
+                </div>
+                <div className="grid grid-cols-2 border-t border-[#D5DEF2]/50 divide-x divide-[#D5DEF2]/50">
+                  <Link href={href} className="py-3 text-center text-[13px] font-bold text-[#D4AF37] hover:bg-[#FAF3E2] transition-colors">Insights</Link>
+                  <Link href={href} className="py-3 text-center text-[13px] font-bold text-[#D4AF37] hover:bg-[#FAF3E2] transition-colors">Properties</Link>
                 </div>
               </div>
-              <div className="grid grid-cols-2 border-t border-[#D5DEF2]/50 divide-x divide-[#D5DEF2]/50">
-                <Link href={l.href} className="py-3 text-center text-[13px] font-bold text-[#D4AF37] hover:bg-[#FAF3E2] transition-colors">Insights</Link>
-                <Link href={l.href} className="py-3 text-center text-[13px] font-bold text-[#D4AF37] hover:bg-[#FAF3E2] transition-colors">Properties</Link>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

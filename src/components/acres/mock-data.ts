@@ -54,6 +54,8 @@ export type Property = {
   // Admin workflow: only published listings appear on the public site
   published?: boolean;
   featured?: boolean;
+  /** Which homepage carousel/section this belongs to (matches backend enum) */
+  websiteSection?: string;
   status?: string;
   source?: "admin" | "mock" | "public";
   submittedBy?: "user" | "admin";
@@ -540,21 +542,7 @@ export const localityInsights: LocalityInsight[] = [
   { name: "Electronic City", rating: 4.0, pricePerSqft: "₹6,950/ sqft", yoy: "12.7% YoY", image: "https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=400&q=80", href: "/property-in-electronic-city-bangalore-ffid" },
 ];
 
-export type PropertyTypeTile = {
-  label: string;
-  count: string;
-  image: string;
-  tint: string;
-  href: string;
-};
 
-export const propertyTypeTiles: PropertyTypeTile[] = [
-  { label: "1 RK/ Studio Apartment", count: "40+ Properties", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=80", tint: "#E7F0FA", href: "/studio-apartment-in-bangalore-ffid" },
-  { label: "Farm House", count: "10+ Properties", image: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=600&q=80", tint: "#E6F2EA", href: "/farm-house-in-bangalore-ffid" },
-  { label: "Serviced Apartments", count: "5 Properties", image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80", tint: "#FAF3E2", href: "/serviced-apartment-in-bangalore-ffid" },
-  { label: "Independent House/Villa", count: "120+ Properties", image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&q=80", tint: "#F1EAF7", href: "/independent-house-in-bangalore-ffid" },
-  { label: "Residential Plots", count: "85+ Properties", image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80", tint: "#FAEAEA", href: "/residential-land-in-bangalore-ffid" },
-];
 
 export type BhkOption = { label: string; count: string; href: string };
 
@@ -598,31 +586,11 @@ export type ProjectCard = {
   priceTrend?: string;
 };
 
-export const handpickedProjects: ProjectCard[] = [
-  { id: "hp-ivy", name: "Ivy County by Icon Homz", locality: "Land, Gunjur", config: "Plots", price: "₹ 1.58 - 2.52 Cr", image: "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=800&q=80", status: "Featured", rera: true },
-  { id: "hp-mg", name: "MG Trident", locality: "2,3 BHK Apartment, Sarjapur", config: "2,3 BHK", price: "₹ 45.68 - 62.55 Lacs", image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80", status: "Featured", rera: true },
-  { id: "hp-adwaith", name: "The Adwaith by Sanjeevini", locality: "3,4 BHK Apartment, Gunjur", config: "3,4 BHK", price: "₹ 1.10 - 1.85 Cr", image: "https://images.unsplash.com/photo-1448630360428-65456885c650?w=800&q=80", status: "Featured", rera: true },
-];
-
 export const newlyLaunchedProjects: ProjectCard[] = [
   { id: "nl-maruti", name: "Maruti Akrida", locality: "Sarjapur, Bangalore", config: "2, 3, 4 BHK Apartment", price: "₹70.93 L - 1.44 Cr", image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&q=80", rera: true, tag: "NEW ARRIVAL", priceTrend: "71.2% price increase in last 3 months" },
   { id: "nl-binary", name: "Binary Etania", locality: "Sarjapur Road, Bangalore", config: "3 BHK Apartment", price: "₹1.2 - 1.21 Cr", image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&q=80", rera: true, tag: "NEW LAUNCH", priceTrend: "14.7% price increase in last 3 months" },
   { id: "nl-sanjeevini", name: "Sanjeevini Aarna", locality: "Hoskote, Bangalore", config: "3 BHK Apartment", price: "₹1.11 - 1.43 Cr", image: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&q=80", rera: true, tag: "NEW ARRIVAL", priceTrend: "9.4% price increase in last 3 months" },
   { id: "nl-peram", name: "Peram Eco City", locality: "Hoskote, Bangalore", config: "4 BHK Villa", price: "₹2.49 - 2.92 Cr", image: "https://images.unsplash.com/photo-1576941089067-2de3c901e126?w=400&q=80", rera: true, tag: "NEW LAUNCH", priceTrend: "5.1% price increase in last 3 months" },
-];
-
-export const searchTrendProjects: ProjectCard[] = [
-  { id: "st-bollineni", name: "BSCPL Bollineni Nestor", locality: "2, 3 BHK Apartment in Yelahanka, Bangalore", config: "2,3 BHK", price: "₹ 50 - 75 L", image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&q=80", status: "Ready To Move", rera: true },
-  { id: "st-sowparnika", name: "Sowparnika Whispering Petals", locality: "1, 2, 3 BHK Apartment in Hoskote, Bangalore", config: "1,2,3 BHK", price: "₹ 45.43 L - 1.1 Cr", image: "https://images.unsplash.com/photo-1448630360428-65456885c650?w=600&q=80", status: "Possession from Sep 2032", rera: true },
-  { id: "st-mgtrident", name: "MG Trident", locality: "2, 3 BHK Apartment in Sarjapur, Bangalore", config: "2,3 BHK", price: "₹ 45.68 - 62.55 L", image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80", status: "Ready To Move", rera: false },
-  { id: "st-adwaith", name: "The Adwaith by Sanjeevini", locality: "3, 4 BHK Apartment in Gunjur, Bangalore", config: "3,4 BHK", price: "₹ 1.10 - 1.85 Cr", image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&q=80", status: "Possession from Dec 2027", rera: true },
-];
-
-export const offerProjects: ProjectCard[] = [
-  { id: "of-peram", name: "Peram Eco City", locality: "Hoskote", config: "4 BHK Villa", price: "₹ 2.49 - 2.92 Cr", image: "https://images.unsplash.com/photo-1576941089067-2de3c901e126?w=400&q=80", note: "NO PRE EMI-Offer till possession" },
-  { id: "of-binary", name: "Binary Etania", locality: "Sarjapur Road", config: "3 BHK Apartment", price: "₹ 1.3 - 1.32 Cr", image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&q=80", note: "No Pre-EMI Till Possession" },
-  { id: "of-sanjeevini", name: "Sanjeevini Aarna", locality: "Hoskote", config: "3 BHK Apartment", price: "₹ 1.11 - 1.43 Cr", image: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&q=80", note: "Book today and save up to ₹5 L" },
-  { id: "of-mg", name: "MG Trident", locality: "Sarjapur", config: "2,3 BHK Apartment", price: "₹ 45.68 - 62.55 L", image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&q=80", note: "Assured gold coin on booking" },
 ];
 
 export type Lawyer = {
