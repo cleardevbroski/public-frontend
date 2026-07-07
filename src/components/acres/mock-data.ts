@@ -10,6 +10,8 @@ export type Property = {
   area: string;
   possession?: string;
   builder?: string;
+  builderId?: string | null;
+  dealerId?: string | null;
   image: string;
   badges?: string[];
   // Extended fields for admin-posted properties

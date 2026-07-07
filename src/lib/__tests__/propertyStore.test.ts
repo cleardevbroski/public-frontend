@@ -30,4 +30,62 @@ describe("propertyStore (backend-backed)", () => {
     const result = await store.addProperty({ title: "New", subtitle: "", price: "1", configs: [], area: "", image: "" } as never);
     expect(result?.id).toBe("new");
   });
+
+  it("getBuilders groups by real builderId link when one resolves fetched Builder", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (String(url).includes("/api/builders")) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ builders: [{ id: "b1", name: "Prestige Group", slug: "prestige-group", verified: true }], pagination: {} }),
+          } as Response;
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            properties: [
+              { id: "1", title: "A", subtitle: "", price: "1", configs: [], area: "", image: "", published: true, builder: "Other Builder", builderId: "b1" },
+            ],
+            pagination: {},
+          }),
+        } as Response;
+      })
+    );
+    const store = await import("@/lib/propertyStore");
+    store.getPublishedProperties();
+    store.getBuilders();
+    await vi.waitFor(() => expect(store.getBuilders().length).toBeGreaterThan(0));
+    expect(store.getBuilders()[0]).toMatchObject({ slug: "prestige-group", verified: true });
+  });
+
+  it("getPropertiesByBuilder matches by real builderId link even when free-text builder name differs", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (String(url).includes("/api/builders")) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ builders: [{ id: "b1", name: "Prestige Group", slug: "prestige-group" }], pagination: {} }),
+          } as Response;
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            properties: [
+              { id: "p1", title: "A", subtitle: "", price: "1", configs: [], area: "", image: "", published: true, builder: "Prestige (old name)", builderId: "b1" },
+            ],
+            pagination: {},
+          }),
+        } as Response;
+      })
+    );
+    const store = await import("@/lib/propertyStore");
+    store.getPublishedProperties();
+    await vi.waitFor(() => expect(store.getPropertiesByBuilder("prestige-group").length).toBe(1));
+  });
 });

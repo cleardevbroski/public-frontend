@@ -2,17 +2,26 @@ import type { Property } from "@/components/acres/mock-data";
 import { createHydratedCache } from "./hydratedCache";
 import {
   fetchProperties,
+  fetchBuilders,
   createProperty as apiCreateProperty,
   updateProperty as apiUpdateProperty,
   deleteProperty as apiDeleteProperty,
 } from "./api";
 
 const PROPERTIES_EVENT = "cleartitle:properties-changed";
+const BUILDERS_EVENT = "cleartitle:builders-changed";
+
+type BuilderRecord = { id: string; name: string; slug: string; verified?: boolean; featured?: boolean; logo?: string };
 
 const cache = createHydratedCache<Property>(async () => {
   const data = await fetchProperties({ limit: 200, sort: "-createdAt" });
   return (data.properties as Property[]).map((p) => ({ ...p, source: "admin" as const }));
 }, PROPERTIES_EVENT);
+
+const builderCache = createHydratedCache<BuilderRecord>(async () => {
+  const data = await fetchBuilders({ limit: 200 });
+  return data.builders as BuilderRecord[];
+}, BUILDERS_EVENT);
 
 /** All properties from the backend (admin views — unfiltered). */
 export function getAllProperties(): Property[] {
@@ -82,30 +91,51 @@ export function getPropertiesByLocality(): { zone: string; count: number; sample
     .sort((a, b) => b.count - a.count);
 }
 
-/** Distinct builders across published listings, with project counts. */
-export function getBuilders(): { name: string; slug: string; total: number; sample: Property }[] {
+/** Distinct builders across published listings — real Builder links first, free-text fallback otherwise. */
+export function getBuilders(): { name: string; slug: string; total: number; sample: Property; verified?: boolean; featured?: boolean; logo?: string }[] {
   const published = getPublishedProperties();
-  const groups: Record<string, Property[]> = {};
+  const builders = builderCache.get();
+  const byId = new Map(builders.map((b) => [b.id, b]));
+
+  type Group = { name: string; slug: string; verified?: boolean; featured?: boolean; logo?: string; list: Property[] };
+  const groups: Record<string, Group> = {};
+
   for (const p of published) {
-    const name = (p.builder || "").trim();
-    if (!name) continue;
-    (groups[name] ||= []).push(p);
+    const linked = p.builderId ? byId.get(p.builderId) : undefined;
+    const freeText = (p.builder || "").trim();
+
+    const key = linked ? `id:${linked.id}` : builderSlug(freeText);
+
+    if (!key) continue;
+
+    if (!groups[key]) {
+      groups[key] = {
+        name: linked?.name ?? freeText,
+        slug: linked?.slug ?? builderSlug(freeText),
+        verified: linked?.verified,
+        featured: linked?.featured,
+        logo: linked?.logo,
+        list: [],
+      };
+    }
+
+    groups[key].list.push(p);
   }
-  return Object.entries(groups)
-    .map(([name, list]) => ({
-      name,
-      slug: builderSlug(name),
-      total: list.length,
-      sample: list[0],
-    }))
+
+  return Object.values(groups)
+    .map((g) => ({ name: g.name, slug: g.slug, total: g.list.length, sample: g.list[0], verified: g.verified, featured: g.featured, logo: g.logo }))
     .sort((a, b) => b.total - a.total);
 }
 
-/** All published properties for a given builder (matched by slug). */
+/** All published properties for a given builder slug (matches real Builder link first, free-text builder name otherwise). */
 export function getPropertiesByBuilder(slug: string): Property[] {
-  return getPublishedProperties().filter(
-    (p) => p.builder && builderSlug(p.builder) === slug
-  );
+  const builders = builderCache.get();
+  const linkedBuilder = builders.find((b) => b.slug === slug);
+  return getPublishedProperties().filter((p) => {
+    if (linkedBuilder && p.builderId === linkedBuilder.id) return true;
+    if (!p.builderId && p.builder && builderSlug(p.builder) === slug) return true;
+    return false;
+  });
 }
 
 export function builderSlug(name: string): string {
