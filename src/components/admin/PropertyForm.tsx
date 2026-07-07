@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ChevronLeft,
@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import MediaUploader from "./MediaUploader";
 import { addProperty } from "@/lib/propertyStore";
-import { createPublicProperty } from "@/lib/api";
+import { createPublicProperty, fetchBuilders, fetchDealers } from "@/lib/api";
 import type { Property } from "@/components/acres/mock-data";
 
 const steps = [
@@ -140,6 +140,18 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [configInput, setConfigInput] = useState("");
+  const [builders, setBuilders] = useState<{ id: string; name: string }[]>([]);
+  const [dealers, setDealers] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    if (isPublic) return;
+    fetchBuilders({ limit: 200 })
+      .then((data) => setBuilders(data.builders))
+      .catch(() => {});
+    fetchDealers({ limit: 200 })
+      .then((data) => setDealers(data.dealers))
+      .catch(() => {});
+  }, [isPublic]);
 
   const updateField = <K extends keyof FormData>(key: K, value: FormData[K]) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -584,6 +596,37 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                   </div>
                 </div>
               </div>
+
+              {!isPublic && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[13px] font-semibold text-[#243559] mb-2">Linked Builder</label>
+                    <select
+                      value={formData.builderId || ""}
+                      onChange={(e) => updateField("builderId", e.target.value || null)}
+                      className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                    >
+                      <option value="">— None —</option>
+                      {builders.map((b) => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-semibold text-[#243559] mb-2">Linked Dealer</label>
+                    <select
+                      value={formData.dealerId || ""}
+                      onChange={(e) => updateField("dealerId", e.target.value || null)}
+                      className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                    >
+                      <option value="">— None —</option>
+                      {dealers.map((d) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
 
               {/* Furnishing, Facing, Parking */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
