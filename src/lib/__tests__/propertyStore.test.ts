@@ -61,6 +61,30 @@ describe("propertyStore (backend-backed)", () => {
     expect(store.getBuilders()[0]).toMatchObject({ slug: "prestige-group", verified: true });
   });
 
+  it("getBuilders falls back to free-text builder grouping when no link exists", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (String(url).includes("/api/builders")) {
+          return { ok: true, status: 200, json: async () => ({ builders: [], pagination: {} }) } as Response;
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            properties: [{ id: "p1", title: "A", subtitle: "", price: "1", configs: [], area: "", image: "", published: true, builder: "Sobha Limited" }],
+            pagination: {},
+          }),
+        } as Response;
+      })
+    );
+    const store = await import("@/lib/propertyStore");
+    store.getPublishedProperties();
+    store.getBuilders();
+    await vi.waitFor(() => expect(store.getBuilders().length).toBeGreaterThan(0));
+    expect(store.getBuilders()[0]).toMatchObject({ name: "Sobha Limited", total: 1 });
+  });
+
   it("getPropertiesByBuilder matches by real builderId link even when free-text builder name differs", async () => {
     vi.stubGlobal(
       "fetch",
