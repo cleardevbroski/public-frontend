@@ -130,11 +130,11 @@ export function getBuilders(): { name: string; slug: string; total: number; samp
 /** All published properties for a given builder slug (matches real Builder link first, free-text builder name otherwise). */
 export function getPropertiesByBuilder(slug: string): Property[] {
   const builders = builderCache.get();
-  const linkedBuilder = builders.find((b) => b.slug === slug);
+  const byId = new Map(builders.map((b) => [b.id, b]));
   return getPublishedProperties().filter((p) => {
-    if (linkedBuilder && p.builderId === linkedBuilder.id) return true;
-    if (!p.builderId && p.builder && builderSlug(p.builder) === slug) return true;
-    return false;
+    const linked = p.builderId ? byId.get(p.builderId) : undefined;
+    if (linked) return linked.slug === slug;
+    return Boolean(p.builder) && builderSlug(p.builder!) === slug;
   });
 }
 

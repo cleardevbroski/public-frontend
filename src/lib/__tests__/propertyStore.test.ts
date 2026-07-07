@@ -112,4 +112,28 @@ describe("propertyStore (backend-backed)", () => {
     store.getPublishedProperties();
     await vi.waitFor(() => expect(store.getPropertiesByBuilder("prestige-group").length).toBe(1));
   });
+
+  it("getPropertiesByBuilder falls back to free text when builderId points at a builder that no longer resolves", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (String(url).includes("/api/builders")) {
+          return { ok: true, status: 200, json: async () => ({ builders: [], pagination: {} }) } as Response;
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            properties: [
+              { id: "p1", title: "A", subtitle: "", price: "1", configs: [], area: "", image: "", published: true, builder: "Old Name", builderId: "stale-id" },
+            ],
+            pagination: {},
+          }),
+        } as Response;
+      })
+    );
+    const store = await import("@/lib/propertyStore");
+    store.getPublishedProperties();
+    await vi.waitFor(() => expect(store.getPropertiesByBuilder("old-name").length).toBe(1));
+  });
 });
