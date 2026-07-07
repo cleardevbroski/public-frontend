@@ -5,6 +5,8 @@ import { useParams } from "react-router-dom";
 import PropertyDetail from "@/components/acres/PropertyDetail";
 import { cityListings } from "@/components/acres/mock-data";
 import type { Property } from "@/components/acres/mock-data";
+import { fetchPropertyById } from "@/lib/api";
+import { getPublishedProperties } from "@/lib/propertyStore";
 
 export default function PropertyPage() {
   const params = useParams();
@@ -16,36 +18,45 @@ export default function PropertyPage() {
 
   useEffect(() => {
     if (!id) return;
+    let cancelled = false;
+    setLoading(true);
+    setNotFound(false);
 
-    // Check mock data first
-    const allMockProperties = Object.values(cityListings).flat();
-    let found = allMockProperties.find((p) => p.id === id);
-
-    // Check localStorage (admin-posted properties)
-    if (!found) {
-      try {
-        const stored = localStorage.getItem("cleartitle_admin_properties");
-        if (stored) {
-          const adminProperties: Property[] = JSON.parse(stored);
-          found = adminProperties.find((p) => p.id === id);
+    async function resolveProperty() {
+      // Legacy mock-data properties — still linked from BangalorePages.tsx
+      // and LocalProperties.tsx via blr-* ids.
+      const allMockProperties = Object.values(cityListings).flat();
+      const mockMatch = allMockProperties.find((p) => p.id === id);
+      if (mockMatch) {
+        if (!cancelled) {
+          setProperty(mockMatch);
+          setRelatedProperties(
+            (cityListings.Bangalore || []).filter((p) => p.id !== id).slice(0, 4)
+          );
+          setLoading(false);
         }
+        return;
+      }
+
+      // Real, backend-posted properties (admin or public submissions).
+      try {
+        const data = await fetchPropertyById(id);
+        if (cancelled) return;
+        setProperty(data.property as Property);
+        setRelatedProperties(
+          getPublishedProperties().filter((p) => p.id !== id).slice(0, 4)
+        );
       } catch {
-        // ignore parse errors
+        if (!cancelled) setNotFound(true);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
 
-    if (found) {
-      setProperty(found);
-      // Get related properties
-      const related = (cityListings.Bangalore || [])
-        .filter((p) => p.id !== id)
-        .slice(0, 4);
-      setRelatedProperties(related);
-    } else {
-      setNotFound(true);
-    }
-
-    setLoading(false);
+    resolveProperty();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   if (loading) {

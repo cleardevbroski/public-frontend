@@ -56,6 +56,8 @@ export type Property = {
   featured?: boolean;
   /** Which homepage carousel/section this belongs to (matches backend enum) */
   websiteSection?: string;
+  /** "For Sale" | "For Rent" — routes the property to Buy vs Rent listing pages. */
+  listingType?: string;
   status?: string;
   source?: "admin" | "mock" | "public";
   submittedBy?: "user" | "admin";

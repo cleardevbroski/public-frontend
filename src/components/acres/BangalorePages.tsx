@@ -1,16 +1,14 @@
 "use client";
 
-import Image from "@/components/Image";
 import Link from "@/components/Link";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   Building2,
   CheckCircle2,
   ChevronDown,
-  Heart,
   IndianRupee,
-  MapPin,
   Search,
   SlidersHorizontal,
   Star,
@@ -29,40 +27,18 @@ import {
   bangaloreLocalities,
   bangaloreZones,
   getListingsByKind,
-  type BangaloreListing,
   type BangaloreRoute,
   type BangaloreZone,
   getLocalitiesByZone,
   getLocalityByName,
   bangaloreRoutes,
 } from "./bangalore-data";
-import PropertyCard from "./PropertyCard";
 import { getPublishedProperties } from "@/lib/propertyStore";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 import type { Property } from "./mock-data";
-
-/** Admin-posted, published listings surfaced at the top of every listing page. */
-function AdminPostedStrip() {
-  const adminPosted = useLiveProperties<Property[]>(
-    () => getPublishedProperties().filter((p) => p.source === "admin"),
-    []
-  );
-  if (adminPosted.length === 0) return null;
-  return (
-    <div className="mb-6 bg-white border border-[#D4AF37]/30 rounded-2xl p-5 shadow-sm">
-      <div className="flex items-center gap-2 mb-4">
-        <span className="size-2 rounded-full bg-[#D4AF37] animate-pulse" />
-        <h3 className="text-[15px] font-bold text-[#1E3A8A]">Newly posted on ClearTitle One</h3>
-        <span className="text-[11px] text-[#6E7488]">({adminPosted.length})</span>
-      </div>
-      <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-        {adminPosted.map((p) => (
-          <PropertyCard key={p.id} p={p} />
-        ))}
-      </div>
-    </div>
-  );
-}
+import PropertyListingRow from "./PropertyListingRow";
+import { filterListingProperties } from "@/lib/listingFilter";
+import type { ListingKind } from "./bangalore-data";
 
 const filterGroups = [
   ["Verified Only", "Direct Owner", "RERA Mandated", "With Photos"],
@@ -85,133 +61,6 @@ const featureLinks = bangaloreRoutes.filter((route) =>
   ].includes(route.slug)
 );
 
-function ListingCard({ item }: { item: BangaloreListing }) {
-  return (
-    <Link href={`/property/blr-${item.id.split('-')[1]}`} className="block bg-white rounded-2xl border border-[#D5DEF2]/30 hover:border-[#D4AF37]/50 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group">
-      <article className="grid md:grid-cols-[250px_1fr] gap-0">
-        
-        {/* Left Thumbnail Media */}
-        <div className="relative h-[220px] md:h-full min-h-[220px] bg-[#E2E9FB] overflow-hidden">
-          <Image
-            src={item.image}
-            alt={item.project}
-            fill
-            sizes="250px"
-            className="object-cover group-hover:scale-103 transition-transform duration-500"
-          />
-          <div className="absolute left-3 top-3 flex flex-wrap gap-1.5 z-10">
-            <span className="flex items-center gap-1.5 bg-white/95 backdrop-blur-sm pl-1 pr-2.5 py-1 rounded-full shadow-md border border-[#D4AF37]/40">
-              <span className="size-5 rounded-full bg-gradient-to-br from-[#E0B84A] to-[#D4AF37] flex items-center justify-center">
-                <ShieldCheck className="size-3 text-[#1E3A8A]" strokeWidth={2.5} />
-              </span>
-              <span className="text-[9px] font-extrabold tracking-wide text-[#1E3A8A] uppercase">
-                Clear Title Verified
-              </span>
-            </span>
-            {item.tags.slice(0, 1).map((tag) => (
-              <span
-                key={tag}
-                className="bg-[#C9A24E] text-white text-[9px] font-bold px-2.5 py-1 rounded-md shadow-sm"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-          <button
-            className="absolute right-3 top-3 size-8 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white flex items-center justify-center shadow"
-            aria-label="Shortlist property"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          >
-            <Heart className="size-4 text-[#1E3A8A] hover:text-red-500 transition-colors" />
-          </button>
-        </div>
-
-        {/* Right Info Box */}
-        <div className="p-5 flex flex-col justify-between">
-          <div>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[10px] text-[#6E7488] font-extrabold uppercase tracking-widest">
-                  {item.project}
-                </p>
-                <h2 className="text-[18px] font-bold text-[#1E3A8A] mt-1 group-hover:text-[#C9A24E] transition-colors leading-snug">
-                  {item.title}
-                </h2>
-                <p className="text-[13px] text-[#243559]/80 mt-1 flex items-center gap-1">
-                  <MapPin className="size-4 text-[#C9A24E]" />
-                  {item.locality}, {item.microMarket}
-                </p>
-              </div>
-              <span className="text-[11px] text-[#C9A24E] font-bold bg-[#E2E9FB] border border-[#D5DEF2]/30 px-3 py-1 rounded-full shrink-0 flex items-center gap-1">
-                <Star className="size-3 fill-[#C9A24E] text-transparent" />
-                4.{item.id.length % 5 + 1} Rating
-              </span>
-            </div>
-
-            {/* Core Spec Attributes */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5 border-y border-[#E2E9FB]/55 py-3.5 text-left">
-              <div>
-                <span className="text-[9px] text-[#6E7488] font-bold uppercase tracking-wider block">Estimated Price</span>
-                <span className="text-[16px] font-extrabold text-[#C9A24E] block mt-0.5">{item.price}</span>
-                <span className="text-[11px] text-[#6E7488] block mt-0.5">{item.priceSubtext}</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-[#6E7488] font-bold uppercase tracking-wider block">Carpet Area</span>
-                <span className="text-[14px] font-bold text-[#1E3A8A] block mt-0.5">{item.area}</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-[#6E7488] font-bold uppercase tracking-wider block">Configuration</span>
-                <span className="text-[14px] font-bold text-[#1E3A8A] block mt-0.5">{item.configuration}</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-[#6E7488] font-bold uppercase tracking-wider block">Status</span>
-                <span className="text-[14px] font-bold text-[#1E3A8A] block mt-0.5">{item.status}</span>
-              </div>
-            </div>
-
-            {/* Highlights Grid */}
-            <div className="flex flex-wrap gap-1.5 mt-4">
-              {item.highlights.map((h) => (
-                <span
-                  key={h}
-                  className="text-[11px] font-medium text-[#243559]/90 bg-[#F1F5FF] border border-[#D5DEF2]/30 px-3 py-0.5 rounded-lg"
-                >
-                  {h}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Footer Listing Details */}
-          <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-4 border-t border-[#E2E9FB]/40">
-            <p className="text-[12px] text-[#6E7488]">
-              Listed by: <span className="font-bold text-[#1E3A8A]">{item.postedBy}</span>
-            </p>
-            <div className="flex gap-2.5 w-full sm:w-auto">
-              <button
-                className="flex-1 sm:flex-none h-10 px-4 rounded-xl border border-[#C9A24E] text-[#C9A24E] hover:bg-[#E2E9FB] text-[13px] font-bold transition-colors"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-              >
-                View Number
-              </button>
-              <button
-                className="flex-1 sm:flex-none h-10 px-5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E8C66A] hover:from-[#C5A55A] hover:to-[#D4AF37] text-white text-[13px] font-bold shadow-sm hover:shadow transition-all"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-              >
-                Submit Enquiry
-              </button>
-            </div>
-          </div>
-        </div>
-
-      </article>
-    </Link>
-  );
-}
-
 function extractZoneFromSlug(slug: string): BangaloreZone | null {
   if (slug.includes("east")) return "East";
   if (slug.includes("west")) return "West";
@@ -229,49 +78,35 @@ function extractLocalityFromSlug(slug: string): string | null {
   return null;
 }
 
-function ListingPage({ route }: { route: BangaloreRoute }) {
+function ListingPage({ route, query = "" }: { route: BangaloreRoute; query?: string }) {
+  const navigate = useNavigate();
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [searchInput, setSearchInput] = useState(query);
+  const typeToSlug: Record<string, string> = {
+    buy: "property-in-bangalore-ffid",
+    rent: "property-for-rent-in-bangalore-ffid",
+    lease: "commercial-property-for-rent-in-bangalore-ffid",
+    projects: "new-projects-in-bangalore-ffid",
+    commercial: "commercial-property-in-bangalore-ffid",
+    plots: "residential-land-in-bangalore-ffid",
+  };
   const zone = extractZoneFromSlug(route.slug);
   const localityName = extractLocalityFromSlug(route.slug);
 
-  let listings = getListingsByKind(route.kind);
   let zoneInfo = zone ? bangaloreZones[zone] : null;
   let localityInfo = localityName ? getLocalityByName(localityName) : null;
   let filteredLocalities = zone ? getLocalitiesByZone(zone) : bangaloreLocalities;
 
-  // Filter listings based on zone or locality
-  if (localityInfo) {
-    listings = listings.filter(
-      (l) =>
-        l.locality.toLowerCase().includes(localityInfo!.name.toLowerCase()) ||
-        l.microMarket.toLowerCase().includes(localityInfo!.name.toLowerCase())
-    );
-  } else if (zoneInfo) {
-    const zoneLocalityNames = zoneInfo.localities.map((l) => l.toLowerCase());
-    listings = listings.filter((l) =>
-      zoneLocalityNames.some(
-        (zl) =>
-          l.locality.toLowerCase().includes(zl) ||
-          l.microMarket.toLowerCase().includes(zl)
-      )
-    );
-  }
-
-  // Apply active filters
-  if (activeFilters.length > 0) {
-    listings = listings.filter(l => {
-      const searchStr = JSON.stringify(l).toLowerCase();
-      return activeFilters.every(f => {
-        let term = f.toLowerCase();
-        if (term === "verified only") term = "verified";
-        if (term === "direct owner") term = "owner";
-        if (term === "rera mandated") term = "rera";
-        if (term === "with photos") term = "photos";
-        return searchStr.includes(term);
-      });
-    });
-  }
+  const allProperties = useLiveProperties<Property[]>(() => getPublishedProperties(), []);
+  const listings = filterListingProperties({
+    properties: allProperties,
+    kind: route.kind as ListingKind,
+    zone,
+    locality: localityInfo?.name ?? null,
+    filters: activeFilters,
+    query,
+  });
 
   return (
     <>
@@ -320,7 +155,16 @@ function ListingPage({ route }: { route: BangaloreRoute }) {
             </div>
 
             {/* Quick Search Row */}
-            <form action="/property-in-bangalore-ffid" className="mt-6 flex items-center bg-white rounded-xl border border-[#D5DEF2]/50 shadow-sm overflow-hidden max-w-3xl">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const sel = (e.currentTarget.elements.namedItem("type") as HTMLSelectElement)?.value || "buy";
+                const base = typeToSlug[sel] ?? "property-in-bangalore-ffid";
+                const q = searchInput.trim();
+                navigate(q ? `/${base}?q=${encodeURIComponent(q)}` : `/${base}`);
+              }}
+              className="mt-6 flex items-center bg-white rounded-xl border border-[#D5DEF2]/50 shadow-sm overflow-hidden max-w-3xl"
+            >
               <div className="relative h-12 flex items-center border-r border-[#D5DEF2]/40 bg-slate-50 cursor-pointer">
                 <select name="type" className="appearance-none outline-none bg-transparent pl-4.5 pr-8 text-[13px] font-bold text-[#1E3A8A] cursor-pointer h-full w-full">
                   <option value="buy">Buy</option>
@@ -334,6 +178,8 @@ function ListingPage({ route }: { route: BangaloreRoute }) {
               </div>
               <input
                 name="q"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="flex-1 h-12 outline-none px-4 text-[13.5px] placeholder:text-[#6E7488]/80"
                 placeholder={`Search builders, projects, or localities in ${zone || localityInfo?.name || "Bangalore"}...`}
               />
@@ -509,9 +355,8 @@ function ListingPage({ route }: { route: BangaloreRoute }) {
 
             {/* Listings Grid */}
             <div className="space-y-6">
-              <AdminPostedStrip />
               {listings.length > 0 ? (
-                listings.map((item) => <ListingCard key={item.id} item={item} />)
+                listings.map((p) => <PropertyListingRow key={p.id} p={p} />)
               ) : (
                 <div className="bg-white border border-[#D5DEF2]/30 rounded-2xl p-12 text-center shadow-sm">
                   <p className="text-[15px] font-bold text-[#1E3A8A]">No Properties Found</p>
@@ -807,13 +652,13 @@ function listingsByTrends() {
   );
 }
 
-export default function BangalorePageRenderer({ route }: { route: BangaloreRoute }) {
+export default function BangalorePageRenderer({ route, query }: { route: BangaloreRoute; query?: string }) {
   if (
     ["buy", "rent", "projects", "plots", "pg", "commercial-sale", "commercial-rent"].includes(
       route.kind
     )
   )
-    return <ListingPage route={route} />;
+    return <ListingPage route={route} query={query} />;
   if (route.kind === "city") return <CityOverview route={route} />;
   if (route.kind === "price-trends" || route.kind === "insights")
     return <TrendsPage route={route} />;

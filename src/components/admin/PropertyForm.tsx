@@ -44,7 +44,7 @@ const steps = [
   { id: 5, label: "Review & Submit", icon: Eye },
 ];
 
-const propertyTypes = ["Apartment", "Villa", "Penthouse", "Plot", "Commercial", "Independent House"];
+const propertyTypes = ["Apartment", "Villa", "Penthouse", "Plot", "Commercial", "Independent House", "PG/Co-living"];
 const transactionTypes = ["New Property", "Resale"];
 const possessionOptions = ["Ready to Move", "Within 3 Months", "Within 6 Months", "Within 1 Year", "Dec 2026", "Mar 2027", "Jun 2027"];
 const furnishingOptions = ["Unfurnished", "Semi-Furnished", "Fully Furnished"];
@@ -98,6 +98,7 @@ const initialFormData: FormData = {
   facing: "East",
   floor: "",
   transactionType: "New Property",
+  listingType: "For Sale",
   ageOfProperty: "Under Construction",
   images: [],
   videos: [],
@@ -520,8 +521,8 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                 </div>
               </div>
 
-              {/* Possession, Builder, Transaction Type */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Possession, Builder, Transaction Type, Listing Type */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-[13px] font-semibold text-[#243559] mb-2">Possession</label>
                   <select
@@ -554,6 +555,25 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                         onClick={() => updateField("transactionType", type)}
                         className={`flex-1 px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200 border ${
                           formData.transactionType === type
+                            ? "bg-[#C9A24E] text-white border-[#C9A24E] shadow-md"
+                            : "bg-[#F1F5FF] text-[#243559] border-[#D5DEF2]/30 hover:border-[#C9A24E]/40"
+                        }`}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Listing Type</label>
+                  <div className="flex gap-2">
+                    {["For Sale", "For Rent"].map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => updateField("listingType", type)}
+                        className={`flex-1 px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200 border ${
+                          formData.listingType === type
                             ? "bg-[#C9A24E] text-white border-[#C9A24E] shadow-md"
                             : "bg-[#F1F5FF] text-[#243559] border-[#D5DEF2]/30 hover:border-[#C9A24E]/40"
                         }`}
