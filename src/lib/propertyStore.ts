@@ -104,9 +104,9 @@ export function getBuilders(): { name: string; slug: string; total: number; samp
     const linked = p.builderId ? byId.get(p.builderId) : undefined;
     const freeText = (p.builder || "").trim();
 
-    const key = linked ? `id:${linked.id}` : builderSlug(freeText);
+    if (!linked && !freeText) continue;
 
-    if (!key) continue;
+    const key = linked ? `id:${linked.id}` : `name:${freeText}`;
 
     if (!groups[key]) {
       groups[key] = {
