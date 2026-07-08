@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Outlet, ScrollRestoration } from "react-router-dom";
 import { AuthProvider } from "@/components/acres/AuthContext";
 
@@ -9,7 +10,9 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <ScrollRestoration />
-      <Outlet />
+      <Suspense fallback={null}>
+        <Outlet />
+      </Suspense>
     </AuthProvider>
   );
 }

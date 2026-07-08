@@ -1,24 +1,26 @@
+import { lazy } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import RootLayout from "@/RootLayout";
 import Home from "@/pages/Home";
-import Account from "@/pages/Account";
-import Dealers from "@/pages/Dealers";
-import PostProperty from "@/pages/PostProperty";
-import Admin from "@/pages/Admin";
-import AdminHero from "@/pages/AdminHero";
-import AdminPost from "@/pages/AdminPost";
-import Property from "@/pages/Property";
-import Dealer from "@/pages/Dealer";
-import Builder from "@/pages/Builder";
-import Bangalore from "@/pages/Bangalore";
 
-import AdminDealers from "@/pages/admin/AdminDealers";
-import AdminBuilders from "@/pages/admin/AdminBuilders";
-import AdminLeads from "@/pages/admin/AdminLeads";
-import AdminAnalytics from "@/pages/admin/AdminAnalytics";
-import AdminTestimonials from "@/pages/admin/AdminTestimonials";
-import AdminLawyers from "@/pages/admin/AdminLawyers";
-import AdminInsights from "@/pages/admin/AdminInsights";
+const Account = lazy(() => import("@/pages/Account"));
+const Dealers = lazy(() => import("@/pages/Dealers"));
+const PostProperty = lazy(() => import("@/pages/PostProperty"));
+const Admin = lazy(() => import("@/pages/Admin"));
+const AdminHero = lazy(() => import("@/pages/AdminHero"));
+const AdminPost = lazy(() => import("@/pages/AdminPost"));
+const Property = lazy(() => import("@/pages/Property"));
+const Dealer = lazy(() => import("@/pages/Dealer"));
+const Builder = lazy(() => import("@/pages/Builder"));
+const Bangalore = lazy(() => import("@/pages/Bangalore"));
+
+const AdminDealers = lazy(() => import("@/pages/admin/AdminDealers"));
+const AdminBuilders = lazy(() => import("@/pages/admin/AdminBuilders"));
+const AdminLeads = lazy(() => import("@/pages/admin/AdminLeads"));
+const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
+const AdminTestimonials = lazy(() => import("@/pages/admin/AdminTestimonials"));
+const AdminLawyers = lazy(() => import("@/pages/admin/AdminLawyers"));
+const AdminInsights = lazy(() => import("@/pages/admin/AdminInsights"));
 
 export const router = createBrowserRouter([
   {

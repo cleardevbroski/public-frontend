@@ -1,16 +1,17 @@
 "use client";
 import Image from "@/components/Image";
 import Link from "@/components/Link";
-import { useState, useRef, useEffect } from "react";
+import { lazy, Suspense, useState, useRef, useEffect } from "react";
 import { ChevronDown, Headset, Menu, MapPin, ChevronRightCircle, X, ChevronUp, ShieldCheck, Phone, Mail, Clock, User } from "lucide-react";
 import { navItems, headerDropdowns } from "./mock-data";
 import HeaderDropdown from "./HeaderDropdown";
 import { useAuth } from "./AuthContext";
-import AuthModal from "./AuthModal";
-import ProfileDrawer from "./ProfileDrawer";
+
+const AuthModal = lazy(() => import("./AuthModal"));
+const ProfileDrawer = lazy(() => import("./ProfileDrawer"));
 
 export default function Header() {
-  const { user, setIsAuthModalOpen, setIsProfileDrawerOpen } = useAuth();
+  const { user, isAuthModalOpen, isProfileDrawerOpen, setIsAuthModalOpen, setIsProfileDrawerOpen } = useAuth();
   const [city, setCity] = useState("Bangalore");
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -383,8 +384,12 @@ export default function Header() {
           </div>
         </>
       )}
-      <AuthModal />
-      <ProfileDrawer />
+      {(isAuthModalOpen || isProfileDrawerOpen) && (
+        <Suspense fallback={null}>
+          {isAuthModalOpen && <AuthModal />}
+          {isProfileDrawerOpen && <ProfileDrawer />}
+        </Suspense>
+      )}
     </>
   );
 }
