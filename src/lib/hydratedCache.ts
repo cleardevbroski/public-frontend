@@ -17,7 +17,8 @@ export function createHydratedCache<T>(fetcher: () => Promise<T[]>, event: strin
     try {
       cache = await fetcher();
     } catch {
-      /* keep the last good value */
+      // DBG009: Reset so subsequent get() retries instead of returning stale empty data
+      started = false;
     }
     notify();
   }

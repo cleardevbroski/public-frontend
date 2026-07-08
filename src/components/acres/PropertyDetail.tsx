@@ -183,7 +183,12 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const [isTabBarSticky, setIsTabBarSticky] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Contact reveal and brochure downloads require a logged-in user.
+  // DBG006: Reset media state when navigating to a different property to prevent out-of-bounds crash
+  useEffect(() => {
+    setCurrentImageIndex(0);
+    setVideoIndex(0);
+    setMediaTab("photos");
+  }, [property.id]);
   const { user, setIsAuthModalOpen } = useAuth();
   const requireLogin = (action: () => void) => {
     if (!user) { setIsAuthModalOpen(true); return; }
