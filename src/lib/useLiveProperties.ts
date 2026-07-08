@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Re-run `selector` whenever any of `events` fires (cache hydration / admin
@@ -12,8 +12,13 @@ export function useLiveData<T>(
 ): T {
   const [value, setValue] = useState<T>(initial);
 
+  // Track the latest selector so event-driven refreshes never call a stale
+  // closure (e.g. after the parent swaps props without remounting).
+  const selectorRef = useRef(selector);
+  selectorRef.current = selector;
+
   useEffect(() => {
-    const refresh = () => setValue(selector());
+    const refresh = () => setValue(selectorRef.current());
     refresh();
     events.forEach((e) => window.addEventListener(e, refresh));
     window.addEventListener("storage", refresh);
@@ -21,7 +26,7 @@ export function useLiveData<T>(
       events.forEach((e) => window.removeEventListener(e, refresh));
       window.removeEventListener("storage", refresh);
     };
-    // selector is stable per-call-site; run once on mount.
+    // Subscribe once on mount; selectorRef always holds the latest selector.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
