@@ -128,6 +128,10 @@ export function matchesQuery(p: Property, q: string): boolean {
     p.commercialDetails?.commercialSubtype,
     p.commercialDetails?.zoneType,
     p.commercialDetails?.buildingGrade,
+    p.pgDetails?.genderPreference,
+    p.pgDetails?.mealsIncluded,
+    p.pgDetails?.foodType,
+    ...((p.pgDetails?.sharingDetails || []).map((row) => row.sharingType)),
     ...((p.plotDetails?.plotSizeDetails || []).map((row) => row.plotSize)),
     ...(p.configs ?? []),
   ]

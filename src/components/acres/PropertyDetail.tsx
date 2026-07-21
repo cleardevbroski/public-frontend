@@ -279,6 +279,8 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const amenities =
     property.amenities && property.amenities.length > 0
       ? property.amenities
+      : property.pgDetails?.commonAmenities?.length
+      ? property.pgDetails.commonAmenities
       : property.villaDetails || property.plotDetails || property.commercialDetails || property.pgDetails
       ? []
       : [
