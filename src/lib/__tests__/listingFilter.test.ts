@@ -76,6 +76,37 @@ describe("matchesFilters (OR within group, AND across groups)", () => {
     expect(matchesFilters(makeProp({ bedrooms: 3 }), ["2 BHK", "3 BHK"])).toBe(true);
     expect(matchesFilters(makeProp({ bedrooms: 1 }), ["2 BHK", "3 BHK"])).toBe(false);
   });
+  it("matches every nested Apartment configuration, not only the legacy minimum bedroom value", () => {
+    const p = makeProp({
+      bedrooms: 2,
+      configurationDetails: [
+        { configuration: "2 BHK", price: "1", superBuiltUpArea: "1000", carpetArea: "800", bedrooms: 2, bathrooms: 2, balconies: 1, facings: ["East"] },
+        { configuration: "3 BHK", price: "2", superBuiltUpArea: "1500", carpetArea: "1200", bedrooms: 3, bathrooms: 3, balconies: 2, facings: ["South"] },
+      ],
+    });
+    expect(matchesFilters(p, ["3 BHK"])).toBe(true);
+  });
+  it("matches nested Villa bedrooms", () => {
+    const p = makeProp({
+      propertyType: "Villa",
+      bedrooms: 3,
+      configs: ["3 BHK", "4 BHK"],
+      villaDetails: {
+        villaType: "Twin Villa",
+        configurationDetails: [
+          { configuration: "3 BHK", price: "₹2 Cr", plotArea: "2000 sqft", builtUpArea: "2500 sqft", superArea: "2800 sqft", bedrooms: 3, bathrooms: 3 },
+          { configuration: "4 BHK", price: "₹3 Cr", plotArea: "2600 sqft", builtUpArea: "3200 sqft", superArea: "3600 sqft", bedrooms: 4, bathrooms: 4 },
+        ],
+        plotFacing: "North-East",
+        cornerPlot: false,
+        privateGarden: false,
+        privatePool: false,
+        terrace: true,
+        gatedCommunity: true,
+      },
+    });
+    expect(matchesFilters(p, ["4 BHK"])).toBe(true);
+  });
   it("filters in different groups are AND'd", () => {
     const p = makeProp({ bedrooms: 2, verified: true });
     expect(matchesFilters(p, ["2 BHK", "Verified Only"])).toBe(true);
@@ -98,6 +129,23 @@ describe("matchesQuery", () => {
     expect(matchesQuery(p, "whitefield")).toBe(true);
     expect(matchesQuery(p, "2 bhk")).toBe(true);
     expect(matchesQuery(p, "penthouse")).toBe(false);
+  });
+  it("matches Villa type and plot facing", () => {
+    const p = makeProp({
+      propertyType: "Villa",
+      villaDetails: {
+        villaType: "Twin Villa",
+        configurationDetails: [],
+        plotFacing: "North-East",
+        cornerPlot: false,
+        privateGarden: false,
+        privatePool: false,
+        terrace: false,
+        gatedCommunity: true,
+      },
+    });
+    expect(matchesQuery(p, "twin villa")).toBe(true);
+    expect(matchesQuery(p, "north-east")).toBe(true);
   });
 });
 

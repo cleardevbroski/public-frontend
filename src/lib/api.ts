@@ -169,6 +169,17 @@ export async function createPublicProperty(propertyData: Record<string, unknown>
   );
 }
 
+export async function uploadPropertyMedia(file: File, kind: "image" | "video" | "brochure" | "layout-map-image" | "layout-map-pdf"): Promise<string> {
+  const res = await apiFetch(`/api/property-media?kind=${kind}`, {
+    method: "POST",
+    headers: { "Content-Type": file.type },
+    body: file,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Media upload failed");
+  return data.url;
+}
+
 export async function updateProperty(id: string, updates: Record<string, unknown>) {
   const res = await apiFetch(`/api/properties/${id}`, {
     method: "PUT",
@@ -327,4 +338,3 @@ export async function updateLeadStatus(id: string, status: string) {
 export async function deleteLead(id: string) {
   return readJson(await apiFetch(`/api/leads/${id}`, { method: "DELETE" }), "Failed to delete lead");
 }
-

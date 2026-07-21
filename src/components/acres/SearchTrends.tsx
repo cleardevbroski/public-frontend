@@ -3,11 +3,12 @@ import { useRef } from "react";
 import Link from "@/components/Link";
 import { ChevronLeft, ChevronRight, Heart, ShieldCheck, TrendingUp } from "lucide-react";
 import { getPropertiesBySection } from "@/lib/propertyStore";
+import { formatPossession } from "@/lib/propertyDetails";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 import type { Property } from "./mock-data";
 
 function statusOf(p: Property): string {
-  if (p.possession === "Ready to Move") return "Ready to Move";
+  if (p.possession || p.possessionDetails) return formatPossession(p);
   if (p.ageOfProperty === "Under Construction") return "Under Construction";
   return p.badges?.[0] || "New Launch";
 }

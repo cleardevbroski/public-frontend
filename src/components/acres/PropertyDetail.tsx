@@ -43,6 +43,7 @@ import {
   Heart as HeartIcon,
   Star,
   TrendingUp,
+  Home,
 } from "lucide-react";
 import Header from "./Header";
 import Footer from "./Footer";
@@ -60,6 +61,11 @@ import { getPublishedDealers, type Dealer } from "@/lib/dealerStore";
 import { useAuth } from "./AuthContext";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 import { embedUrl, isDirectVideo } from "@/lib/video";
+import { formatPossession } from "@/lib/propertyDetails";
+import ConfigurationTable from "./ConfigurationTable";
+import VillaConfigurationTable from "./VillaConfigurationTable";
+import PlotSizeTable from "./PlotSizeTable";
+import PlotInventoryTable from "./PlotInventoryTable";
 
 type Pools = {
   recommended: Property[];
@@ -111,6 +117,26 @@ const amenityIcons: Record<string, React.ReactNode> = {
   Gymnasium: <Dumbbell className="w-5 h-5 text-[#D4AF37]" />,
   Park: <TreePine className="w-5 h-5 text-[#D4AF37]" />,
   "Water Storage": <Droplets className="w-5 h-5 text-[#D4AF37]" />,
+  "Gated Security": <Shield className="w-5 h-5 text-[#D4AF37]" />,
+  "Landscaped Gardens": <TreePine className="w-5 h-5 text-[#D4AF37]" />,
+  "Jogging Track": <Zap className="w-5 h-5 text-[#D4AF37]" />,
+  "Children's Play Area": <HeartIcon className="w-5 h-5 text-[#D4AF37]" />,
+  "EV Charging": <Zap className="w-5 h-5 text-[#D4AF37]" />,
+  "Community Hall": <Building2 className="w-5 h-5 text-[#D4AF37]" />,
+  "Entrance Arch": <Home className="w-5 h-5 text-[#D4AF37]" />,
+  "Underground Drainage": <Droplets className="w-5 h-5 text-[#D4AF37]" />,
+  "Street Lighting": <Sparkles className="w-5 h-5 text-[#D4AF37]" />,
+  "Avenue Plantation": <TreePine className="w-5 h-5 text-[#D4AF37]" />,
+  "Cauvery/Borewell Water Supply": <Droplets className="w-5 h-5 text-[#D4AF37]" />,
+  "Security Cabin": <Shield className="w-5 h-5 text-[#D4AF37]" />,
+  "24x7 Security": <Shield className="w-5 h-5 text-[#D4AF37]" />,
+  "Passenger Lift": <Layers className="w-5 h-5 text-[#D4AF37]" />,
+  "Service Lift": <Layers className="w-5 h-5 text-[#D4AF37]" />,
+  Cafeteria: <Building2 className="w-5 h-5 text-[#D4AF37]" />,
+  "Conference Rooms": <Building2 className="w-5 h-5 text-[#D4AF37]" />,
+  "DG Backup": <Zap className="w-5 h-5 text-[#D4AF37]" />,
+  ATM: <Building2 className="w-5 h-5 text-[#D4AF37]" />,
+  "Food Court": <Building2 className="w-5 h-5 text-[#D4AF37]" />,
 };
 
 const sections = [
@@ -238,10 +264,23 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
 
   const videos = property.videos && property.videos.length > 0 ? property.videos : [];
   const hasVideos = videos.length > 0;
+  const possessionLabel = formatPossession(property);
+  const floorDisplay = property.floorLabel
+    ? `${property.floorLabel}${property.totalFloors ? ` of ${property.totalFloors}` : ""}`
+    : property.floor || "";
+  const nearbyValue = (key: "schools" | "hospitals" | "shopping" | "metro", legacy?: string) => {
+    const detail = property.nearbyDetails?.[key];
+    if (detail && (detail.count !== undefined || detail.distance)) {
+      return [detail.count !== undefined ? `${detail.count}` : "", detail.distance].filter(Boolean).join(" · ");
+    }
+    return legacy || "—";
+  };
 
   const amenities =
     property.amenities && property.amenities.length > 0
       ? property.amenities
+      : property.villaDetails || property.plotDetails || property.commercialDetails || property.pgDetails
+      ? []
       : [
           "Power Backup",
           "Rain Water Harvesting",
@@ -308,6 +347,20 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
       a.remove();
       return;
     }
+    const configurationRows = property.configurationDetails?.map((row) => `<tr><td>${row.configuration}</td><td>${row.price}</td><td>${row.superBuiltUpArea}</td><td>${row.carpetArea}</td><td>${row.bedrooms}</td><td>${row.bathrooms}</td><td>${row.balconies}</td><td>${row.facings.join(", ")}</td></tr>`).join("") || "";
+    const villaConfigurationRows = property.villaDetails?.configurationDetails.map((row) => `<tr><td>${row.configuration}</td><td>${row.price}</td><td>${row.plotArea}</td><td>${row.builtUpArea}</td><td>${row.superArea}</td><td>${row.bedrooms}</td><td>${row.bathrooms}</td></tr>`).join("") || "";
+    const villaFacts = property.villaDetails ? [
+      ["Villa type", property.villaDetails.villaType],
+      ["Plot dimensions", property.villaDetails.plotDimensions],
+      ["Floors", property.villaDetails.numberOfFloors],
+      ["Plot facing", property.villaDetails.plotFacing],
+      ["Corner plot", property.villaDetails.cornerPlot ? "Yes" : "No"],
+      ["Road width", property.villaDetails.roadWidthFacing],
+      ["Private garden", property.villaDetails.privateGarden ? `Yes${property.villaDetails.privateGardenArea ? ` · ${property.villaDetails.privateGardenArea}` : ""}` : "No"],
+      ["Private pool", property.villaDetails.privatePool ? "Yes" : "No"],
+      ["Terrace", property.villaDetails.terrace ? `Yes${property.villaDetails.terraceDetails ? ` · ${property.villaDetails.terraceDetails}` : ""}` : "No"],
+      ["Gated community", property.villaDetails.gatedCommunity ? "Yes" : "No"],
+    ].filter(([, value]) => value).map(([label, value]) => `<div class="card"><div class="label">${label}</div><div class="val">${value}</div></div>`).join("") : "";
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${property.title} — Brochure</title>
 <style>
   body{font-family:Georgia,serif;color:#1E3A8A;margin:0;padding:48px;background:#F1F5FF}
@@ -317,6 +370,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   .price{font-size:30px;color:#D4AF37;font-weight:bold;margin:18px 0}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}
   .card{background:#fff;border:1px solid #D5DEF2;border-radius:12px;padding:14px}
+  table{width:100%;border-collapse:collapse;background:#fff;margin:20px 0;font-family:Arial,sans-serif;font-size:12px}th,td{border:1px solid #D5DEF2;padding:8px;text-align:left}th{background:#1E3A8A;color:#fff}
   .label{font-size:11px;text-transform:uppercase;color:#6E7488;letter-spacing:1px}
   .val{font-size:16px;font-weight:bold}
   img{width:100%;border-radius:14px;margin:16px 0;max-height:320px;object-fit:cover}
@@ -330,9 +384,12 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   <div class="grid">
     <div class="card"><div class="label">Configuration</div><div class="val">${property.configs.join(", ") || "—"}</div></div>
     <div class="card"><div class="label">Area</div><div class="val">${property.area}</div></div>
-    <div class="card"><div class="label">Possession</div><div class="val">${property.possession || "Ready"}</div></div>
+    <div class="card"><div class="label">Possession</div><div class="val">${possessionLabel}</div></div>
     <div class="card"><div class="label">Builder</div><div class="val">${property.builder || "ClearTitle One"}</div></div>
   </div>
+  ${configurationRows ? `<table><thead><tr><th>Config</th><th>Price</th><th>Super area</th><th>Carpet area</th><th>Beds</th><th>Baths</th><th>Balconies</th><th>Facing</th></tr></thead><tbody>${configurationRows}</tbody></table>` : ""}
+  ${villaConfigurationRows ? `<table><thead><tr><th>Config</th><th>Price</th><th>Plot area</th><th>Built-up area</th><th>Super area</th><th>Beds</th><th>Baths</th></tr></thead><tbody>${villaConfigurationRows}</tbody></table>` : ""}
+  ${villaFacts ? `<div class="grid">${villaFacts}</div>` : ""}
   <p>${property.description || ""}</p>
   <div class="foot">Generated by ClearTitle One — Verified clear-title real estate in Bangalore.</div>
 </body></html>`;
@@ -347,7 +404,59 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     URL.revokeObjectURL(url);
   };
 
-  const beds = property.bedrooms || property.configs[0]?.split(" ")[0] || "2";
+  const beds = property.bedrooms || property.configs[0]?.split(" ")[0] || "—";
+  const villaOverviewFacts = property.villaDetails ? [
+    { label: "Villa Type", val: property.villaDetails.villaType },
+    { label: "Plot Dimensions", val: property.villaDetails.plotDimensions },
+    { label: "Number of Floors", val: property.villaDetails.numberOfFloors },
+    { label: "Plot Facing", val: property.villaDetails.plotFacing },
+    { label: "Corner Plot", val: property.villaDetails.cornerPlot ? "Yes" : "No" },
+    { label: "Road Width Facing", val: property.villaDetails.roadWidthFacing },
+    { label: "Private Garden", val: property.villaDetails.privateGarden ? `Yes${property.villaDetails.privateGardenArea ? ` · ${property.villaDetails.privateGardenArea}` : ""}` : "No" },
+    { label: "Private Pool", val: property.villaDetails.privatePool ? "Yes" : "No" },
+    { label: "Terrace", val: property.villaDetails.terrace ? `Yes${property.villaDetails.terraceDetails ? ` · ${property.villaDetails.terraceDetails}` : ""}` : "No" },
+    { label: "Gated Community", val: property.villaDetails.gatedCommunity ? "Yes" : "No" },
+    { label: "Transaction", val: property.transactionType },
+    { label: "Listing", val: property.listingType },
+    { label: "RERA Number", val: property.reraRegistered ? property.reraNumber : "" },
+  ].filter((item) => item.val) : [];
+  const plotOverviewFacts = property.plotDetails ? [
+    { label: "Plots in layout", val: String(property.plotDetails.totalPlots) },
+    { label: "Approval authority", val: property.plotDetails.approvalAuthority },
+    { label: "Approval number", val: property.plotDetails.approvalNumber },
+    { label: "Road width", val: property.plotDetails.roadWidth },
+    { label: "Drainage", val: property.plotDetails.civicInfrastructure.undergroundDrainage },
+    { label: "Electricity", val: property.plotDetails.civicInfrastructure.electricity },
+    { label: "Water", val: property.plotDetails.civicInfrastructure.water },
+    { label: "Transaction", val: property.transactionType },
+    { label: "Listing", val: property.listingType },
+    { label: "RERA Number", val: property.reraRegistered ? property.reraNumber : "" },
+  ].filter((item) => item.val) : [];
+  const commercialOverviewFacts = property.commercialDetails ? [
+    { label: "Commercial type", val: property.commercialDetails.commercialSubtype }, { label: "Floor", val: `${property.commercialDetails.floor} of ${property.commercialDetails.totalFloors}` },
+    { label: "Zone", val: property.commercialDetails.zoneType }, { label: "Building grade", val: property.commercialDetails.buildingGrade },
+    { label: "Structure", val: property.commercialDetails.structure }, { label: "Frontage", val: property.commercialDetails.frontage },
+    { label: "Seating", val: property.commercialDetails.seatingCapacity ? String(property.commercialDetails.seatingCapacity) : "" }, { label: "Cabins", val: property.commercialDetails.cabins ? String(property.commercialDetails.cabins) : "" },
+    { label: "Meeting rooms", val: property.commercialDetails.meetingRooms ? String(property.commercialDetails.meetingRooms) : "" }, { label: "Pantry", val: property.commercialDetails.pantry },
+    { label: "Washrooms", val: property.commercialDetails.washrooms }, { label: "Parking", val: property.commercialDetails.parking },
+    { label: "Power backup", val: property.commercialDetails.powerBackup }, { label: "Sanctioned load", val: property.commercialDetails.sanctionedLoadKva ? `${property.commercialDetails.sanctionedLoadKva} KVA` : "" },
+    { label: "Fire safety", val: property.commercialDetails.fireSafetyCompliance }, { label: "Furnishing", val: property.commercialDetails.furnishing },
+    { label: "Ownership", val: property.ownershipType }, { label: "Maintenance", val: property.maintenanceCharges ? `${property.maintenanceCharges} / ${property.maintenancePeriod || "month"}` : "" },
+  ].filter((item) => item.val) : [];
+  const pgOverviewFacts = property.pgDetails ? [
+    { label: "Gender preference", val: property.pgDetails.genderPreference }, { label: "Meals", val: property.pgDetails.mealsIncluded }, { label: "Food type", val: property.pgDetails.foodType },
+    { label: "Wi-Fi", val: property.pgDetails.wifiIncluded ? "Included" : "Not included" }, { label: "Laundry", val: property.pgDetails.laundryIncluded ? property.pgDetails.laundrySchedule || "Included" : "Not included" },
+    { label: "Housekeeping", val: property.pgDetails.housekeeping }, { label: "Curfew", val: property.pgDetails.curfewEntryTiming || "None" }, { label: "Visitors", val: property.pgDetails.visitorsAllowed },
+    { label: "Notice period", val: property.pgDetails.noticePeriod }, { label: "Lock-in period", val: property.pgDetails.lockInPeriod }, { label: "Contact", val: property.pgDetails.contactType },
+  ].filter((item) => item.val) : [];
+  const societyFacts = [
+    { label: "Security Desk", val: property.society?.security || (property.villaDetails ? "" : "24x7 Armed Guard") },
+    { label: "Water Supply", val: property.society?.waterSupply || (property.villaDetails ? "" : "Borewell + Cauvery") },
+    { label: "Power Backup", val: property.society?.powerBackup || (property.villaDetails ? "" : "100% DG Backup") },
+    { label: "Elevators", val: property.society?.lift || (property.villaDetails ? "" : "High-Speed Elevators") },
+    { label: "Visitor Parking", val: property.society?.visitorParking || (property.villaDetails ? "" : "Dedicated Slots") },
+    { label: "Maintenance", val: property.society?.maintenanceStaff || (property.villaDetails ? "" : "On-Call Staff") },
+  ].filter((item) => item.val);
 
   return (
     <div className="min-h-screen bg-[#EEF3FE]">
@@ -390,9 +499,9 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
             <div className="flex flex-wrap gap-3 text-white">
               {[
                 { icon: Bed, label: `${beds} Beds` },
-                { icon: Bath, label: `${property.bathrooms || 2} Baths` },
+                { icon: Bath, label: `${property.bathrooms ?? "—"} Baths` },
                 { icon: Maximize, label: property.area },
-                { icon: Clock, label: property.possession || "Ready" },
+                { icon: Clock, label: possessionLabel },
               ].map(({ icon: Icon, label }) => (
                 <div key={label} className="bg-white/10 backdrop-blur-md border border-white/15 rounded-xl px-4 py-2.5 flex items-center gap-2">
                   <Icon className="size-4.5 text-[#E8C66A]" />
@@ -592,6 +701,13 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
               )}
             </div>
 
+            {property.virtualTourUrl && (
+              <div className="bg-white rounded-3xl p-6 md:p-8 shadow-md border border-[#D5DEF2]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div><h2 className="text-[20px] font-bold text-[#1E3A8A]">Virtual Tour / 3D Walkthrough</h2><p className="text-[13px] text-[#6E7488] mt-1">Explore the project in an external interactive viewer.</p></div>
+                <a href={property.virtualTourUrl} target="_blank" rel="noreferrer" className="btn-gold px-5 py-3 rounded-xl text-[13px] font-bold">Open Virtual Tour</a>
+              </div>
+            )}
+
             {/* ── POLISHED PROPERTY DETAILS ── */}
             <div className="bg-white rounded-3xl shadow-md border border-[#D5DEF2]/30 overflow-hidden">
               {/* gold accent bar */}
@@ -609,7 +725,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                         </span>
                       )}
                       <span className="inline-flex items-center gap-1 bg-[#F1F5FF] border border-[#D5DEF2] text-[#1E3A8A] text-[11px] font-bold px-2.5 py-1 rounded-full">
-                        <Clock className="size-3 text-[#D4AF37]" /> {property.possession || "Ready to Move"}
+                        <Clock className="size-3 text-[#D4AF37]" /> {possessionLabel}
                       </span>
                     </div>
                     <h2 className="text-[24px] md:text-[30px] font-bold text-[#1E3A8A] leading-tight">{property.title}</h2>
@@ -644,9 +760,9 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-7">
                   {[
                     { icon: Bed, label: "Bedrooms", val: beds },
-                    { icon: Bath, label: "Bathrooms", val: property.bathrooms || 2 },
+                    { icon: Bath, label: "Bathrooms", val: property.bathrooms ?? "—" },
                     { icon: Maximize, label: "Area", val: property.area },
-                    { icon: Compass, label: "Facing", val: property.facing || "East" },
+                    { icon: Compass, label: "Facing", val: property.facing || "—" },
                   ].map(({ icon: Icon, label, val }) => (
                     <div key={label} className="flex items-center gap-3 p-3.5 bg-[#F1F5FF] border border-[#D5DEF2]/50 rounded-2xl">
                       <div className="w-11 h-11 rounded-xl bg-white border border-[#D5DEF2]/60 flex items-center justify-center shrink-0 shadow-sm">
@@ -662,6 +778,32 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
               </div>
             </div>
 
+            {property.configurationDetails && property.configurationDetails.length > 0 && (
+              <div className="bg-white rounded-3xl p-6 md:p-8 shadow-md border border-[#D5DEF2]/30">
+                <h2 className="text-[20px] font-bold text-[#1E3A8A] flex items-center gap-2 mb-5">
+                  <div className="w-1.5 h-6 bg-[#D4AF37] rounded-full" /> Configuration & Pricing
+                </h2>
+                <ConfigurationTable details={property.configurationDetails} />
+              </div>
+            )}
+
+            {property.villaDetails?.configurationDetails.length ? (
+              <div className="bg-white rounded-3xl p-6 md:p-8 shadow-md border border-[#D5DEF2]/30">
+                <h2 className="text-[20px] font-bold text-[#1E3A8A] flex items-center gap-2 mb-5">
+                  <div className="w-1.5 h-6 bg-[#D4AF37] rounded-full" /> Villa Configuration & Pricing
+                </h2>
+                <VillaConfigurationTable details={property.villaDetails.configurationDetails} />
+              </div>
+            ) : null}
+
+            {property.plotDetails?.plotSizeDetails.length ? (
+              <div className="bg-white rounded-3xl p-6 md:p-8 shadow-md border border-[#D5DEF2]/30 space-y-7">
+                <div><h2 className="text-[20px] font-bold text-[#1E3A8A] flex items-center gap-2 mb-5"><div className="w-1.5 h-6 bg-[#D4AF37] rounded-full" /> Plot Sizes & Pricing</h2><PlotSizeTable details={property.plotDetails.plotSizeDetails} /></div>
+                <div><h3 className="text-[17px] font-bold text-[#1E3A8A] mb-4">Plot availability</h3><PlotInventoryTable inventory={property.plotDetails.inventory} /></div>
+                <div className="pt-2"><h3 className="text-[17px] font-bold text-[#1E3A8A] mb-4">Master Plan / Layout Map</h3>{property.plotDetails.layoutMapType === "image" ? <img src={property.plotDetails.layoutMapUrl} alt={`${property.title} layout map`} className="w-full max-h-[540px] object-contain bg-[#F1F5FF] rounded-2xl border border-[#D5DEF2]" /> : <a href={property.plotDetails.layoutMapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-4 py-3 bg-[#1E3A8A] text-white rounded-xl text-[13px] font-bold"><FileText className="w-4 h-4" /> View layout-map PDF</a>}</div>
+              </div>
+            ) : null}
+
             {/* Overview Section */}
             <div ref={setSectionRef("overview")} className="bg-white rounded-3xl p-6 md:p-8 shadow-md border border-[#D5DEF2]/30 space-y-6">
               <h2 className="text-[20px] font-bold text-[#1E3A8A] flex items-center gap-2">
@@ -671,9 +813,9 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                   { label: "Property Type", val: property.propertyType || "Residential" },
-                  { label: "Facing", val: property.facing || "East Facing" },
-                  { label: "Furnishing", val: property.furnishing || "Semi-Furnished" },
-                  { label: "Parking", val: property.parking || "1 Covered" },
+                  { label: "Facing", val: property.facing || "—" },
+                  { label: "Furnishing", val: property.furnishing || "—" },
+                  { label: "Parking", val: property.parking || "—" },
                 ].map(({ label, val }) => (
                   <div key={label} className="bg-[#F1F5FF]/60 border border-[#D5DEF2]/40 p-3.5 rounded-2xl">
                     <span className="text-[10px] text-[#6E7488] uppercase font-bold tracking-wider">{label}</span>
@@ -682,15 +824,47 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                 ))}
               </div>
 
+              {(floorDisplay || property.reraNumber || property.ownershipType || property.overlooking?.length || property.bookingAmount || property.maintenanceCharges) && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {[
+                    { label: "Floor", val: floorDisplay },
+                    { label: "RERA Number", val: property.reraNumber },
+                    { label: "Ownership", val: property.ownershipType },
+                    { label: "Overlooking", val: property.overlooking?.join(", ") },
+                    { label: "Booking Amount", val: property.transactionType === "New Property" ? property.bookingAmount : "" },
+                    { label: "Maintenance", val: property.maintenanceCharges ? `${property.maintenanceCharges} / ${property.maintenancePeriod || "month"}` : "" },
+                  ].filter((item) => item.val).map(({ label, val }) => <div key={label} className="bg-[#F1F5FF]/60 border border-[#D5DEF2]/40 p-3.5 rounded-2xl"><span className="text-[10px] text-[#6E7488] uppercase font-bold tracking-wider">{label}</span><p className="text-[14px] font-bold text-[#1E3A8A] mt-1">{val}</p></div>)}
+                </div>
+              )}
+
+              {villaOverviewFacts.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {villaOverviewFacts.map(({ label, val }) => <div key={label} className="bg-[#F1F5FF]/60 border border-[#D5DEF2]/40 p-3.5 rounded-2xl"><span className="text-[10px] text-[#6E7488] uppercase font-bold tracking-wider">{label}</span><p className="text-[14px] font-bold text-[#1E3A8A] mt-1">{val}</p></div>)}
+                </div>
+              )}
+              {plotOverviewFacts.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {plotOverviewFacts.map(({ label, val }) => <div key={label} className="bg-[#F1F5FF]/60 border border-[#D5DEF2]/40 p-3.5 rounded-2xl"><span className="text-[10px] text-[#6E7488] uppercase font-bold tracking-wider">{label}</span><p className="text-[14px] font-bold text-[#1E3A8A] mt-1">{val}</p></div>)}
+                </div>
+              )}
+              {commercialOverviewFacts.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {commercialOverviewFacts.map(({ label, val }) => <div key={label} className="bg-[#F1F5FF]/60 border border-[#D5DEF2]/40 p-3.5 rounded-2xl"><span className="text-[10px] text-[#6E7488] uppercase font-bold tracking-wider">{label}</span><p className="text-[14px] font-bold text-[#1E3A8A] mt-1">{val}</p></div>)}
+                </div>
+              )}
+              {property.pgDetails?.sharingDetails.length ? <div><h3 className="text-[17px] font-bold text-[#1E3A8A] mb-3">Sharing options & availability</h3><div className="overflow-x-auto"><table className="min-w-[580px] w-full text-[13px]"><thead className="bg-[#1E3A8A] text-white"><tr><th className="p-3 text-left">Sharing type</th><th>Rent / bed / month</th><th>Deposit</th><th>Beds available</th></tr></thead><tbody>{property.pgDetails.sharingDetails.map((row) => <tr key={row.sharingType} className="border-b border-[#E2E9FB]"><td className="p-3 font-semibold">{row.sharingType}</td><td className="text-center">₹{row.rentPerBed.toLocaleString("en-IN")}</td><td className="text-center">₹{row.deposit.toLocaleString("en-IN")}</td><td className="text-center">{row.bedsAvailable}</td></tr>)}</tbody></table></div></div> : null}
+              {pgOverviewFacts.length > 0 && <div className="grid grid-cols-2 md:grid-cols-3 gap-4">{pgOverviewFacts.map(({ label, val }) => <div key={label} className="bg-[#F1F5FF]/60 border border-[#D5DEF2]/40 p-3.5 rounded-2xl"><span className="text-[10px] text-[#6E7488] uppercase font-bold tracking-wider">{label}</span><p className="text-[14px] font-bold text-[#1E3A8A] mt-1">{val}</p></div>)}</div>}
+
               <div>
                 <span className="text-[11px] text-[#6E7488] uppercase font-bold tracking-wider">About this property</span>
                 <p className="text-[14.5px] text-[#243559]/90 leading-relaxed mt-2.5">
-                  {property.description ||
-                    `This elegant signature space in ${property.subtitle} delivers modern architecture and high-end layouts. Spanning ${property.area}, it offers well-ventilated rooms, designer fittings, and spacious interiors. Located in a prime zone with quick access to tech parks, schools, and healthcare. Verified clear-title documentation guarantees a safe investment.`}
+                  {property.description || (property.villaDetails || property.plotDetails || property.commercialDetails || property.pgDetails ? "—" :
+                    `This elegant signature space in ${property.subtitle} delivers modern architecture and high-end layouts. Spanning ${property.area}, it offers well-ventilated rooms, designer fittings, and spacious interiors. Located in a prime zone with quick access to tech parks, schools, and healthcare. Verified clear-title documentation guarantees a safe investment.`
+                  )}
                 </p>
               </div>
 
-              <div className="pt-6 border-t border-[#E2E9FB]/60">
+              {amenities.length > 0 && <div className="pt-6 border-t border-[#E2E9FB]/60">
                 <span className="text-[11px] text-[#6E7488] uppercase font-bold tracking-wider block mb-4">Amenities Included</span>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   {amenities.map((amenity) => (
@@ -702,7 +876,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                     </div>
                   ))}
                 </div>
-              </div>
+              </div>}
             </div>
 
             {/* Brochure Section */}
@@ -749,26 +923,19 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
             </div>
 
             {/* Society & Maintenance */}
-            <div ref={setSectionRef("society")} className="bg-white rounded-3xl p-6 md:p-8 shadow-md border border-[#D5DEF2]/30 space-y-6">
+            {societyFacts.length > 0 && <div ref={setSectionRef("society")} className="bg-white rounded-3xl p-6 md:p-8 shadow-md border border-[#D5DEF2]/30 space-y-6">
               <h2 className="text-[20px] font-bold text-[#1E3A8A] flex items-center gap-2">
                 <div className="w-1.5 h-6 bg-[#D4AF37] rounded-full" /> Society & Maintenance
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {[
-                  { label: "Security Desk", val: property.society?.security || "24x7 Armed Guard" },
-                  { label: "Water Supply", val: property.society?.waterSupply || "Borewell + Cauvery" },
-                  { label: "Power Backup", val: property.society?.powerBackup || "100% DG Backup" },
-                  { label: "Elevators", val: property.society?.lift || "High-Speed Elevators" },
-                  { label: "Visitor Parking", val: property.society?.visitorParking || "Dedicated Slots" },
-                  { label: "Maintenance", val: property.society?.maintenanceStaff || "On-Call Staff" },
-                ].map(({ label, val }) => (
+                {societyFacts.map(({ label, val }) => (
                   <div key={label} className="p-4 bg-[#F1F5FF]/60 border border-[#D5DEF2]/40 rounded-2xl">
                     <span className="text-[10px] text-[#6E7488] uppercase font-bold tracking-wider">{label}</span>
                     <p className="text-[14px] font-bold text-[#1E3A8A] mt-1">{val}</p>
                   </div>
                 ))}
               </div>
-            </div>
+            </div>}
 
             {/* Developer Profile */}
             <div ref={setSectionRef("dealer")} className="bg-white rounded-3xl p-6 md:p-8 shadow-md border border-[#D5DEF2]/30 space-y-6">
@@ -787,7 +954,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                   <p className="text-[12px] text-[#6E7488] font-semibold tracking-wide uppercase mt-0.5">Corporate Developer Partner</p>
                   <div className="flex items-center gap-4 mt-3 text-[12px] text-[#243559]/85">
                     <span className="flex items-center gap-1"><Check className="size-4 text-[#D4AF37]" /> Verified titles</span>
-                    <span className="flex items-center gap-1"><Check className="size-4 text-[#D4AF37]" /> RERA Registered</span>
+                    {property.reraRegistered && <span className="flex items-center gap-1"><Check className="size-4 text-[#D4AF37]" /> RERA Registered</span>}
                   </div>
                 </div>
                 {property.builder && (
@@ -848,10 +1015,10 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { icon: School, label: "Schools", val: property.nearbyAmenities?.schools || "3 within 2km" },
-                  { icon: Hospital, label: "Hospitals", val: property.nearbyAmenities?.hospitals || "2 within 3km" },
-                  { icon: ShoppingBag, label: "Shopping", val: property.nearbyAmenities?.shopping || "Mall 1.5km" },
-                  { icon: Train, label: "Metro", val: property.nearbyAmenities?.metro || "Station 1.2km" },
+                  { icon: School, label: "Schools", val: nearbyValue("schools", property.nearbyAmenities?.schools) },
+                  { icon: Hospital, label: "Hospitals", val: nearbyValue("hospitals", property.nearbyAmenities?.hospitals) },
+                  { icon: ShoppingBag, label: "Shopping", val: nearbyValue("shopping", property.nearbyAmenities?.shopping) },
+                  { icon: Train, label: "Metro", val: nearbyValue("metro", property.nearbyAmenities?.metro) },
                 ].map(({ icon: Icon, label, val }) => (
                   <div key={label} className="flex gap-2.5 p-3.5 bg-[#F1F5FF]/60 border border-[#D5DEF2]/40 rounded-2xl">
                     <Icon className="w-5 h-5 text-[#D4AF37] shrink-0" />
@@ -942,7 +1109,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                   <Scale className="w-4 h-4 shrink-0" /> <span className="font-extrabold">Title deed audited by Legal Panel</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-[12.5px] text-white/80">
-                  <Shield className="w-4 h-4 text-[#E8C66A] shrink-0" /> <span>RERA Registered development</span>
+                  <Shield className="w-4 h-4 text-[#E8C66A] shrink-0" /> <span>{property.reraRegistered ? "RERA Registered development" : "Clear-title documentation review"}</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-[12.5px] text-white/80">
                   <Check className="w-4 h-4 text-[#C9A24E] shrink-0" /> <span>100% Genuine Media verified</span>

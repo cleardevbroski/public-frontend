@@ -1,5 +1,120 @@
 export type CityTab = "Buy" | "Rent" | "PG/Co-living" | "Commercial Buy" | "Commercial Lease";
 
+export type ConfigurationDetail = {
+  configuration: string;
+  price: string;
+  superBuiltUpArea: string;
+  carpetArea: string;
+  bedrooms: number;
+  bathrooms: number;
+  balconies: number;
+  facings: string[];
+};
+
+export type VillaType = "Independent" | "Row Villa" | "Twin Villa";
+export type PlotFacing = "East" | "West" | "North" | "South" | "North-East" | "North-West" | "South-East" | "South-West";
+
+export type VillaConfigurationDetail = {
+  configuration: string;
+  price: string;
+  plotArea: string;
+  builtUpArea: string;
+  superArea: string;
+  bedrooms: number;
+  bathrooms: number;
+};
+
+export type VillaDetails = {
+  villaType: VillaType;
+  configurationDetails: VillaConfigurationDetail[];
+  plotDimensions?: string;
+  numberOfFloors?: string;
+  plotFacing: PlotFacing;
+  cornerPlot: boolean;
+  roadWidthFacing?: string;
+  privateGarden: boolean;
+  privateGardenArea?: string;
+  privatePool: boolean;
+  terrace: boolean;
+  terraceDetails?: string;
+  gatedCommunity: boolean;
+};
+
+export type PlotSizeDetail = {
+  plotSize: string;
+  width: number;
+  length: number;
+  areaSqft: number;
+  pricePerSqft: number;
+  totalPrice: number;
+  facings: PlotFacing[];
+};
+
+export type PlotInventoryItem = {
+  plotNumber: string;
+  plotSize: string;
+  facing: PlotFacing;
+  status: "Available" | "Booked" | "Sold";
+  isCorner: boolean;
+};
+
+export type PlotDetails = {
+  plotSizeDetails: PlotSizeDetail[];
+  totalPlots: number;
+  approvalAuthority: "BMRDA" | "BDA" | "DTCP" | "Panchayat";
+  approvalNumber?: string;
+  roadWidth?: string;
+  civicInfrastructure: {
+    undergroundDrainage: "Ready" | "Under Development";
+    electricity: "Ready" | "Under Development";
+    water: "Ready" | "Under Development";
+  };
+  layoutMapUrl: string;
+  layoutMapType: "image" | "pdf";
+  layoutPossession: {
+    status: "Layout Ready" | "Under Development";
+    readyDate?: string;
+    expectedCompletionDate?: string;
+  };
+  inventory: PlotInventoryItem[];
+};
+
+export type CommercialSubtype = "Office Space" | "Shop/Showroom" | "Warehouse" | "Industrial Shed" | "Co-working";
+export type CommercialDetails = {
+  commercialSubtype: CommercialSubtype;
+  carpetArea?: string;
+  builtUpArea?: string;
+  superArea?: string;
+  floor: string;
+  totalFloors: number;
+  frontage?: string;
+  zoneType: "IT/ITES SEZ" | "Non-SEZ" | "Retail" | "Industrial";
+  seatingCapacity: number;
+  cabins: number;
+  meetingRooms: number;
+  buildingGrade: "Grade A" | "Grade B" | "Grade C" | "Not Applicable";
+  structure?: string;
+  pantry: "None" | "Shared Pantry" | "Private Pantry";
+  washrooms?: string;
+  parking?: string;
+  powerBackup?: string;
+  sanctionedLoadKva: number;
+  fireSafetyCompliance?: string;
+  furnishing: "Bare Shell" | "Warm Shell" | "Fully Furnished";
+};
+export type PgSharingDetail = { sharingType: "Single occupancy" | "Double sharing" | "Triple sharing" | "Four sharing"; rentPerBed: number; deposit: number; bedsAvailable: number };
+export type PgDetails = { genderPreference: "Men only" | "Women only" | "Co-ed"; sharingDetails: PgSharingDetail[]; mealsIncluded: "Breakfast + Dinner" | "All 3 meals" | "No meals"; foodType?: "" | "Veg only" | "Veg + Non-veg"; wifiIncluded: boolean; laundryIncluded: boolean; laundrySchedule?: string; housekeeping?: string; curfewEntryTiming?: string; visitorsAllowed?: string; noticePeriod?: string; lockInPeriod?: string; idProofRequired?: string; utilitiesIncluded?: string; availableFrom: string; commonAmenities: string[]; contactType: "Owner" | "PG Manager" | "Company-run" };
+
+export type PossessionStatus = "Ready to Move" | "Under Construction" | "New Launch";
+
+export type PossessionDetails = {
+  status: PossessionStatus;
+  launchDate?: string;
+  expectedCompletionDate?: string;
+};
+
+export type NearbyDetail = { count?: number; distance?: string };
+
 export type Property = {
   id: string;
   title: string;
@@ -7,8 +122,14 @@ export type Property = {
   price: string;
   pricePerSqft?: string;
   configs: string[];
+  configurationDetails?: ConfigurationDetail[];
+  villaDetails?: VillaDetails;
+  plotDetails?: PlotDetails;
+  commercialDetails?: CommercialDetails;
+  pgDetails?: PgDetails;
   area: string;
   possession?: string;
+  possessionDetails?: PossessionDetails;
   builder?: string;
   builderId?: string | null;
   dealerId?: string | null;
@@ -23,11 +144,19 @@ export type Property = {
   furnishing?: string;
   facing?: string;
   floor?: string;
+  floorLabel?: string;
+  totalFloors?: number;
   transactionType?: string;
   ageOfProperty?: string;
   images?: string[];
   videos?: string[];
+  virtualTourUrl?: string;
   amenities?: string[];
+  ownershipType?: string;
+  overlooking?: string[];
+  bookingAmount?: string;
+  maintenanceCharges?: string;
+  maintenancePeriod?: "month" | "quarter" | "year" | "";
   society?: {
     security?: string;
     waterSupply?: string;
@@ -40,6 +169,7 @@ export type Property = {
     city?: string;
     zone?: string;
     landmark?: string;
+    pinCode?: string;
   };
   nearbyAmenities?: {
     schools?: string;
@@ -47,7 +177,14 @@ export type Property = {
     shopping?: string;
     metro?: string;
   };
+  nearbyDetails?: {
+    schools?: NearbyDetail;
+    hospitals?: NearbyDetail;
+    shopping?: NearbyDetail;
+    metro?: NearbyDetail;
+  };
   reraRegistered?: boolean;
+  reraNumber?: string;
   verified?: boolean;
   postedDate?: string;
   // Downloadable brochure (data URL or external link) + display name

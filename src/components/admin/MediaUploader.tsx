@@ -12,6 +12,7 @@ import {
   Link2,
 } from "lucide-react";
 import { youtubeThumb, isEmbeddable } from "@/lib/video";
+import { uploadPropertyMedia } from "@/lib/api";
 
 interface MediaUploaderProps {
   images: string[];
@@ -57,15 +58,6 @@ export default function MediaUploader({
     setVideoUrl("");
   };
 
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleImageFiles = useCallback(
     async (files: FileList | File[]) => {
       const newErrors: string[] = [];
@@ -81,10 +73,9 @@ export default function MediaUploader({
           continue;
         }
         try {
-          const base64 = await fileToBase64(file);
-          newImages.push(base64);
-        } catch {
-          newErrors.push(`${file.name}: Failed to process.`);
+          newImages.push(await uploadPropertyMedia(file, "image"));
+        } catch (error) {
+          newErrors.push(`${file.name}: ${error instanceof Error ? error.message : "Upload failed."}`);
         }
       }
 
@@ -114,10 +105,9 @@ export default function MediaUploader({
           continue;
         }
         try {
-          const base64 = await fileToBase64(file);
-          newVideos.push(base64);
-        } catch {
-          newErrors.push(`${file.name}: Failed to process.`);
+          newVideos.push(await uploadPropertyMedia(file, "video"));
+        } catch (error) {
+          newErrors.push(`${file.name}: ${error instanceof Error ? error.message : "Upload failed."}`);
         }
       }
 

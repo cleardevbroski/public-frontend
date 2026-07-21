@@ -3,6 +3,7 @@ import Image from "@/components/Image";
 import Link from "@/components/Link";
 import { Heart, BedDouble, Maximize2, Calendar, MapPin, ShieldCheck } from "lucide-react";
 import type { Property } from "./mock-data";
+import { formatPossession } from "@/lib/propertyDetails";
 
 const isBase64 = (src: string) => src.startsWith("data:");
 
@@ -70,11 +71,7 @@ export default function PropertyCard({ p }: { p: Property }) {
 
         <div className="flex items-center justify-between mt-2.5">
           <span className="text-[11px] text-[#6E7488] flex items-center gap-1">
-            {p.possession ? (
-              <><Calendar className="size-3.5 text-[#D4AF37]" /> {p.possession}</>
-            ) : (
-              p.builder || "Verified listing"
-            )}
+            <><Calendar className="size-3.5 text-[#D4AF37]" /> {formatPossession(p)}</>
           </span>
           {p.pricePerSqft && (
             <span className="text-[11px] text-[#6E7488] font-medium">{p.pricePerSqft}</span>

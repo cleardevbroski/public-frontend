@@ -9,6 +9,8 @@ function isForRent(p: Property): boolean {
 
 function isNewProject(p: Property): boolean {
   return (
+    p.possessionDetails?.status === "Under Construction" ||
+    p.possessionDetails?.status === "New Launch" ||
     p.ageOfProperty === "Under Construction" ||
     (p.badges?.includes("New Launch") ?? false) ||
     p.websiteSection === "Newly Launched"
@@ -53,6 +55,8 @@ export function matchesLocality(p: Property, locality: string): boolean {
 }
 
 function bhk(p: Property, n: number): boolean {
+  if (p.configurationDetails?.length) return p.configurationDetails.some((row) => row.bedrooms === n);
+  if (p.villaDetails?.configurationDetails.length) return p.villaDetails.configurationDetails.some((row) => row.bedrooms === n);
   if (typeof p.bedrooms === "number") return p.bedrooms === n;
   return p.configs?.some((c) => c.includes(`${n} BHK`)) ?? false;
 }
@@ -74,11 +78,11 @@ const FILTERS: Record<string, FilterDef> = {
   "3 BHK": { group: "config", test: (p) => bhk(p, 3) },
   "4 BHK": { group: "config", test: (p) => bhk(p, 4) },
   "Villa Portfolio": { group: "config", test: (p) => p.propertyType === "Villa" },
-  "Ready To Move": { group: "status", test: (p) => p.possession === "Ready to Move" },
-  "Under Construction": { group: "status", test: (p) => p.ageOfProperty === "Under Construction" },
+  "Ready To Move": { group: "status", test: (p) => p.possessionDetails?.status === "Ready to Move" || p.possession === "Ready to Move" },
+  "Under Construction": { group: "status", test: (p) => p.possessionDetails?.status === "Under Construction" || p.ageOfProperty === "Under Construction" },
   "New Project Launch": {
     group: "status",
-    test: (p) => (p.badges?.includes("New Launch") ?? false) || p.websiteSection === "Newly Launched",
+    test: (p) => p.possessionDetails?.status === "New Launch" || (p.badges?.includes("New Launch") ?? false) || p.websiteSection === "Newly Launched",
   },
   "Power Backup": { group: "amenity", test: (p) => hasAmenity(p, "Power Backup") },
   "Swimming Pool": { group: "amenity", test: (p) => hasAmenity(p, "Swimming Pool") },
@@ -116,6 +120,15 @@ export function matchesQuery(p: Property, q: string): boolean {
     p.propertyType,
     p.locality?.zone,
     p.locality?.landmark,
+    p.villaDetails?.villaType,
+    p.villaDetails?.plotFacing,
+    p.plotDetails?.approvalAuthority,
+    p.plotDetails?.approvalNumber,
+    p.plotDetails?.roadWidth,
+    p.commercialDetails?.commercialSubtype,
+    p.commercialDetails?.zoneType,
+    p.commercialDetails?.buildingGrade,
+    ...((p.plotDetails?.plotSizeDetails || []).map((row) => row.plotSize)),
     ...(p.configs ?? []),
   ]
     .filter(Boolean)

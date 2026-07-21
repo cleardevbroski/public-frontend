@@ -3,11 +3,12 @@ import Image from "@/components/Image";
 import Link from "@/components/Link";
 import { Heart, MapPin, ShieldCheck, Star } from "lucide-react";
 import type { Property } from "./mock-data";
+import { formatPossession } from "@/lib/propertyDetails";
 
 const isBase64 = (src?: string) => !!src && src.startsWith("data:");
 
 function statusOf(p: Property): string {
-  if (p.possession) return p.possession;
+  if (p.possession || p.possessionDetails) return formatPossession(p);
   if (p.ageOfProperty) return p.ageOfProperty;
   return p.badges?.[0] || "Available";
 }
