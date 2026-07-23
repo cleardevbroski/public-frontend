@@ -12,6 +12,21 @@ beforeEach(() => {
 });
 
 describe("api client", () => {
+  it("does not duplicate /api when VITE_API_URL includes it", async () => {
+    vi.stubEnv("VITE_API_URL", "https://backend.example.com/api/");
+    const fetchMock = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ mode: "sms" }) }) as Response);
+    vi.stubGlobal("fetch", fetchMock);
+    vi.resetModules();
+
+    const { sendOtp } = await import("@/lib/api");
+    await sendOtp("9876543210");
+
+    const callArgs = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(callArgs[0]).toBe("https://backend.example.com/api/auth/send-otp");
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
   it("adminLogin stores the returned token", async () => {
     mockFetchOnce({ token: "jwt-123", user: { role: "admin" } });
     const { adminLogin } = await import("@/lib/api");

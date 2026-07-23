@@ -1,4 +1,16 @@
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+/**
+ * API URLs are configured per frontend deployment.  People commonly paste the
+ * backend URL from Render with `/api` on the end; every endpoint below already
+ * includes that segment, so normalize it here to avoid requests such as
+ * `/api/api/auth/send-otp` (which Render correctly returns as a 404).
+ */
+function getApiBase() {
+  const configured = import.meta.env.VITE_API_URL?.trim();
+  if (!configured) return "http://localhost:5000";
+  return configured.replace(/\/+$/, "").replace(/\/api$/, "");
+}
+
+const API_BASE = getApiBase();
 const CUSTOMER_TOKEN_KEY = "cleartitle_token";
 const CUSTOMER_TOKEN_BACKUP_KEY = "cleartitle_customer_token";
 const ADMIN_TOKEN_KEY = "cleartitle_admin_token";
@@ -90,12 +102,14 @@ async function apiFetchWithToken(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  return response;
+  try {
+    return await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch {
+    throw new Error("Cannot reach the API. Check VITE_API_URL and confirm the backend FRONTEND_URL allows this website origin.");
+  }
 }
 
 async function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
@@ -340,10 +354,18 @@ function toQuery(params: Record<string, unknown> = {}): string {
   return s ? `?${s}` : "";
 }
 
-async function readJson(res: Response, fallback: string) {
-  const data = await res.json();
+async function readJson<T = any>(res: Response, fallback: string): Promise<T> {
+  let data: { error?: string } = {};
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error("The API returned an invalid response. Check VITE_API_URL is your Render backend URL, not the website URL.");
+  }
+  if (res.status === 404) {
+    throw new Error("API route not found. Check VITE_API_URL points to the Render backend service.");
+  }
   if (!res.ok) throw new Error(data.error || fallback);
-  return data;
+  return data as T;
 }
 
 // ─── Admin auth ─────────────────────────────────────────────────

@@ -16,4 +16,11 @@ describe("adminAuth", () => {
     expect(await adminLogin("admin", "wrong")).toBe(false);
     expect(isAdminAuthed()).toBe(false);
   });
+
+  it("keeps an API configuration error instead of reporting it as invalid credentials", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 404, json: async () => ({ error: "Route not found" }) }) as Response));
+    const { adminLogin, getAdminLoginError } = await import("@/lib/adminAuth");
+    expect(await adminLogin("admin", "secret")).toBe(false);
+    expect(getAdminLoginError()).toMatch(/VITE_API_URL/i);
+  });
 });

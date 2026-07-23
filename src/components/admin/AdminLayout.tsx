@@ -28,7 +28,7 @@ import {
   Megaphone,
   FileText,
 } from "lucide-react";
-import { isAdminAuthed, adminLogin, adminLogout } from "@/lib/adminAuth";
+import { isAdminAuthed, adminLogin, adminLogout, getAdminLoginError } from "@/lib/adminAuth";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -65,7 +65,7 @@ function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
       setError("");
       onSuccess();
     } else {
-      setError("Invalid username or password.");
+      setError(getAdminLoginError() || "Invalid username or password.");
     }
   };
 
