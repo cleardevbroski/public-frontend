@@ -68,6 +68,7 @@ export default function LawyerConsultationModal({ open, propertyId, propertyTitl
   const [lawyersLoading, setLawyersLoading] = useState(false);
   const [error, setError] = useState("");
   const [devMode, setDevMode] = useState(false);
+  const [fallbackOtp, setFallbackOtp] = useState("");
   const [whatsappUrl, setWhatsappUrl] = useState("");
 
   useEffect(() => {
@@ -82,6 +83,7 @@ export default function LawyerConsultationModal({ open, propertyId, propertyTitl
     setConsent(false);
     setError("");
     setDevMode(false);
+    setFallbackOtp("");
     setWhatsappUrl("");
     setStep(user?.name && user?.email ? "lawyers" : "identity");
   }, [open, user]);
@@ -110,6 +112,7 @@ export default function LawyerConsultationModal({ open, propertyId, propertyTitl
     if (validationError) return setError(validationError);
     setLoading(true);
     setError("");
+    setFallbackOtp("");
     try {
       if (user) {
         const profile = await updateProfile({ name: name.trim(), email: email.trim() });
@@ -117,7 +120,11 @@ export default function LawyerConsultationModal({ open, propertyId, propertyTitl
         setStep("lawyers");
       } else {
         const result = await sendOtp(phone);
-        setDevMode(result.mode === "dev");
+        if (result.mode === "fallback" && result.otp) {
+          setFallbackOtp(result.otp);
+          setOtp(result.otp);
+        }
+        setDevMode(result.mode === "dev" || result.mode === "fallback");
         setStep("otp");
       }
     } catch (err) {
@@ -217,10 +224,14 @@ export default function LawyerConsultationModal({ open, propertyId, propertyTitl
 
           {step === "otp" && <form onSubmit={verifyIdentity} className="mx-auto max-w-md space-y-5 text-center">
             <ShieldCheck className="mx-auto size-12 text-[#DDAA42]" /><div><h3 className="text-xl font-bold text-[#121B35]">Verify mobile number</h3><p className="mt-1 text-sm text-[#68646F]">Enter the OTP sent to +91 {phone}.</p></div>
-            {devMode && <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">Development mode: the OTP is displayed in the backend server console.</p>}
+            {devMode && (
+              <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+                {fallbackOtp ? `Fallback Mode: Please use OTP ${fallbackOtp}` : "Development mode: the OTP is displayed in the backend server console."}
+              </p>
+            )}
             <input autoFocus value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" placeholder="6-digit OTP" className="w-full rounded-xl border border-[#E4E0E7] bg-white px-4 py-3 text-center text-lg font-bold tracking-[0.4em] outline-none focus:border-[#DDAA42]" />
             <button disabled={loading || otp.length !== 6} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#DDAA42] px-5 py-3.5 font-bold text-[#0B1328] disabled:opacity-60">{loading && <Loader2 className="size-4 animate-spin" />}Verify & view lawyers</button>
-            <button type="button" onClick={() => { setStep("identity"); setOtp(""); setError(""); }} className="text-sm font-bold text-[#121B35]">Change details</button>
+            <button type="button" onClick={() => { setStep("identity"); setOtp(""); setError(""); setFallbackOtp(""); }} className="text-sm font-bold text-[#121B35]">Change details</button>
           </form>}
 
           {step === "lawyers" && <div>

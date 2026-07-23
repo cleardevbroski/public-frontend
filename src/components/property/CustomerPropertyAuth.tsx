@@ -11,19 +11,25 @@ export default function CustomerPropertyAuth() {
   const [otpSent, setOtpSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [fallbackOtp, setFallbackOtp] = useState("");
   const { login } = useAuth();
   const inputClass = "w-full h-11 rounded-xl border border-[#E4E0E7] px-10 text-[14px] text-[#121B35] outline-none focus:border-[#DDAA42]";
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
+    setFallbackOtp("");
     if (!/^[6-9]\d{9}$/.test(phone)) return setError("Enter a valid 10-digit Indian mobile number.");
     if (otpSent && otp.length !== 6) return setError("Enter the 6-digit OTP.");
     setBusy(true);
     try {
       if (!otpSent) {
-        await sendOtp(phone);
+        const data = await sendOtp(phone);
         setOtpSent(true);
+        if (data.mode === "fallback" && data.otp) {
+          setFallbackOtp(data.otp);
+          setOtp(data.otp);
+        }
       } else {
         const data = await verifyOtp(phone, otp);
         login(data.user, data.token);
@@ -42,10 +48,15 @@ export default function CustomerPropertyAuth() {
     <form onSubmit={submit} className="mt-6 space-y-4">
       <Field icon={Smartphone}><input className={inputClass} value={phone} disabled={otpSent} onChange={(event) => setPhone(event.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="10-digit mobile number" inputMode="numeric" required /></Field>
       {otpSent && <Field icon={KeyRound}><input autoFocus inputMode="numeric" className={inputClass} value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="6-digit OTP" required /></Field>}
+      {fallbackOtp && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-700 font-semibold">
+          Fallback Mode: Please use OTP <span className="underline decoration-2">{fallbackOtp}</span> to verify.
+        </p>
+      )}
       {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700">{error}</p>}
       <button disabled={busy} className="btn-gold flex h-12 w-full items-center justify-center gap-2 rounded-xl text-[14px] font-bold disabled:opacity-60">{busy && <Loader2 className="size-4 animate-spin" />}{otpSent ? "Verify & Continue" : "Send OTP"}</button>
     </form>
-    {otpSent && <button type="button" onClick={() => { setOtpSent(false); setOtp(""); setError(""); }} className="mt-5 w-full text-[13px] font-semibold text-[#121B35] hover:text-[#DDAA42]">Use a different number</button>}
+    {otpSent && <button type="button" onClick={() => { setOtpSent(false); setOtp(""); setError(""); setFallbackOtp(""); }} className="mt-5 w-full text-[13px] font-semibold text-[#121B35] hover:text-[#DDAA42]">Use a different number</button>}
   </div>;
 }
 
