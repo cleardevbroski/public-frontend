@@ -123,22 +123,17 @@ async function customerApiFetch(endpoint: string, options: RequestInit = {}): Pr
 // ─── Auth API ───────────────────────────────────────────────────
 
 export async function sendOtp(phone: string) {
-  const res = await apiFetch("/api/auth/send-otp", {
+  return readJson(await apiFetch("/api/auth/send-otp", {
     method: "POST",
     body: JSON.stringify({ phone }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to send OTP");
-  return data;
+  }), "Failed to send OTP");
 }
 
 export async function verifyOtp(phone: string, otp: string) {
-  const res = await apiFetch("/api/auth/verify-otp", {
+  const data = await readJson(await apiFetch("/api/auth/verify-otp", {
     method: "POST",
     body: JSON.stringify({ phone, otp }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to verify OTP");
+  }), "Failed to verify OTP");
 
   // Store the JWT token
   if (data.token) {
@@ -148,20 +143,14 @@ export async function verifyOtp(phone: string, otp: string) {
 }
 
 export async function getMe() {
-  const res = await customerApiFetch("/api/auth/me");
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to get profile");
-  return data;
+  return readJson(await customerApiFetch("/api/auth/me"), "Failed to get profile");
 }
 
 export async function updateProfile(updates: { name?: string; email?: string }) {
-  const res = await customerApiFetch("/api/auth/profile", {
+  return readJson(await customerApiFetch("/api/auth/profile", {
     method: "PUT",
     body: JSON.stringify(updates),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to update profile");
-  return data;
+  }), "Failed to update profile");
 }
 
 export async function customerRegister(input: { name: string; phone: string; email: string; password: string }) {

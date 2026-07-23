@@ -27,6 +27,12 @@ describe("api client", () => {
     vi.resetModules();
   });
 
+  it("turns an empty OTP response into a configuration error", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 502, json: async () => { throw new SyntaxError("Unexpected end of JSON input"); } }) as unknown as Response));
+    const { sendOtp } = await import("@/lib/api");
+    await expect(sendOtp("9876543210")).rejects.toThrow(/API returned an invalid response/i);
+  });
+
   it("adminLogin stores the returned token", async () => {
     mockFetchOnce({ token: "jwt-123", user: { role: "admin" } });
     const { adminLogin } = await import("@/lib/api");
