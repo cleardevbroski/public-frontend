@@ -108,8 +108,8 @@ export default function AdminBuilders() {
 
   const filtered = builders.filter((b) => b.name.toLowerCase().includes(search.toLowerCase()));
 
-  const input = "w-full h-11 px-3.5 rounded-xl border border-[#D5DEF2] focus:border-[#C9A24E] outline-none text-[14px] text-[#1E3A8A] bg-white";
-  const label = "block text-[12px] font-bold text-[#6E7488] mb-1.5";
+  const input = "w-full h-11 px-3.5 rounded-xl border border-[#E4E0E7] focus:border-[#DDAA42] outline-none text-[14px] text-[#121B35] bg-white";
+  const label = "block text-[12px] font-bold text-[#68646F] mb-1.5";
 
   if (!mounted) return null;
 
@@ -117,29 +117,29 @@ export default function AdminBuilders() {
     <AdminLayout>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-[28px] font-bold text-[#1E3A8A]" style={{ fontFamily: "var(--font-outfit)" }}>
+          <h1 className="text-[28px] font-bold text-[#121B35]" style={{ fontFamily: "var(--font-outfit)" }}>
             Builders
           </h1>
-          <p className="text-[14px] text-[#6E7488] mt-1">Manage real estate developers</p>
+          <p className="text-[14px] text-[#68646F] mt-1">Manage real estate developers</p>
         </div>
         <button
           onClick={startAdd}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#C9A24E] to-[#E3C25A] text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all text-[14px]"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#DDAA42] to-[#273559] text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all text-[14px]"
         >
           <Plus className="size-5" /> Add Builder
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-[#D5DEF2]/30 overflow-hidden">
-        <div className="p-4 border-b border-[#D5DEF2]/30 flex gap-4 items-center">
-          <div className="flex-1 max-w-md flex items-center gap-2 bg-[#F1F5FF] rounded-xl px-4 py-2.5 border border-[#D5DEF2]/30 focus-within:border-[#C9A24E]/40">
-            <Search className="size-4 text-[#6E7488]" />
+      <div className="bg-white rounded-2xl shadow-sm border border-[#E4E0E7]/30 overflow-hidden">
+        <div className="p-4 border-b border-[#E4E0E7]/30 flex gap-4 items-center">
+          <div className="flex-1 max-w-md flex items-center gap-2 bg-[#F8F7FA] rounded-xl px-4 py-2.5 border border-[#E4E0E7]/30 focus-within:border-[#DDAA42]/40">
+            <Search className="size-4 text-[#68646F]" />
             <input
               type="text"
               placeholder="Search by builder name..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 bg-transparent text-[14px] text-[#1E3A8A] placeholder-[#6E7488] outline-none"
+              className="flex-1 bg-transparent text-[14px] text-[#121B35] placeholder-[#68646F] outline-none"
             />
           </div>
         </div>
@@ -147,7 +147,7 @@ export default function AdminBuilders() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
-              <tr className="bg-[#F8FAFC] border-b border-[#D5DEF2]/50 text-[12px] font-bold text-[#6E7488] uppercase tracking-wider">
+              <tr className="bg-[#F8FAFC] border-b border-[#E4E0E7]/50 text-[12px] font-bold text-[#68646F] uppercase tracking-wider">
                 <th className="px-6 py-4 font-medium">Builder Name</th>
                 <th className="px-6 py-4 font-medium">City</th>
                 <th className="px-6 py-4 font-medium">Projects</th>
@@ -156,27 +156,27 @@ export default function AdminBuilders() {
                 <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#D5DEF2]/30">
-              {loading && <tr><td colSpan={6} className="px-6 py-8 text-center text-[#6E7488]">Loading...</td></tr>}
+            <tbody className="divide-y divide-[#E4E0E7]/30">
+              {loading && <tr><td colSpan={6} className="px-6 py-8 text-center text-[#68646F]">Loading...</td></tr>}
               {!loading && filtered.map((b) => (
                 <tr key={b._id} className="hover:bg-[#F8FAFC]/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="size-10 rounded-full bg-gradient-to-br from-[#D4AF37]/10 to-[#E8C66A]/20 flex items-center justify-center font-bold text-[#C9A24E] overflow-hidden">
+                      <div className="size-10 rounded-full bg-gradient-to-br from-[#DDAA42]/10 to-[#F2C052]/20 flex items-center justify-center font-bold text-[#DDAA42] overflow-hidden">
                         {b.logo ? <img src={b.logo} alt="" className="size-full object-cover" /> : b.name[0]}
                       </div>
                       <div>
-                        <div className="font-bold text-[#1E3A8A] text-[14px]">{b.name}</div>
-                        <div className="text-[12.5px] text-[#6E7488]">Est. {b.established || "N/A"}</div>
+                        <div className="font-bold text-[#121B35] text-[14px]">{b.name}</div>
+                        <div className="text-[12.5px] text-[#68646F]">Est. {b.established || "N/A"}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-[13px] text-[#1E3A8A]">{b.city || "-"}</td>
-                  <td className="px-6 py-4 text-[13px] text-[#1E3A8A] font-bold">{b.projectCount}</td>
+                  <td className="px-6 py-4 text-[13px] text-[#121B35]">{b.city || "-"}</td>
+                  <td className="px-6 py-4 text-[13px] text-[#121B35] font-bold">{b.projectCount}</td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
                       {b.verified && <span className="flex items-center gap-1 text-[11px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded"><ShieldCheck className="size-3" /> Verified</span>}
-                      {b.featured && <span className="flex items-center gap-1 text-[11px] font-bold text-[#C9A24E] bg-[#C9A24E]/10 px-2 py-1 rounded"><Star className="size-3" /> Featured</span>}
+                      {b.featured && <span className="flex items-center gap-1 text-[11px] font-bold text-[#DDAA42] bg-[#DDAA42]/10 px-2 py-1 rounded"><Star className="size-3" /> Featured</span>}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -184,10 +184,10 @@ export default function AdminBuilders() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
-                      <button onClick={() => startEdit(b)} className="p-2 text-[#6E7488] hover:text-[#C9A24E] hover:bg-[#F1F5FF] rounded-lg transition-colors">
+                      <button onClick={() => startEdit(b)} className="p-2 text-[#68646F] hover:text-[#DDAA42] hover:bg-[#F8F7FA] rounded-lg transition-colors">
                         <Pencil className="size-4" />
                       </button>
-                      <button onClick={() => remove(b._id)} className="p-2 text-[#6E7488] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                      <button onClick={() => remove(b._id)} className="p-2 text-[#68646F] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                         <Trash2 className="size-4" />
                       </button>
                     </div>
@@ -196,7 +196,7 @@ export default function AdminBuilders() {
               ))}
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-[#6E7488] text-[14px]">
+                  <td colSpan={6} className="px-6 py-8 text-center text-[#68646F] text-[14px]">
                     No builders found.
                   </td>
                 </tr>
@@ -207,11 +207,11 @@ export default function AdminBuilders() {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-[#0B1B43]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-[#0B1328]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-[#F8FAFC] rounded-2xl shadow-2xl w-full max-w-2xl my-auto">
-            <div className="px-6 py-4 border-b border-[#D5DEF2] flex items-center justify-between bg-white rounded-t-2xl">
-              <h2 className="text-[18px] font-bold text-[#1E3A8A]">{editing ? "Edit Builder" : "Add Builder"}</h2>
-              <button onClick={() => setShowForm(false)} className="text-[#6E7488] hover:text-[#1E3A8A]">
+            <div className="px-6 py-4 border-b border-[#E4E0E7] flex items-center justify-between bg-white rounded-t-2xl">
+              <h2 className="text-[18px] font-bold text-[#121B35]">{editing ? "Edit Builder" : "Add Builder"}</h2>
+              <button onClick={() => setShowForm(false)} className="text-[#68646F] hover:text-[#121B35]">
                 <X className="size-5" />
               </button>
             </div>
@@ -238,12 +238,12 @@ export default function AdminBuilders() {
                   <input value={form.logo || ""} onChange={(e) => set("logo", e.target.value)} className={input} placeholder="https://..." />
                 </div>
                 <div className="col-span-2 flex gap-6 mt-2">
-                  <label className="flex items-center gap-2 text-[14px] text-[#1E3A8A] font-bold cursor-pointer">
-                    <input type="checkbox" checked={form.verified} onChange={(e) => set("verified", e.target.checked)} className="size-4 accent-[#C9A24E]" />
+                  <label className="flex items-center gap-2 text-[14px] text-[#121B35] font-bold cursor-pointer">
+                    <input type="checkbox" checked={form.verified} onChange={(e) => set("verified", e.target.checked)} className="size-4 accent-[#DDAA42]" />
                     Verified Builder
                   </label>
-                  <label className="flex items-center gap-2 text-[14px] text-[#1E3A8A] font-bold cursor-pointer">
-                    <input type="checkbox" checked={form.featured} onChange={(e) => set("featured", e.target.checked)} className="size-4 accent-[#C9A24E]" />
+                  <label className="flex items-center gap-2 text-[14px] text-[#121B35] font-bold cursor-pointer">
+                    <input type="checkbox" checked={form.featured} onChange={(e) => set("featured", e.target.checked)} className="size-4 accent-[#DDAA42]" />
                     Featured Builder
                   </label>
                 </div>
@@ -257,8 +257,8 @@ export default function AdminBuilders() {
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-[#D5DEF2]">
-                <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2.5 rounded-xl font-bold text-[14px] text-[#6E7488] hover:bg-[#E2E9FB] transition-colors">
+              <div className="flex justify-end gap-3 pt-4 border-t border-[#E4E0E7]">
+                <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2.5 rounded-xl font-bold text-[14px] text-[#68646F] hover:bg-[#F3F1F5] transition-colors">
                   Cancel
                 </button>
                 <button type="submit" disabled={submitting} className="px-5 py-2.5 btn-gold rounded-xl font-bold text-[14px] shadow-md disabled:opacity-50">

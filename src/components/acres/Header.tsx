@@ -47,12 +47,12 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-[#1E3A8A]/90 backdrop-blur-md border-b border-[#C9A24E]/25 acres-shadow-header text-white transition-all duration-300">
+      <header className="sticky top-0 z-50 bg-[#121B35]/90 backdrop-blur-md border-b border-[#DDAA42]/25 acres-shadow-header text-white transition-all duration-300">
         {/* Main Header Bar */}
         <div className="h-[64px] md:h-[72px] w-full flex items-center px-4 md:px-[50px] gap-3 md:gap-6">
           {/* Logo — gold coin */}
           <a href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#D4AF37]/60 group-hover:ring-[#E8C66A] transition-all duration-300 group-hover:scale-[1.05] shadow-lg">
+            <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#DDAA42]/60 group-hover:ring-[#F2C052] transition-all duration-300 group-hover:scale-[1.05] shadow-lg">
               <Image
                 src="/cleartitleone/logo.png"
                 alt="ClearTitle One"
@@ -64,7 +64,7 @@ export default function Header() {
               />
             </div>
             <span className="text-[18px] font-bold tracking-tight" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
-              Clear<span className="text-[#E8C66A]">Title</span><span className="text-[#D4AF37]">One</span>
+              Clear<span className="text-[#F2C052]">Title</span><span className="text-[#DDAA42]">One</span>
             </span>
           </a>
 
@@ -97,7 +97,7 @@ export default function Header() {
                 >
                   <span>{item.label}</span>
                   {item.badge && (
-                    <span className="absolute -top-1 -right-1 bg-[#E8C66A] text-[8px] font-bold text-[#1E3A8A] px-1 py-px rounded-sm leading-none animate-pulse">
+                    <span className="absolute -top-1 -right-1 bg-[#F2C052] text-[8px] font-bold text-[#121B35] px-1 py-px rounded-sm leading-none animate-pulse">
                       {item.badge}
                     </span>
                   )}
@@ -119,9 +119,9 @@ export default function Header() {
           </nav>
 
           {/* Post property pill */}
-          <Link href="/postproperty" className="ml-2 hidden md:flex items-center gap-2 bg-white text-[#1E3A8A] h-9 pl-4 pr-1.5 rounded-full font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 shrink-0">
+          <Link href="/postproperty" className="ml-2 hidden md:flex items-center gap-2 bg-white text-[#121B35] h-9 pl-4 pr-1.5 rounded-full font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 shrink-0">
             <span>Post property</span>
-            <span className="bg-gradient-to-r from-[#C9A24E] to-[#E3C25A] text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+            <span className="bg-gradient-to-r from-[#DDAA42] to-[#F2C052] text-[#0B1328] text-[10px] font-bold px-1.5 py-0.5 rounded">
               FREE
             </span>
           </Link>
@@ -187,12 +187,12 @@ export default function Header() {
           />
 
           {/* Drawer Panel */}
-          <div className="fixed top-0 right-0 h-full w-full max-w-[420px] bg-[#1E3A8A]/95 backdrop-blur-xl border-l border-[#C9A24E]/20 z-[101] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 text-white">
+          <div className="fixed top-0 right-0 h-full w-full max-w-[420px] bg-[#121B35]/95 backdrop-blur-xl border-l border-[#DDAA42]/20 z-[101] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 text-white">
             
             {/* Drawer Header */}
-            <div className="p-5 border-b border-[#C9A24E]/25 flex items-center justify-between">
+            <div className="p-5 border-b border-[#DDAA42]/25 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="relative w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#D4AF37]/60">
+                <div className="relative w-8 h-8 rounded-full overflow-hidden ring-2 ring-[#DDAA42]/60">
                   <Image
                     src="/cleartitleone/logo.png"
                     alt="ClearTitle One"
@@ -204,7 +204,7 @@ export default function Header() {
                   />
                 </div>
                 <span className="text-[16px] font-bold tracking-tight" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
-                  Clear<span className="text-[#E8C66A]">Title</span>One
+                  Clear<span className="text-[#F2C052]">Title</span>One
                 </span>
               </div>
               <button
@@ -218,7 +218,7 @@ export default function Header() {
 
             {/* Scrollable Categories List */}
             <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-4">
-              <h2 className="text-[11px] font-bold tracking-[0.2em] text-[#E8C66A] uppercase mb-2">Features & Portals</h2>
+              <h2 className="text-[11px] font-bold tracking-[0.2em] text-[#F2C052] uppercase mb-2">Features & Portals</h2>
               
               <div className="space-y-3">
                 {navItems.map((item) => {
@@ -226,7 +226,7 @@ export default function Header() {
                   const isExpanded = expandedCategory === item.label;
 
                   return (
-                    <div key={item.label} className="border border-[#C9A24E]/20 rounded-xl overflow-hidden bg-[#0B1B43]/40">
+                    <div key={item.label} className="border border-[#DDAA42]/20 rounded-xl overflow-hidden bg-[#0B1328]/40">
                       {hasDropdownMenu ? (
                         <button
                           onClick={() => setExpandedCategory(isExpanded ? null : item.label)}
@@ -236,7 +236,7 @@ export default function Header() {
                             {item.label}
                             {item.badge && (
                               <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded leading-none ${
-                                item.badge === "UNIQUE" ? "bg-gradient-to-r from-[#D4AF37] to-[#E8C66A] text-[#1E3A8A]" : "bg-[#E8C66A] text-white"
+                                item.badge === "UNIQUE" ? "bg-gradient-to-r from-[#DDAA42] to-[#F2C052] text-[#121B35]" : "bg-[#F2C052] text-[#0B1328]"
                               }`}>
                                 {item.badge}
                               </span>
@@ -250,11 +250,11 @@ export default function Header() {
                           onClick={() => setIsMenuOpen(false)}
                           className="w-full flex items-center justify-between p-4 font-semibold text-[14px] hover:bg-white/5 transition-all"
                         >
-                          <span className="flex items-center gap-2.5 text-[#E8C66A]">
-                            {item.label === "Legal Shield" && <ShieldCheck className="size-4.5 text-[#E8C66A]" />}
+                          <span className="flex items-center gap-2.5 text-[#F2C052]">
+                            {item.label === "Legal Shield" && <ShieldCheck className="size-4.5 text-[#F2C052]" />}
                             {item.label}
                             {item.badge && (
-                              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded leading-none bg-gradient-to-r from-[#D4AF37] to-[#E8C66A] text-[#1E3A8A]">
+                              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded leading-none bg-gradient-to-r from-[#DDAA42] to-[#F2C052] text-[#121B35]">
                                 {item.badge}
                               </span>
                             )}
@@ -264,11 +264,11 @@ export default function Header() {
 
                       {/* Accordion dropdown contents */}
                       {hasDropdownMenu && isExpanded && (
-                        <div className="bg-[#081640]/60 border-t border-[#C9A24E]/15 p-4 space-y-4">
+                        <div className="bg-[#081640]/60 border-t border-[#DDAA42]/15 p-4 space-y-4">
                           {/* Left Sections */}
                           {headerDropdowns[item.label].leftSections.map((section) => (
                             <div key={section.title} className="space-y-1.5">
-                              <h4 className="text-[10px] font-bold text-[#E8C66A]/70 uppercase tracking-wider">{section.title}</h4>
+                              <h4 className="text-[10px] font-bold text-[#F2C052]/70 uppercase tracking-wider">{section.title}</h4>
                               <div className="grid grid-cols-1 gap-1 pl-1">
                                 {section.items.map((subitem) => (
                                   <Link
@@ -277,10 +277,10 @@ export default function Header() {
                                     onClick={() => setIsMenuOpen(false)}
                                     className="text-[12.5px] text-white/80 hover:text-white hover:underline py-1 flex items-center gap-2"
                                   >
-                                    <span className="size-1 rounded-full bg-[#C9A24E] shrink-0" />
+                                    <span className="size-1 rounded-full bg-[#DDAA42] shrink-0" />
                                     {subitem.label}
                                     {subitem.badge && (
-                                      <span className="text-[8px] font-bold px-1 py-0.2 bg-[#C9A24E] text-white rounded">
+                                      <span className="text-[8px] font-bold px-1 py-0.2 bg-[#DDAA42] text-[#0B1328] rounded">
                                         {subitem.badge}
                                       </span>
                                     )}
@@ -292,8 +292,8 @@ export default function Header() {
 
                           {/* Center Sections if present */}
                           {headerDropdowns[item.label].centerSections?.map((section) => (
-                            <div key={section.title} className="space-y-1.5 pt-2 border-t border-[#C9A24E]/10">
-                              <h4 className="text-[10px] font-bold text-[#E8C66A]/70 uppercase tracking-wider">{section.title}</h4>
+                            <div key={section.title} className="space-y-1.5 pt-2 border-t border-[#DDAA42]/10">
+                              <h4 className="text-[10px] font-bold text-[#F2C052]/70 uppercase tracking-wider">{section.title}</h4>
                               <div className="grid grid-cols-1 gap-1 pl-1">
                                 {section.items.map((subitem) => (
                                   <Link
@@ -302,10 +302,10 @@ export default function Header() {
                                     onClick={() => setIsMenuOpen(false)}
                                     className="text-[12.5px] text-white/80 hover:text-white hover:underline py-1 flex items-center gap-2"
                                   >
-                                    <span className="size-1 rounded-full bg-[#C9A24E] shrink-0" />
+                                    <span className="size-1 rounded-full bg-[#DDAA42] shrink-0" />
                                     {subitem.label}
                                     {subitem.badge && (
-                                      <span className="text-[8px] font-bold px-1 py-0.2 bg-[#C9A24E] text-white rounded">
+                                      <span className="text-[8px] font-bold px-1 py-0.2 bg-[#DDAA42] text-[#0B1328] rounded">
                                         {subitem.badge}
                                       </span>
                                     )}
@@ -322,14 +322,14 @@ export default function Header() {
               </div>
 
               {/* Extra features inside menu */}
-              <div className="pt-4 border-t border-[#C9A24E]/25 mt-6 space-y-3">
+              <div className="pt-4 border-t border-[#DDAA42]/25 mt-6 space-y-3">
                 <Link
                   href="/postproperty"
                   onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center justify-between w-full bg-white text-[#1E3A8A] h-10 px-4 rounded-xl font-bold text-[13px] shadow-md hover:scale-[1.02] transition-all"
+                  className="flex items-center justify-between w-full bg-white text-[#121B35] h-10 px-4 rounded-xl font-bold text-[13px] shadow-md hover:scale-[1.02] transition-all"
                 >
                   <span>Post Free Property Listing</span>
-                  <span className="bg-gradient-to-r from-[#C9A24E] to-[#E3C25A] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                  <span className="bg-gradient-to-r from-[#DDAA42] to-[#273559] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
                     FREE
                   </span>
                 </Link>
@@ -345,7 +345,7 @@ export default function Header() {
                   <Link
                     href="/account"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center justify-center w-full bg-white/5 border border-white/15 text-[#E8C66A] hover:bg-white/10 h-10 px-3 rounded-xl font-bold text-[12.5px] transition-all"
+                    className="flex items-center justify-center w-full bg-white/5 border border-white/15 text-[#F2C052] hover:bg-white/10 h-10 px-3 rounded-xl font-bold text-[12.5px] transition-all"
                   >
                     Become a Dealer
                   </Link>
@@ -354,7 +354,7 @@ export default function Header() {
                 <Link
                   href="/admin"
                   onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center justify-center w-full bg-transparent border border-[#E8C66A]/30 text-[#E8C66A] hover:bg-[#E8C66A]/10 h-10 px-4 rounded-xl font-bold text-[13px] transition-all"
+                  className="flex items-center justify-center w-full bg-transparent border border-[#F2C052]/30 text-[#F2C052] hover:bg-[#F2C052]/10 h-10 px-4 rounded-xl font-bold text-[13px] transition-all"
                 >
                   Go to Attorney Admin Panel
                 </Link>
@@ -362,11 +362,11 @@ export default function Header() {
             </div>
 
             {/* Drawer Footer Contact details */}
-            <div className="p-5 border-t border-[#C9A24E]/25 bg-[#081640]">
+            <div className="p-5 border-t border-[#DDAA42]/25 bg-[#081640]">
               <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider mb-2">Need Assistance?</p>
               <div className="space-y-2 text-[12.5px] text-white/80">
                 <div className="flex items-center gap-2">
-                  <Phone className="size-4 text-[#E8C66A]" />
+                  <Phone className="size-4 text-[#F2C052]" />
                   <span className="font-semibold">1800 41 99099</span>
                   <span className="text-[10px] text-white/40 font-normal">(Toll Free)</span>
                 </div>

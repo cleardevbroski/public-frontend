@@ -19,7 +19,7 @@ function apartment(): Partial<Property> {
       { ...createConfigurationDetail("2 BHK"), price: "₹1.70 Cr", superBuiltUpArea: "1280 sqft", carpetArea: "915 sqft", facings: ["East"] },
       { ...createConfigurationDetail("3 BHK"), price: "₹2.30 Cr", superBuiltUpArea: "1730 sqft", carpetArea: "1245 sqft", facings: ["South"] },
     ],
-    possessionDetails: { status: "Under Construction", expectedCompletionDate: "2028-06-30" },
+    possessionDetails: { status: "Under Construction", expectedCompletionDate: "2028-06" },
     floorLabel: "3",
     transactionType: "New Property",
     bookingAmount: "₹5,00,000",
@@ -38,6 +38,25 @@ describe("Apartment property helpers", () => {
 
   it("creates independent row defaults based on each BHK tag", () => {
     expect(createConfigurationDetail("4 BHK")).toMatchObject({ configuration: "4 BHK", bedrooms: 4, bathrooms: 4, balconies: 0, facings: [] });
+  });
+
+  it("allows an Apartment draft without a flat floor", () => {
+    const draft = apartment();
+    draft.floorLabel = "";
+    expect(validateApartmentDraft(draft).floorLabel).toBeUndefined();
+  });
+
+  it("allows repeated BHK rows", () => {
+    const draft = apartment();
+    draft.configs = ["3 BHK", "3 BHK", "3 BHK"];
+    draft.configurationDetails = Array.from({ length: 3 }, () => ({
+      ...createConfigurationDetail("3 BHK"),
+      price: "₹2.30 Cr",
+      superBuiltUpArea: "1730 sqft",
+      carpetArea: "1245 sqft",
+      facings: ["South"],
+    }));
+    expect(validateApartmentDraft(draft).configurations).toBeUndefined();
   });
 
   it("derives public price and area ranges while preserving row associations", () => {
@@ -61,7 +80,7 @@ describe("Apartment property helpers", () => {
     vi.setSystemTime(new Date("2026-07-21T00:00:00Z"));
     expect(formatPossession({ possessionDetails: { status: "Ready to Move", launchDate: "2024-01-15" } })).toContain("Launched on 15 Jan 2024");
     expect(formatPossession({ possessionDetails: { status: "New Launch", launchDate: "2027-01-15" } })).toContain("Launching on 15 Jan 2027");
-    expect(formatPossession({ possessionDetails: { status: "Under Construction", expectedCompletionDate: "2028-06-30" } })).toContain("Completion expected by 30 Jun 2028");
+    expect(formatPossession({ possessionDetails: { status: "Under Construction", expectedCompletionDate: "2028-06" } })).toContain("Completion expected by Jun 2028");
     expect(formatPossession({ possession: "Within 6 Months" })).toBe("Within 6 Months");
   });
 
@@ -74,10 +93,22 @@ describe("Apartment property helpers", () => {
     draft.bookingAmount = "";
     draft.description = "short";
     const errors = validateApartmentDraft(draft);
-    expect(errors["configuration.2 BHK.price"]).toBeTruthy();
+    expect(errors["configuration.0.price"]).toBeTruthy();
     expect(errors.possessionDate).toBeTruthy();
     expect(errors.reraNumber).toBeTruthy();
     expect(errors.bookingAmount).toBeTruthy();
     expect(errors.description).toBeTruthy();
+  });
+
+  it("validates optional interactive plan and facility presentation fields", () => {
+    const draft = apartment();
+    draft.configurationDetails![0].floorPlan2dUrl = "not-a-url";
+    draft.configurationDetails![0].rooms = [{ name: "", length: -1, unit: "ft" }];
+    draft.facilities = [{ name: "Swimming Pool", imageUrl: "javascript:alert(1)" }];
+    const errors = validateApartmentDraft(draft);
+    expect(errors["configuration.0.floorPlan2dUrl"]).toBeTruthy();
+    expect(errors["configuration.0.rooms.0.name"]).toBeTruthy();
+    expect(errors["configuration.0.rooms.0.length"]).toBeTruthy();
+    expect(errors["facility.0.imageUrl"]).toBeTruthy();
   });
 });

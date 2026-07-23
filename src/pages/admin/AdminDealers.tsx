@@ -83,8 +83,8 @@ export default function AdminDealers() {
     return d.name.toLowerCase().includes(q) || d.agency.toLowerCase().includes(q);
   });
 
-  const input = "w-full h-11 px-3.5 rounded-xl border border-[#D5DEF2] focus:border-[#C9A24E] outline-none text-[14px] text-[#1E3A8A] bg-white";
-  const label = "block text-[12px] font-bold text-[#6E7488] mb-1.5";
+  const input = "w-full h-11 px-3.5 rounded-xl border border-[#E4E0E7] focus:border-[#DDAA42] outline-none text-[14px] text-[#121B35] bg-white";
+  const label = "block text-[12px] font-bold text-[#68646F] mb-1.5";
 
   if (!mounted) return null;
 
@@ -92,29 +92,29 @@ export default function AdminDealers() {
     <AdminLayout>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-[28px] font-bold text-[#1E3A8A]" style={{ fontFamily: "var(--font-outfit)" }}>
+          <h1 className="text-[28px] font-bold text-[#121B35]" style={{ fontFamily: "var(--font-outfit)" }}>
             Dealers
           </h1>
-          <p className="text-[14px] text-[#6E7488] mt-1">Manage broker and agency profiles</p>
+          <p className="text-[14px] text-[#68646F] mt-1">Manage broker and agency profiles</p>
         </div>
         <button
           onClick={startAdd}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#C9A24E] to-[#E3C25A] text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all text-[14px]"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#DDAA42] to-[#273559] text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all text-[14px]"
         >
           <Plus className="size-5" /> Add Dealer
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-[#D5DEF2]/30 overflow-hidden">
-        <div className="p-4 border-b border-[#D5DEF2]/30 flex gap-4 items-center">
-          <div className="flex-1 max-w-md flex items-center gap-2 bg-[#F1F5FF] rounded-xl px-4 py-2.5 border border-[#D5DEF2]/30 focus-within:border-[#C9A24E]/40">
-            <Search className="size-4 text-[#6E7488]" />
+      <div className="bg-white rounded-2xl shadow-sm border border-[#E4E0E7]/30 overflow-hidden">
+        <div className="p-4 border-b border-[#E4E0E7]/30 flex gap-4 items-center">
+          <div className="flex-1 max-w-md flex items-center gap-2 bg-[#F8F7FA] rounded-xl px-4 py-2.5 border border-[#E4E0E7]/30 focus-within:border-[#DDAA42]/40">
+            <Search className="size-4 text-[#68646F]" />
             <input
               type="text"
               placeholder="Search by name or agency..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 bg-transparent text-[14px] text-[#1E3A8A] placeholder-[#6E7488] outline-none"
+              className="flex-1 bg-transparent text-[14px] text-[#121B35] placeholder-[#68646F] outline-none"
             />
           </div>
         </div>
@@ -122,7 +122,7 @@ export default function AdminDealers() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
-              <tr className="bg-[#F8FAFC] border-b border-[#D5DEF2]/50 text-[12px] font-bold text-[#6E7488] uppercase tracking-wider">
+              <tr className="bg-[#F8FAFC] border-b border-[#E4E0E7]/50 text-[12px] font-bold text-[#68646F] uppercase tracking-wider">
                 <th className="px-6 py-4 font-medium">Dealer / Agency</th>
                 <th className="px-6 py-4 font-medium">Contact</th>
                 <th className="px-6 py-4 font-medium">Deal Types</th>
@@ -130,31 +130,31 @@ export default function AdminDealers() {
                 <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#D5DEF2]/30">
+            <tbody className="divide-y divide-[#E4E0E7]/30">
               {filtered.map((d) => (
                 <tr key={d.id} className="hover:bg-[#F8FAFC]/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="size-10 rounded-full bg-gradient-to-br from-[#D4AF37]/10 to-[#E8C66A]/20 flex items-center justify-center font-bold text-[#C9A24E]">
+                      <div className="size-10 rounded-full bg-gradient-to-br from-[#DDAA42]/10 to-[#F2C052]/20 flex items-center justify-center font-bold text-[#DDAA42]">
                         {d.logo ? <img src={d.logo} alt="" className="size-full rounded-full object-cover" /> : d.name[0]}
                       </div>
                       <div>
-                        <div className="font-bold text-[#1E3A8A] text-[14px]">{d.name}</div>
-                        <div className="text-[12.5px] text-[#6E7488]">{d.agency}</div>
+                        <div className="font-bold text-[#121B35] text-[14px]">{d.name}</div>
+                        <div className="text-[12.5px] text-[#68646F]">{d.agency}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="space-y-1">
-                      {d.phone && <div className="text-[12.5px] text-[#6E7488] flex items-center gap-1.5"><Phone className="size-3" /> {d.phone}</div>}
-                      {d.email && <div className="text-[12.5px] text-[#6E7488] flex items-center gap-1.5"><Mail className="size-3" /> {d.email}</div>}
-                      {!d.phone && !d.email && <span className="text-[12.5px] text-[#6E7488] italic">No contact info</span>}
+                      {d.phone && <div className="text-[12.5px] text-[#68646F] flex items-center gap-1.5"><Phone className="size-3" /> {d.phone}</div>}
+                      {d.email && <div className="text-[12.5px] text-[#68646F] flex items-center gap-1.5"><Mail className="size-3" /> {d.email}</div>}
+                      {!d.phone && !d.email && <span className="text-[12.5px] text-[#68646F] italic">No contact info</span>}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1">
                       {d.dealsIn.map((t) => (
-                        <span key={t} className="px-2 py-0.5 rounded bg-[#F1F5FF] text-[#1E3A8A] text-[10px] font-bold">{t}</span>
+                        <span key={t} className="px-2 py-0.5 rounded bg-[#F8F7FA] text-[#121B35] text-[10px] font-bold">{t}</span>
                       ))}
                     </div>
                   </td>
@@ -163,10 +163,10 @@ export default function AdminDealers() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
-                      <button onClick={() => startEdit(d)} className="p-2 text-[#6E7488] hover:text-[#C9A24E] hover:bg-[#F1F5FF] rounded-lg transition-colors">
+                      <button onClick={() => startEdit(d)} className="p-2 text-[#68646F] hover:text-[#DDAA42] hover:bg-[#F8F7FA] rounded-lg transition-colors">
                         <Pencil className="size-4" />
                       </button>
-                      <button onClick={() => remove(d.id)} className="p-2 text-[#6E7488] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                      <button onClick={() => remove(d.id)} className="p-2 text-[#68646F] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                         <Trash2 className="size-4" />
                       </button>
                     </div>
@@ -175,7 +175,7 @@ export default function AdminDealers() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-[#6E7488] text-[14px]">
+                  <td colSpan={5} className="px-6 py-8 text-center text-[#68646F] text-[14px]">
                     No dealers found.
                   </td>
                 </tr>
@@ -186,11 +186,11 @@ export default function AdminDealers() {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-[#0B1B43]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-[#0B1328]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-[#F8FAFC] rounded-2xl shadow-2xl w-full max-w-2xl my-auto">
-            <div className="px-6 py-4 border-b border-[#D5DEF2] flex items-center justify-between bg-white rounded-t-2xl">
-              <h2 className="text-[18px] font-bold text-[#1E3A8A]">{editing ? "Edit Dealer" : "Add Dealer"}</h2>
-              <button onClick={() => setShowForm(false)} className="text-[#6E7488] hover:text-[#1E3A8A]">
+            <div className="px-6 py-4 border-b border-[#E4E0E7] flex items-center justify-between bg-white rounded-t-2xl">
+              <h2 className="text-[18px] font-bold text-[#121B35]">{editing ? "Edit Dealer" : "Add Dealer"}</h2>
+              <button onClick={() => setShowForm(false)} className="text-[#68646F] hover:text-[#121B35]">
                 <X className="size-5" />
               </button>
             </div>
@@ -235,8 +235,8 @@ export default function AdminDealers() {
                   placeholder="Short bio or description of the agency..."
                 />
               </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-[#D5DEF2]">
-                <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2.5 rounded-xl font-bold text-[14px] text-[#6E7488] hover:bg-[#E2E9FB] transition-colors">
+              <div className="flex justify-end gap-3 pt-4 border-t border-[#E4E0E7]">
+                <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2.5 rounded-xl font-bold text-[14px] text-[#68646F] hover:bg-[#F3F1F5] transition-colors">
                   Cancel
                 </button>
                 <button type="submit" disabled={submitting} className="px-5 py-2.5 btn-gold rounded-xl font-bold text-[14px] shadow-md disabled:opacity-50">

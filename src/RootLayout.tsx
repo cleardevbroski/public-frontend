@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { Outlet, ScrollRestoration } from "react-router-dom";
 import { AuthProvider } from "@/components/acres/AuthContext";
+import AnalyticsPageTracker from "@/components/AnalyticsPageTracker";
 
 /**
  * Root layout — replaces the `<body>` of the Next `app/layout.tsx`. The
@@ -10,6 +11,7 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <ScrollRestoration />
+      <AnalyticsPageTracker />
       <Suspense fallback={null}>
         <Outlet />
       </Suspense>

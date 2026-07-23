@@ -1,10 +1,9 @@
 /*
  * Maps the CSS variables that Next's `next/font/google` used to inject on <html>
  * to the @fontsource-variable font families, so globals.css's `@theme inline`
- * block resolves identical fonts. Open Sans → body sans; Playfair Display →
- * headings (mapped to --font-outfit, matching the source layout.tsx).
+ * block resolves the same compact, readable sans-serif family across the UI.
  */
 :root {
   --font-open-sans: "Open Sans Variable", "Open Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-outfit: "Playfair Display Variable", "Playfair Display", Georgia, serif;
+  --font-outfit: "Open Sans Variable", "Open Sans", ui-sans-serif, system-ui, sans-serif;
 }

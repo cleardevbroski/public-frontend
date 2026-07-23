@@ -1,11 +1,11 @@
-import { adminLogin as apiAdminLogin, hasToken, removeToken } from "@/lib/api";
+import { adminLogin as apiAdminLogin, hasAdminToken, removeAdminToken } from "@/lib/api";
 
 const ADMIN_FLAG = "cleartitle_admin_auth";
 
 export function isAdminAuthed(): boolean {
   if (typeof window === "undefined") return false;
   // Authed only when both the admin flag and a JWT are present.
-  return localStorage.getItem(ADMIN_FLAG) === "1" && hasToken();
+  return localStorage.getItem(ADMIN_FLAG) === "1" && hasAdminToken();
 }
 
 /** Backend-backed admin login. Resolves true on success and persists the session. */
@@ -23,6 +23,6 @@ export async function adminLogin(username: string, password: string): Promise<bo
 export function adminLogout(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(ADMIN_FLAG);
-  removeToken();
+  removeAdminToken();
   window.dispatchEvent(new Event("cleartitle:admin-auth-changed"));
 }

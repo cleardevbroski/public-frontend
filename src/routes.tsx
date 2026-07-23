@@ -21,6 +21,9 @@ const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
 const AdminTestimonials = lazy(() => import("@/pages/admin/AdminTestimonials"));
 const AdminLawyers = lazy(() => import("@/pages/admin/AdminLawyers"));
 const AdminInsights = lazy(() => import("@/pages/admin/AdminInsights"));
+const AdminPropertySubmissions = lazy(() => import("@/pages/admin/AdminPropertySubmissions"));
+const AdminAdvertisements = lazy(() => import("@/pages/admin/AdminAdvertisements"));
+const AdminLoginReports = lazy(() => import("@/pages/admin/AdminLoginReports"));
 
 export const router = createBrowserRouter([
   {
@@ -40,6 +43,9 @@ export const router = createBrowserRouter([
       { path: "/admin/testimonials", element: <AdminTestimonials /> },
       { path: "/admin/lawyers", element: <AdminLawyers /> },
       { path: "/admin/insights", element: <AdminInsights /> },
+      { path: "/admin/property-submissions", element: <AdminPropertySubmissions /> },
+      { path: "/admin/advertisements", element: <AdminAdvertisements /> },
+      { path: "/admin/login-reports", element: <AdminLoginReports /> },
       { path: "/property/:id", element: <Property /> },
       { path: "/dealer/:slug", element: <Dealer /> },
       { path: "/builder/:slug", element: <Builder /> },

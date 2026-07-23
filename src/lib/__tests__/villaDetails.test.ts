@@ -39,6 +39,20 @@ describe("Villa property helpers", () => {
     expect(createVillaConfigurationDetail("4 BHK")).toMatchObject({ configuration: "4 BHK", bedrooms: 4, bathrooms: 4 });
   });
 
+  it("allows repeated BHK rows", () => {
+    const draft = villa();
+    const repeated = Array.from({ length: 3 }, () => ({
+      ...createVillaConfigurationDetail("3 BHK"),
+      price: "₹95 L",
+      plotArea: "2400 sqft",
+      builtUpArea: "3200 sqft",
+      superArea: "3600 sqft",
+    }));
+    draft.configs = ["3 BHK", "3 BHK", "3 BHK"];
+    draft.villaDetails!.configurationDetails = repeated;
+    expect(validateVillaDraft(draft).configurations).toBeUndefined();
+  });
+
   it("orders mixed lakh/crore prices and derives compatibility summaries", () => {
     const draft = villa();
     expect(villaDisplayRange(draft.villaDetails?.configurationDetails, "price")).toBe("₹95 L - ₹2.80 Cr");
@@ -60,8 +74,8 @@ describe("Villa property helpers", () => {
     draft.reraRegistered = true;
     draft.reraNumber = "bad value";
     const errors = validateVillaDraft(draft);
-    expect(errors["villaConfiguration.3 BHK.bedrooms"]).toBeTruthy();
-    expect(errors["villaConfiguration.3 BHK.plotArea"]).toBeTruthy();
+    expect(errors["villaConfiguration.0.bedrooms"]).toBeTruthy();
+    expect(errors["villaConfiguration.0.plotArea"]).toBeTruthy();
     expect(errors.privateGardenArea).toBeTruthy();
     expect(errors.possessionDate).toBeTruthy();
     expect(errors.builder).toBeTruthy();

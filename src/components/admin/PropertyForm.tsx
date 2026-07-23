@@ -32,14 +32,19 @@ import {
   Square,
 } from "lucide-react";
 import MediaUploader from "./MediaUploader";
+import HeroImageUploader from "./HeroImageUploader";
+import OptionalMediaField from "./OptionalMediaField";
 import ApartmentDetailsFields from "./ApartmentDetailsFields";
 import VillaDetailsFields from "./VillaDetailsFields";
 import PlotDetailsFields from "./PlotDetailsFields";
 import CommercialDetailsFields from "./CommercialDetailsFields";
 import PgDetailsFields from "./PgDetailsFields";
-import { addProperty } from "@/lib/propertyStore";
-import { createPublicProperty, fetchBuilders, fetchDealers, uploadPropertyMedia } from "@/lib/api";
-import type { ConfigurationDetail, Property, VillaConfigurationDetail } from "@/components/acres/mock-data";
+import RentDetailsFields from "./RentDetailsFields";
+import LeaseDetailsFields from "./LeaseDetailsFields";
+import { addProperty, updateProperty } from "@/lib/propertyStore";
+import { createPropertyDraft, createPublicProperty, fetchBuilders, fetchDealers, resubmitProperty, uploadPropertyMedia } from "@/lib/api";
+import { trackAnalytics } from "@/lib/analytics";
+import type { ConfigurationDetail, FacilityDetail, Property, VillaConfigurationDetail } from "@/components/acres/mock-data";
 import {
   createConfigurationDetail,
   normalizeBhkLabel,
@@ -63,10 +68,12 @@ import {
 } from "@/lib/plotDetails";
 import { initialCommercialDetails, prepareCommercialPropertyPayload, validateCommercialDraft } from "@/lib/commercialDetails";
 import { initialPgDetails, preparePgPropertyPayload, validatePgDraft } from "@/lib/pgDetails";
+import { initialRentDetails, prepareRentPayload, validateRentDraft } from "@/lib/rentDetails";
+import { initialLeaseDetails, prepareLeasePayload, validateLeaseDraft } from "@/lib/leaseDetails";
 
 const steps = [
   { id: 1, label: "Basic Details", icon: Building2 },
-  { id: 2, label: "Photos & Videos", icon: ImagePlus },
+  { id: 2, label: "Photos", icon: ImagePlus },
   { id: 3, label: "Amenities", icon: Shield },
   { id: 4, label: "Society & Locality", icon: MapPin },
   { id: 5, label: "Review & Submit", icon: Eye },
@@ -74,7 +81,7 @@ const steps = [
 // Future extension point: add a Verification Documents step only after the
 // product owner supplies the required document categories and approval rules.
 
-const propertyTypes = ["Apartment", "Villa", "Penthouse", "Plot", "Commercial", "Independent House", "PG/Co-living"];
+const propertyTypes = ["Apartment", "Villa", "Rent", "Plot", "Commercial", "Lease", "PG/Co-living"];
 const transactionTypes = ["New Property", "Resale"];
 const possessionOptions = ["Ready to Move", "Within 3 Months", "Within 6 Months", "Within 1 Year", "Dec 2026", "Mar 2027", "Jun 2027"];
 const furnishingOptions = ["Unfurnished", "Semi-Furnished", "Fully Furnished"];
@@ -94,44 +101,44 @@ const sectionOptions = [
 ];
 
 const allAmenities = [
-  { name: "Power Backup", icon: Zap, color: "#D4AF37" },
-  { name: "Rain Water Harvesting", icon: CloudRain, color: "#C9A24E" },
-  { name: "Club House", icon: Building2, color: "#E8C66A" },
-  { name: "Swimming Pool", icon: Waves, color: "#C9A24E" },
-  { name: "Security", icon: Shield, color: "#D4AF37" },
-  { name: "Lift", icon: Layers, color: "#C9A24E" },
-  { name: "Reserved Parking", icon: Car, color: "#E8C66A" },
-  { name: "Gymnasium", icon: Dumbbell, color: "#D4AF37" },
-  { name: "Park", icon: TreePine, color: "#C9A24E" },
-  { name: "Water Storage", icon: Droplets, color: "#C9A24E" },
+  { name: "Power Backup", icon: Zap, color: "#DDAA42" },
+  { name: "Rain Water Harvesting", icon: CloudRain, color: "#DDAA42" },
+  { name: "Club House", icon: Building2, color: "#F2C052" },
+  { name: "Swimming Pool", icon: Waves, color: "#DDAA42" },
+  { name: "Security", icon: Shield, color: "#DDAA42" },
+  { name: "Lift", icon: Layers, color: "#DDAA42" },
+  { name: "Reserved Parking", icon: Car, color: "#F2C052" },
+  { name: "Gymnasium", icon: Dumbbell, color: "#DDAA42" },
+  { name: "Park", icon: TreePine, color: "#DDAA42" },
+  { name: "Water Storage", icon: Droplets, color: "#DDAA42" },
 ];
 
 const villaOnlyAmenities = [
-  { name: "Gated Security", icon: Shield, color: "#D4AF37" },
-  { name: "Landscaped Gardens", icon: TreePine, color: "#C9A24E" },
-  { name: "Jogging Track", icon: Zap, color: "#E8C66A" },
-  { name: "Children's Play Area", icon: Home, color: "#D4AF37" },
-  { name: "EV Charging", icon: Zap, color: "#C9A24E" },
-  { name: "Community Hall", icon: Building2, color: "#E8C66A" },
+  { name: "Gated Security", icon: Shield, color: "#DDAA42" },
+  { name: "Landscaped Gardens", icon: TreePine, color: "#DDAA42" },
+  { name: "Jogging Track", icon: Zap, color: "#F2C052" },
+  { name: "Children's Play Area", icon: Home, color: "#DDAA42" },
+  { name: "EV Charging", icon: Zap, color: "#DDAA42" },
+  { name: "Community Hall", icon: Building2, color: "#F2C052" },
 ];
 
 const plotOnlyAmenities = [
-  { name: "Entrance Arch", icon: Home, color: "#D4AF37" },
-  { name: "Jogging Track", icon: Zap, color: "#E8C66A" },
-  { name: "Underground Drainage", icon: Droplets, color: "#C9A24E" },
-  { name: "Street Lighting", icon: Sparkles, color: "#D4AF37" },
-  { name: "Avenue Plantation", icon: TreePine, color: "#C9A24E" },
-  { name: "Cauvery/Borewell Water Supply", icon: Droplets, color: "#E8C66A" },
-  { name: "Security Cabin", icon: Shield, color: "#D4AF37" },
+  { name: "Entrance Arch", icon: Home, color: "#DDAA42" },
+  { name: "Jogging Track", icon: Zap, color: "#F2C052" },
+  { name: "Underground Drainage", icon: Droplets, color: "#DDAA42" },
+  { name: "Street Lighting", icon: Sparkles, color: "#DDAA42" },
+  { name: "Avenue Plantation", icon: TreePine, color: "#DDAA42" },
+  { name: "Cauvery/Borewell Water Supply", icon: Droplets, color: "#F2C052" },
+  { name: "Security Cabin", icon: Shield, color: "#DDAA42" },
 ];
 const commercialOnlyAmenities = [
-  { name: "24x7 Security", icon: Shield, color: "#D4AF37" }, { name: "Passenger Lift", icon: Layers, color: "#C9A24E" },
-  { name: "Service Lift", icon: Layers, color: "#E8C66A" }, { name: "Cafeteria", icon: Building2, color: "#D4AF37" },
-  { name: "Conference Rooms", icon: Building2, color: "#C9A24E" }, { name: "DG Backup", icon: Zap, color: "#E8C66A" },
-  { name: "ATM", icon: Building2, color: "#D4AF37" }, { name: "Food Court", icon: Building2, color: "#C9A24E" },
+  { name: "24x7 Security", icon: Shield, color: "#DDAA42" }, { name: "Passenger Lift", icon: Layers, color: "#DDAA42" },
+  { name: "Service Lift", icon: Layers, color: "#F2C052" }, { name: "Cafeteria", icon: Building2, color: "#DDAA42" },
+  { name: "Conference Rooms", icon: Building2, color: "#DDAA42" }, { name: "DG Backup", icon: Zap, color: "#F2C052" },
+  { name: "ATM", icon: Building2, color: "#DDAA42" }, { name: "Food Court", icon: Building2, color: "#DDAA42" },
 ];
 
-const isStructuredType = (propertyType?: string) => propertyType === "Apartment" || propertyType === "Villa" || propertyType === "Plot" || propertyType === "Commercial" || propertyType === "PG/Co-living";
+const isStructuredType = (propertyType?: string) => propertyType === "Apartment" || propertyType === "Villa" || propertyType === "Plot" || propertyType === "Commercial" || propertyType === "PG/Co-living" || propertyType === "Rent" || propertyType === "Lease";
 
 type FormData = Omit<Property, "id">;
 
@@ -146,10 +153,14 @@ const initialFormData: FormData = {
   plotDetails: undefined,
   commercialDetails: undefined,
   pgDetails: undefined,
+  rentDetails: undefined,
+  leaseDetails: undefined,
   area: "",
   possession: "",
   possessionDetails: { status: "Ready to Move", launchDate: "" },
   builder: "",
+  developerLogoUrl: "",
+  localityMapImageUrl: "",
   image: "",
   badges: [],
   description: "",
@@ -164,10 +175,10 @@ const initialFormData: FormData = {
   transactionType: "New Property",
   listingType: "For Sale",
   ageOfProperty: "Under Construction",
+  heroImages: [],
   images: [],
-  videos: [],
-  virtualTourUrl: "",
   amenities: [],
+  facilities: [],
   ownershipType: "Freehold",
   overlooking: [],
   bookingAmount: "",
@@ -205,15 +216,31 @@ const initialFormData: FormData = {
 };
 
 interface PropertyFormProps {
-  /** "admin" → publishes live; "public" → submits for admin approval (pending). */
+  /** "admin" publishes live; "public" enters the customer moderation workflow. */
   mode?: "admin" | "public";
+  initialData?: Partial<FormData>;
+  submissionId?: string;
 }
 
-export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
+function mergeInitialData(initialData?: Partial<FormData>): FormData {
+  if (!initialData) return initialFormData;
+  return {
+    ...initialFormData,
+    ...initialData,
+    society: { ...initialFormData.society, ...initialData.society },
+    locality: { ...initialFormData.locality, ...initialData.locality },
+    nearbyAmenities: { ...initialFormData.nearbyAmenities, ...initialData.nearbyAmenities },
+    nearbyDetails: { ...initialFormData.nearbyDetails, ...initialData.nearbyDetails },
+  };
+}
+
+export default function PropertyForm({ mode = "admin", initialData, submissionId }: PropertyFormProps) {
   const navigate = useNavigate();
   const isPublic = mode === "public";
+  const isAdminEdit = !isPublic && Boolean(submissionId);
+  const isResubmission = Boolean(submissionId && initialData?.status !== "draft");
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [formData, setFormData] = useState<FormData>(() => mergeInitialData(initialData));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [configInput, setConfigInput] = useState("");
@@ -222,6 +249,14 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
   const [validationErrors, setValidationErrors] = useState<ApartmentErrors>({});
   const [configError, setConfigError] = useState("");
   const [submitError, setSubmitError] = useState("");
+
+  const buildPropertyPayload = () => prepareLeasePayload(prepareRentPayload(preparePgPropertyPayload(prepareCommercialPropertyPayload(preparePlotPropertyPayload(prepareVillaPropertyPayload(preparePropertyPayload({
+    ...formData,
+    heroImages: (formData.heroImages || []).slice(0, 3),
+    image: formData.heroImages?.[0] || formData.images?.[0] || "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80",
+    // Retain the original submitter when an admin edits a customer listing.
+    submittedBy: formData.submittedBy || (isPublic ? "user" : "admin"),
+  })))))));
 
   useEffect(() => {
     if (isPublic) return;
@@ -268,7 +303,21 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
       amenities: prev.amenities?.includes(amenity)
         ? prev.amenities.filter((a) => a !== amenity)
         : [...(prev.amenities || []), amenity],
+      facilities: prev.amenities?.includes(amenity)
+        ? prev.facilities?.filter((facility) => facility.name !== amenity)
+        : prev.facilities,
     }));
+  };
+
+  const updateFacility = (name: string, updates: Partial<FacilityDetail>) => {
+    setFormData((prev) => {
+      const facilities = [...(prev.facilities || [])];
+      const index = facilities.findIndex((facility) => facility.name === name);
+      const current: FacilityDetail = index >= 0 ? facilities[index] : { id: `facility-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, name, category: "Amenities", status: "Available" };
+      if (index >= 0) facilities[index] = { ...current, ...updates };
+      else facilities.push({ ...current, ...updates });
+      return { ...prev, facilities };
+    });
   };
 
   const visibleAmenities = formData.propertyType === "Villa"
@@ -286,6 +335,9 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
       amenities: allAmenitiesSelected
         ? (prev.amenities || []).filter((name) => !visibleAmenities.some((item) => item.name === name))
         : [...new Set([...(prev.amenities || []), ...visibleAmenities.map((item) => item.name)])],
+      facilities: allAmenitiesSelected
+        ? prev.facilities?.filter((facility) => !visibleAmenities.some((item) => item.name === facility.name))
+        : prev.facilities,
     }));
   };
 
@@ -307,7 +359,7 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
       setConfigError(formData.propertyType === "Plot" ? "Use positive width × length values, for example 30 × 40." : "Use a positive whole-number BHK label, for example 2 BHK.");
       return;
     }
-    if (formData.configs.some((item) => item.toLowerCase() === config.toLowerCase())) {
+    if (formData.propertyType !== "Apartment" && formData.propertyType !== "Villa" && formData.configs.some((item) => item.toLowerCase() === config.toLowerCase())) {
       setConfigError(`${config} has already been added.`);
       return;
     }
@@ -329,9 +381,21 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
     setConfigInput("");
   };
 
-  const removeConfig = (config: string) => {
-    const apartmentRow = formData.configurationDetails?.find((item) => item.configuration === config);
-    const villaRow = formData.villaDetails?.configurationDetails.find((item) => item.configuration === config);
+  const removeConfig = (config: string, occurrence = 0) => {
+    const findOccurrence = <T extends { configuration?: string; plotSize?: string }>(rows: T[] | undefined) =>
+      rows?.filter((item) => (item.configuration || item.plotSize) === config)[occurrence];
+    const removeOccurrence = <T extends { configuration?: string; plotSize?: string }>(rows: T[] | undefined) => {
+      let matches = 0;
+      return rows?.filter((item) => {
+        if ((item.configuration || item.plotSize) !== config) return true;
+        const shouldRemove = matches === occurrence;
+        matches += 1;
+        return !shouldRemove;
+      });
+    };
+    const targetConfigIndex = formData.configs.findIndex((value, index) => value === config && formData.configs.slice(0, index + 1).filter((item) => item === config).length === occurrence + 1);
+    const apartmentRow = findOccurrence(formData.configurationDetails);
+    const villaRow = findOccurrence(formData.villaDetails?.configurationDetails);
     const plotRow = formData.plotDetails?.plotSizeDetails.find((item) => item.plotSize === config);
     const populated = apartmentRow
       ? Boolean(apartmentRow.price || apartmentRow.superBuiltUpArea || apartmentRow.carpetArea || apartmentRow.facings.length)
@@ -341,10 +405,10 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
     if (populated && !window.confirm(`Remove ${config} and all details entered for it?`)) return;
     setFormData((prev) => ({
       ...prev,
-      configs: prev.configs.filter((c) => c !== config),
-      configurationDetails: prev.configurationDetails?.filter((item) => item.configuration !== config),
+      configs: prev.configs.filter((value, index) => index !== targetConfigIndex),
+      configurationDetails: removeOccurrence(prev.configurationDetails),
       villaDetails: prev.villaDetails
-        ? { ...prev.villaDetails, configurationDetails: prev.villaDetails.configurationDetails.filter((item) => item.configuration !== config) }
+        ? { ...prev.villaDetails, configurationDetails: removeOccurrence(prev.villaDetails.configurationDetails) || [] }
         : undefined,
       plotDetails: prev.plotDetails
         ? { ...prev.plotDetails, plotSizeDetails: prev.plotDetails.plotSizeDetails.filter((item) => item.plotSize !== config), inventory: prev.plotDetails.inventory.filter((item) => item.plotSize !== config) }
@@ -352,20 +416,20 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
     }));
   };
 
-  const updateConfigurationDetail = (configuration: string, updates: Partial<ConfigurationDetail>) => {
+  const updateConfigurationDetail = (index: number, updates: Partial<ConfigurationDetail>) => {
     setFormData((prev) => ({
       ...prev,
-      configurationDetails: prev.configurationDetails?.map((row) =>
-        row.configuration === configuration ? { ...row, ...updates } : row
+      configurationDetails: prev.configurationDetails?.map((row, rowIndex) =>
+        rowIndex === index ? { ...row, ...updates } : row
       ),
     }));
   };
 
-  const updateVillaConfigurationDetail = (configuration: string, updates: Partial<VillaConfigurationDetail>) => {
+  const updateVillaConfigurationDetail = (index: number, updates: Partial<VillaConfigurationDetail>) => {
     setFormData((prev) => ({
       ...prev,
       villaDetails: prev.villaDetails
-        ? { ...prev.villaDetails, configurationDetails: prev.villaDetails.configurationDetails.map((row) => row.configuration === configuration ? { ...row, ...updates } : row) }
+        ? { ...prev.villaDetails, configurationDetails: prev.villaDetails.configurationDetails.map((row, rowIndex) => rowIndex === index ? { ...row, ...updates } : row) }
         : undefined,
     }));
   };
@@ -419,6 +483,8 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                 commercialDetails: initialCommercialDetails(), possessionDetails: { status: "Ready to Move", launchDate: "" },
               }
           : propertyType === "PG/Co-living" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: initialPgDetails(), possessionDetails: undefined, reraRegistered: false, reraNumber: "" }
+          : propertyType === "Rent" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: undefined, rentDetails: initialRentDetails(), listingType: "For Rent", possessionDetails: undefined, reraRegistered: false, reraNumber: "" }
+          : propertyType === "Lease" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: undefined, rentDetails: undefined, leaseDetails: initialLeaseDetails(), listingType: "For Rent", possessionDetails: undefined, reraRegistered: false, reraNumber: "" }
           : {
               ...(isStructuredType(prev.propertyType) ? { configs: [] } : {}),
               configurationDetails: undefined,
@@ -437,7 +503,6 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
         maintenanceCharges: undefined,
         maintenancePeriod: undefined,
         reraNumber: undefined,
-        virtualTourUrl: undefined,
         nearbyDetails: undefined,
       } : {}),
       ...(propertyType !== "Apartment" ? { ownershipType: undefined, overlooking: undefined, bookingAmount: undefined, maintenanceCharges: undefined, maintenancePeriod: undefined } : {}),
@@ -458,6 +523,8 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
       else if (formData.propertyType === "Plot") setValidationErrors(validatePlotDraft(formData));
       else if (formData.propertyType === "Commercial") setValidationErrors(validateCommercialDraft(formData));
       else if (formData.propertyType === "PG/Co-living") setValidationErrors(validatePgDraft(formData));
+      else if (formData.propertyType === "Rent") setValidationErrors(validateRentDraft(formData));
+      else if (formData.propertyType === "Lease") setValidationErrors(validateLeaseDraft(formData));
       else setValidationErrors({ basic: "Complete all required fields before continuing." });
       return;
     }
@@ -493,32 +560,71 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
       const errors = validateCommercialDraft(formData);
       if (Object.keys(errors).length) { setValidationErrors(errors); setSubmitError("Some Commercial details are invalid. Return to the highlighted step and correct them."); return; }
     } else if (formData.propertyType === "PG/Co-living") { const errors = validatePgDraft(formData); if (Object.keys(errors).length) { setValidationErrors(errors); setSubmitError("Some PG details are invalid. Return to the highlighted step and correct them."); return; }
-    }
+    } else if (formData.propertyType === "Rent") { const errors=validateRentDraft(formData); if(Object.keys(errors).length){setValidationErrors(errors);return;} }
+    else if (formData.propertyType === "Lease") { const errors=validateLeaseDraft(formData); if(Object.keys(errors).length){setValidationErrors(errors);return;} }
     setIsSubmitting(true);
     setSubmitError("");
     try {
-      const propertyPayload = preparePgPropertyPayload(prepareCommercialPropertyPayload(preparePlotPropertyPayload(prepareVillaPropertyPayload(preparePropertyPayload({
-        ...formData,
-        image: formData.images?.[0] || "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80",
-        // Additional metadata
-        submittedBy: isPublic ? "user" : "admin",
-      })))));
+      const propertyPayload = buildPropertyPayload();
 
       if (isPublic) {
-        // Public submissions go to the pending queue via public API
-        await createPublicProperty(propertyPayload as any);
+        if (submissionId) await resubmitProperty(submissionId, propertyPayload as any);
+        else await createPublicProperty(propertyPayload as any);
+        trackAnalytics("public_property_submitted", { propertyTitle: formData.title, location: formData.subtitle, propertyType: formData.propertyType, source: submissionId ? "customer_resubmission" : "customer_submission" });
         setSubmitted(true);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        // Admin posts go live via admin API
-        const property = await addProperty({ ...propertyPayload, published: true } as any);
+        let property;
+        if (isAdminEdit) {
+          // Editing must not overwrite the customer account or any moderation
+          // state that belongs to the existing listing.
+          const {
+            id: _id,
+            _id: _mongoId,
+            postedBy: _postedBy,
+            postedDate: _postedDate,
+            submittedBy: _submittedBy,
+            published: _published,
+            status: _status,
+            verified: _verified,
+            featured: _featured,
+            source: _source,
+            submissionVersion: _submissionVersion,
+            lastSubmittedAt: _lastSubmittedAt,
+            reviewedAt: _reviewedAt,
+            publishedAt: _publishedAt,
+            rejectionReason: _rejectionReason,
+            reviewMessages: _reviewMessages,
+            createdAt: _createdAt,
+            updatedAt: _updatedAt,
+            __v: _version,
+            ...editablePayload
+          } = propertyPayload as Record<string, unknown>;
+          property = await updateProperty(submissionId!, editablePayload as any);
+        } else {
+          // New admin posts go live immediately.
+          property = await addProperty({ ...propertyPayload, published: true } as any);
+        }
         if (property) {
-          navigate(`/admin?posted=${property.id}`);
+          navigate(`/admin?${isAdminEdit ? "updated" : "posted"}=${property.id}`);
         }
       }
     } catch (error) {
       console.error(error);
       setSubmitError(error instanceof Error ? error.message : "Unable to submit the property. Please try again.");
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (isSubmitting || !isPublic || submissionId) return;
+    setIsSubmitting(true);
+    setSubmitError("");
+    try {
+      await createPropertyDraft(buildPropertyPayload() as any);
+      navigate("/postproperty?view=my");
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Unable to save draft");
       setIsSubmitting(false);
     }
   };
@@ -529,14 +635,15 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
         if (!(formData.title.trim() && formData.subtitle.trim())) return false;
         if (formData.propertyType === "Apartment") return Object.keys(validateApartmentDraft(formData)).length === 0;
         if (formData.propertyType === "Villa") return Object.keys(validateVillaDraft(formData)).length === 0;
-        if (formData.propertyType === "Plot") return Object.keys(validatePlotDraft(formData)).filter((key) => !["layoutMapUrl", "virtualTourUrl", "pinCode"].includes(key)).length === 0;
+        if (formData.propertyType === "Plot") return Object.keys(validatePlotDraft(formData)).filter((key) => !["layoutMapUrl", "pinCode"].includes(key)).length === 0;
         if (formData.propertyType === "Commercial") return Object.keys(validateCommercialDraft(formData)).length === 0;
         if (formData.propertyType === "PG/Co-living") return Object.keys(validatePgDraft(formData)).length === 0;
+        if (formData.propertyType === "Rent") return Object.keys(validateRentDraft(formData)).length === 0;
+        if (formData.propertyType === "Lease") return Object.keys(validateLeaseDraft(formData)).length === 0;
         return !!(formData.price && formData.area && formData.configs.length > 0);
       case 2:
-        if (formData.propertyType === "Apartment") return !validateApartmentDraft(formData).virtualTourUrl;
-        if (formData.propertyType === "Villa") return !validateVillaDraft(formData).virtualTourUrl;
-        if (formData.propertyType === "Plot") return !validatePlotDraft(formData).layoutMapUrl && !validatePlotDraft(formData).virtualTourUrl;
+        if (formData.propertyType === "Apartment" || formData.propertyType === "Villa") return true;
+        if (formData.propertyType === "Plot") return !validatePlotDraft(formData).layoutMapUrl;
         if (formData.propertyType === "Commercial") return true;
         return true;
       case 3:
@@ -556,20 +663,20 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
 
   if (submitted && isPublic) {
     return (
-      <div className="max-w-2xl mx-auto text-center bg-white rounded-3xl p-10 md:p-14 shadow-md border border-[#D5DEF2]/40">
-        <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-[#E0B84A] to-[#D4AF37] flex items-center justify-center shadow-lg">
-          <Check className="w-10 h-10 text-[#1E3A8A]" strokeWidth={3} />
+      <div className="max-w-2xl mx-auto text-center bg-white rounded-3xl p-10 md:p-14 shadow-md border border-[#E4E0E7]/40">
+        <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-[#F2C052] to-[#DDAA42] flex items-center justify-center shadow-lg">
+          <Check className="w-10 h-10 text-[#121B35]" strokeWidth={3} />
         </div>
-        <h2 className="text-[26px] md:text-[32px] font-bold text-[#1E3A8A] mt-6">
+        <h2 className="text-[26px] md:text-[32px] font-bold text-[#121B35] mt-6">
           Property Submitted for Review
         </h2>
-        <p className="text-[15px] text-[#6E7488] mt-3 leading-relaxed">
-          Thank you! Your property <span className="font-bold text-[#1E3A8A]">{formData.title || "listing"}</span> has
+        <p className="text-[15px] text-[#68646F] mt-3 leading-relaxed">
+          Thank you! Your property <span className="font-bold text-[#121B35]">{formData.title || "listing"}</span> has
           been submitted. Our team will verify the details and publish it on ClearTitle One shortly. You&apos;ll be
           notified once it goes live.
         </p>
         <div className="mt-6 inline-flex items-center gap-2 bg-amber-50 text-amber-700 text-[13px] font-bold px-4 py-2 rounded-full">
-          <Clock className="w-4 h-4" /> Status: Pending Verification
+          <Clock className="w-4 h-4" /> Status: {isResubmission ? "Resubmitted" : "Submitted"}
         </div>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <button
@@ -578,13 +685,13 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
               setCurrentStep(1);
               setSubmitted(false);
             }}
-            className="px-6 py-3 rounded-xl text-[14px] font-bold border border-[#D5DEF2] text-[#1E3A8A] hover:border-[#D4AF37] transition-all"
+            className="px-6 py-3 rounded-xl text-[14px] font-bold border border-[#E4E0E7] text-[#121B35] hover:border-[#DDAA42] transition-all"
           >
             Submit Another Property
           </button>
           <button
             onClick={() => navigate("/")}
-            className="px-6 py-3 rounded-xl text-[14px] font-bold bg-[#1E3A8A] text-[#E8C66A] hover:bg-[#25459E] transition-all"
+            className="px-6 py-3 rounded-xl text-[14px] font-bold bg-[#121B35] text-[#F2C052] hover:bg-[#273559] transition-all"
           >
             Back to Home
           </button>
@@ -593,12 +700,12 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
     );
   }
 
-  const previewData = preparePgPropertyPayload(prepareCommercialPropertyPayload(preparePlotPropertyPayload(prepareVillaPropertyPayload(preparePropertyPayload(formData)))));
+  const previewData = prepareLeasePayload(prepareRentPayload(preparePgPropertyPayload(prepareCommercialPropertyPayload(preparePlotPropertyPayload(prepareVillaPropertyPayload(preparePropertyPayload(formData)))))));
 
   return (
     <div className="max-w-4xl mx-auto">
       {/* Step Progress Bar */}
-      <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-[#D5DEF2]/30">
+      <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-[#E4E0E7]/30">
         <div className="flex items-center justify-between mb-4">
           {steps.map((step, idx) => {
             const Icon = step.icon;
@@ -616,27 +723,27 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                   <div
                     className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
                       isCompleted
-                        ? "bg-[#C9A24E] text-white shadow-md"
+                        ? "bg-[#DDAA42] text-[#0B1328] shadow-md"
                         : isActive
-                        ? "bg-gradient-to-br from-[#C9A24E] to-[#E3C25A] text-white shadow-lg scale-110"
-                        : "bg-[#F1F5FF] text-[#6E7488] border border-[#D5DEF2]/30"
+                        ? "bg-gradient-to-br from-[#DDAA42] to-[#273559] text-white shadow-lg scale-110"
+                        : "bg-[#F8F7FA] text-[#68646F] border border-[#E4E0E7]/30"
                     }`}
                   >
                     {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
                   </div>
                   <span
                     className={`text-[11px] font-medium hidden sm:block ${
-                      isActive ? "text-[#C9A24E]" : isCompleted ? "text-[#C9A24E]" : "text-[#6E7488]"
+                      isActive ? "text-[#DDAA42]" : isCompleted ? "text-[#DDAA42]" : "text-[#68646F]"
                     }`}
                   >
                     {step.label}
                   </span>
                 </button>
                 {idx < steps.length - 1 && (
-                  <div className="flex-1 mx-2 h-0.5 rounded-full overflow-hidden bg-[#E2E9FB]">
+                  <div className="flex-1 mx-2 h-0.5 rounded-full overflow-hidden bg-[#F3F1F5]">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        isCompleted ? "bg-[#C9A24E] w-full" : "bg-transparent w-0"
+                        isCompleted ? "bg-[#DDAA42] w-full" : "bg-transparent w-0"
                       }`}
                     />
                   </div>
@@ -645,18 +752,18 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
             );
           })}
         </div>
-        <p className="text-[13px] text-[#6E7488] text-center">
+        <p className="text-[13px] text-[#68646F] text-center">
           Step {currentStep} of {steps.length} — {steps[currentStep - 1].label}
         </p>
       </div>
 
       {/* Form Content */}
-      <div className="bg-white rounded-2xl shadow-sm border border-[#D5DEF2]/30 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-[#E4E0E7]/30 overflow-hidden">
         <div className="p-6 lg:p-8">
           {/* STEP 1: Basic Details */}
           {currentStep === 1 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-              <h2 className="text-[20px] font-bold text-[#1E3A8A]" style={{ fontFamily: "var(--font-outfit)" }}>
+              <h2 className="text-[20px] font-bold text-[#121B35]" style={{ fontFamily: "var(--font-outfit)" }}>
                 Property Basic Details
               </h2>
               {Object.values(validationErrors).some(Boolean) && (
@@ -667,8 +774,8 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
 
               {/* Property Type */}
               <div>
-                <label className="block text-[13px] font-semibold text-[#243559] mb-2">
-                  Property Type <span className="text-[#E8C66A]">*</span>
+                <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">
+                  Property Type <span className="text-[#F2C052]">*</span>
                 </label>
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                   {propertyTypes.map((type) => (
@@ -678,8 +785,8 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                       onClick={() => changePropertyType(type)}
                       className={`px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 border ${
                         formData.propertyType === type
-                          ? "bg-[#C9A24E] text-white border-[#C9A24E] shadow-md"
-                          : "bg-[#F1F5FF] text-[#243559] border-[#D5DEF2]/30 hover:border-[#C9A24E]/40"
+                          ? "bg-[#DDAA42] text-[#0B1328] border-[#DDAA42] shadow-md"
+                          : "bg-[#F8F7FA] text-[#3F3D46] border-[#E4E0E7]/30 hover:border-[#DDAA42]/40"
                       }`}
                     >
                       {type}
@@ -691,27 +798,27 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
               {/* Title & Location */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">
-                    Property / Project Name <span className="text-[#E8C66A]">*</span>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">
+                    Property / Project Name <span className="text-[#F2C052]">*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.title}
                     onChange={(e) => updateField("title", e.target.value)}
                     placeholder="e.g. Prestige Lakeside Habitat"
-                    className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                    className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">
-                    Location / Subtitle <span className="text-[#E8C66A]">*</span>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">
+                    Location / Subtitle <span className="text-[#F2C052]">*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.subtitle}
                     onChange={(e) => updateField("subtitle", e.target.value)}
                     placeholder="e.g. Whitefield, Bangalore"
-                    className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                    className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                   />
                 </div>
               </div>
@@ -769,51 +876,55 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                 />
               ) : formData.propertyType === "PG/Co-living" ? (
                 <PgDetailsFields details={formData.pgDetails || initialPgDetails()} setDetails={(value) => updateField("pgDetails", value)} errors={validationErrors} />
+              ) : formData.propertyType === "Rent" ? (
+                <RentDetailsFields details={formData.rentDetails || initialRentDetails()} setDetails={(value) => updateField("rentDetails", value)} errors={validationErrors} />
+              ) : formData.propertyType === "Lease" ? (
+                <LeaseDetailsFields details={formData.leaseDetails || initialLeaseDetails()} setDetails={(value) => updateField("leaseDetails", value)} errors={validationErrors} />
               ) : (
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Configurations <span className="text-[#E8C66A]">*</span></label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Configurations <span className="text-[#F2C052]">*</span></label>
                   <div className="flex gap-2 mb-2">
-                    <input type="text" value={configInput} onChange={(e) => setConfigInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addConfig())} placeholder="e.g. 3 BHK" className="flex-1 px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] focus:outline-none focus:border-[#C9A24E]" />
-                    <button type="button" onClick={addConfig} className="px-4 py-3 bg-[#C9A24E] text-white rounded-xl text-[13px] font-medium">Add</button>
+                    <input type="text" value={configInput} onChange={(e) => setConfigInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addConfig())} placeholder="e.g. 3 BHK" className="flex-1 px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42]" />
+                    <button type="button" onClick={addConfig} className="px-4 py-3 bg-[#DDAA42] text-[#0B1328] rounded-xl text-[13px] font-medium">Add</button>
                   </div>
-                  <div className="flex flex-wrap gap-2">{formData.configs.map((config) => <span key={config} className="inline-flex items-center gap-1 bg-[#E2E9FB] text-[#C9A24E] px-3 py-1.5 rounded-lg text-[13px] font-medium">{config}<button type="button" onClick={() => removeConfig(config)}>×</button></span>)}</div>
+                  <div className="flex flex-wrap gap-2">{formData.configs.map((config) => <span key={config} className="inline-flex items-center gap-1 bg-[#F3F1F5] text-[#DDAA42] px-3 py-1.5 rounded-lg text-[13px] font-medium">{config}<button type="button" onClick={() => removeConfig(config)}>×</button></span>)}</div>
                 </div>
               )}
 
               {/* Price & Area */}
               {(!isStructuredType(formData.propertyType) || formData.propertyType === "Commercial") && <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">
-                    Price <span className="text-[#E8C66A]">*</span>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">
+                    Price <span className="text-[#F2C052]">*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.price}
                     onChange={(e) => updateField("price", e.target.value)}
                     placeholder="e.g. ₹ 1.25 Cr"
-                    className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                    className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Price per Sqft</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Price per Sqft</label>
                   <input
                     type="text"
                     value={formData.pricePerSqft || ""}
                     onChange={(e) => updateField("pricePerSqft", e.target.value)}
                     placeholder="e.g. ₹ 8,500/sqft"
-                    className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                    className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">
-                    Area <span className="text-[#E8C66A]">*</span>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">
+                    Area <span className="text-[#F2C052]">*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.area}
                     onChange={(e) => updateField("area", e.target.value)}
                     placeholder="e.g. 1500 sqft"
-                    className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                    className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                   />
                 </div>
               </div>}
@@ -821,7 +932,7 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
               {/* Bedrooms, Bathrooms, Floor */}
               {!isStructuredType(formData.propertyType) && <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Bedrooms</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Bedrooms</label>
                   <div className="flex items-center gap-2">
                     {[1, 2, 3, 4, 5].map((n) => (
                       <button
@@ -829,8 +940,8 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                         onClick={() => updateField("bedrooms", n)}
                         className={`w-11 h-11 rounded-xl text-[14px] font-semibold transition-all duration-200 border ${
                           formData.bedrooms === n
-                            ? "bg-[#C9A24E] text-white border-[#C9A24E] shadow-md"
-                            : "bg-[#F1F5FF] text-[#243559] border-[#D5DEF2]/30 hover:border-[#C9A24E]/40"
+                            ? "bg-[#DDAA42] text-[#0B1328] border-[#DDAA42] shadow-md"
+                            : "bg-[#F8F7FA] text-[#3F3D46] border-[#E4E0E7]/30 hover:border-[#DDAA42]/40"
                         }`}
                       >
                         {n}
@@ -839,7 +950,7 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Bathrooms</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Bathrooms</label>
                   <div className="flex items-center gap-2">
                     {[1, 2, 3, 4, 5].map((n) => (
                       <button
@@ -847,8 +958,8 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                         onClick={() => updateField("bathrooms", n)}
                         className={`w-11 h-11 rounded-xl text-[14px] font-semibold transition-all duration-200 border ${
                           formData.bathrooms === n
-                            ? "bg-[#D4AF37] text-white border-[#D4AF37] shadow-md"
-                            : "bg-[#F1F5FF] text-[#243559] border-[#D5DEF2]/30 hover:border-[#D4AF37]/40"
+                            ? "bg-[#DDAA42] text-[#0B1328] border-[#DDAA42] shadow-md"
+                            : "bg-[#F8F7FA] text-[#3F3D46] border-[#E4E0E7]/30 hover:border-[#DDAA42]/40"
                         }`}
                       >
                         {n}
@@ -857,13 +968,13 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Floor</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Floor</label>
                   <input
                     type="text"
                     value={formData.floor || ""}
                     onChange={(e) => updateField("floor", e.target.value)}
                     placeholder="e.g. 3rd of 12 Floors"
-                    className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                    className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                   />
                 </div>
               </div>}
@@ -871,11 +982,11 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
               {/* Possession, Builder, Transaction Type, Listing Type */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {!isStructuredType(formData.propertyType) && <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Possession</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Possession</label>
                   <select
                     value={formData.possession || ""}
                     onChange={(e) => updateField("possession", e.target.value)}
-                    className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                    className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                   >
                     <option value="">Select</option>
                     {possessionOptions.map((o) => (
@@ -884,20 +995,20 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                   </select>
                 </div>}
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Builder / Developer {(formData.propertyType === "Villa" || formData.propertyType === "Plot") && <span className="text-[#E8C66A]">*</span>}</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Builder / Developer {(formData.propertyType === "Villa" || formData.propertyType === "Plot") && <span className="text-[#F2C052]">*</span>}</label>
                   <input
                     type="text"
                     list={!isPublic ? "builder-options" : undefined}
                     value={formData.builder || ""}
                     onChange={(e) => updateField("builder", e.target.value)}
                     placeholder="e.g. Prestige Group"
-                    className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                    className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                   />
                   {!isPublic && <datalist id="builder-options">{builders.map((builder) => <option key={builder.id} value={builder.name} />)}</datalist>}
                   {validationErrors.builder && <p className="text-[12px] text-red-600 mt-1">{validationErrors.builder}</p>}
                 </div>
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Transaction Type {(formData.propertyType === "Villa" || formData.propertyType === "Plot") && <span className="text-[#E8C66A]">*</span>}</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Transaction Type {(formData.propertyType === "Villa" || formData.propertyType === "Plot") && <span className="text-[#F2C052]">*</span>}</label>
                   <div className="flex gap-2">
                     {transactionTypes.map((type) => (
                       <button
@@ -906,8 +1017,8 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                         onClick={() => setFormData((prev) => ({ ...prev, transactionType: type, ...(type === "Resale" ? { bookingAmount: "" } : {}) }))}
                         className={`flex-1 px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200 border ${
                           formData.transactionType === type
-                            ? "bg-[#C9A24E] text-white border-[#C9A24E] shadow-md"
-                            : "bg-[#F1F5FF] text-[#243559] border-[#D5DEF2]/30 hover:border-[#C9A24E]/40"
+                            ? "bg-[#DDAA42] text-[#0B1328] border-[#DDAA42] shadow-md"
+                            : "bg-[#F8F7FA] text-[#3F3D46] border-[#E4E0E7]/30 hover:border-[#DDAA42]/40"
                         }`}
                       >
                         {type}
@@ -917,7 +1028,7 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                   {validationErrors.transactionType && <p className="text-[12px] text-red-600 mt-1">{validationErrors.transactionType}</p>}
                 </div>
                 {formData.propertyType !== "Apartment" && <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Listing Type {(formData.propertyType === "Villa" || formData.propertyType === "Plot") && <span className="text-[#E8C66A]">*</span>}</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Listing Type {(formData.propertyType === "Villa" || formData.propertyType === "Plot") && <span className="text-[#F2C052]">*</span>}</label>
                   <div className="flex gap-2">
                     {["For Sale", "For Rent"].map((type) => (
                       <button
@@ -926,8 +1037,8 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                         onClick={() => updateField("listingType", type)}
                         className={`flex-1 px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200 border ${
                           formData.listingType === type
-                            ? "bg-[#C9A24E] text-white border-[#C9A24E] shadow-md"
-                            : "bg-[#F1F5FF] text-[#243559] border-[#D5DEF2]/30 hover:border-[#C9A24E]/40"
+                            ? "bg-[#DDAA42] text-[#0B1328] border-[#DDAA42] shadow-md"
+                            : "bg-[#F8F7FA] text-[#3F3D46] border-[#E4E0E7]/30 hover:border-[#DDAA42]/40"
                         }`}
                       >
                         {type}
@@ -941,11 +1052,11 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
               {!isPublic && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[13px] font-semibold text-[#243559] mb-2">Linked Builder</label>
+                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Linked Builder</label>
                     <select
                       value={formData.builderId || ""}
                       onChange={(e) => updateField("builderId", e.target.value || null)}
-                      className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                      className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                     >
                       <option value="">— None —</option>
                       {builders.map((b) => (
@@ -954,11 +1065,11 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-semibold text-[#243559] mb-2">Linked Dealer</label>
+                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Linked Dealer</label>
                     <select
                       value={formData.dealerId || ""}
                       onChange={(e) => updateField("dealerId", e.target.value || null)}
-                      className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                      className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                     >
                       <option value="">— None —</option>
                       {dealers.map((d) => (
@@ -972,11 +1083,11 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
               {/* Furnishing, Facing, Parking */}
               {!['Plot', 'Commercial'].includes(formData.propertyType || "") && <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Furnishing</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Furnishing</label>
                   <select
                     value={formData.furnishing || ""}
                     onChange={(e) => updateField("furnishing", e.target.value)}
-                    className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                    className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                   >
                     {furnishingOptions.map((o) => (
                       <option key={o} value={o}>{o}</option>
@@ -984,11 +1095,11 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                   </select>
                 </div>
                 {!isStructuredType(formData.propertyType) && <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Facing</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Facing</label>
                   <select
                     value={formData.facing || ""}
                     onChange={(e) => updateField("facing", e.target.value)}
-                    className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                    className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                   >
                     {facingOptions.map((o) => (
                       <option key={o} value={o}>{o}</option>
@@ -996,11 +1107,11 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                   </select>
                 </div>}
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Parking</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Parking</label>
                   <select
                     value={formData.parking || ""}
                     onChange={(e) => updateField("parking", e.target.value)}
-                    className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                    className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                   >
                     {parkingOptions.map((o) => (
                       <option key={o} value={o}>{o}</option>
@@ -1010,32 +1121,32 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
               </div>}
 
               {formData.propertyType === "Apartment" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-2xl border border-[#D5DEF2]/50 bg-[#F1F5FF]/50 p-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-2xl border border-[#E4E0E7]/50 bg-[#F8F7FA]/50 p-5">
                   <div>
-                    <label className="block text-[13px] font-semibold text-[#243559] mb-2">Ownership Type</label>
-                    <select value={formData.ownershipType || ""} onChange={(e) => updateField("ownershipType", e.target.value)} className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] bg-white">
+                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Ownership Type</label>
+                    <select value={formData.ownershipType || ""} onChange={(e) => updateField("ownershipType", e.target.value)} className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] bg-white">
                       {["Freehold", "Leasehold", "Co-operative Society", "Power of Attorney"].map((value) => <option key={value}>{value}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-semibold text-[#243559] mb-2">Overlooking</label>
+                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Overlooking</label>
                     <div className="flex flex-wrap gap-2">
                       {["Club House", "Garden", "Pool", "Main Road", "Park"].map((value) => {
                         const selected = formData.overlooking?.includes(value);
-                        return <button key={value} type="button" onClick={() => updateField("overlooking", selected ? formData.overlooking!.filter((item) => item !== value) : [...(formData.overlooking || []), value])} className={`px-3 py-2 rounded-lg text-[12px] border ${selected ? "bg-[#C9A24E] text-white border-[#C9A24E]" : "bg-white text-[#243559] border-[#D5DEF2]"}`}>{value}</button>;
+                        return <button key={value} type="button" onClick={() => updateField("overlooking", selected ? formData.overlooking!.filter((item) => item !== value) : [...(formData.overlooking || []), value])} className={`px-3 py-2 rounded-lg text-[12px] border ${selected ? "bg-[#DDAA42] text-[#0B1328] border-[#DDAA42]" : "bg-white text-[#3F3D46] border-[#E4E0E7]"}`}>{value}</button>;
                       })}
                     </div>
                   </div>
                   {formData.transactionType === "New Property" && <div>
-                    <label className="block text-[13px] font-semibold text-[#243559] mb-2">Booking Amount <span className="text-[#E8C66A]">*</span></label>
-                    <input value={formData.bookingAmount || ""} onChange={(e) => updateField("bookingAmount", e.target.value)} placeholder="e.g. ₹5,00,000" className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px]" />
+                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Booking Amount <span className="text-[#F2C052]">*</span></label>
+                    <input value={formData.bookingAmount || ""} onChange={(e) => updateField("bookingAmount", e.target.value)} placeholder="e.g. ₹5,00,000" className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
                     {validationErrors.bookingAmount && <p className="text-[12px] text-red-600 mt-1">{validationErrors.bookingAmount}</p>}
                   </div>}
                   <div>
-                    <label className="block text-[13px] font-semibold text-[#243559] mb-2">Maintenance Charges</label>
+                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Maintenance Charges</label>
                     <div className="flex gap-2">
-                      <input value={formData.maintenanceCharges || ""} onChange={(e) => updateField("maintenanceCharges", e.target.value)} placeholder="e.g. ₹4/sqft" className="flex-1 min-w-0 px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px]" />
-                      <select value={formData.maintenancePeriod || "month"} onChange={(e) => updateField("maintenancePeriod", e.target.value as "month" | "quarter" | "year")} className="px-3 py-3 border border-[#D5DEF2] rounded-xl text-[13px] bg-white"><option value="month">/ month</option><option value="quarter">/ quarter</option><option value="year">/ year</option></select>
+                      <input value={formData.maintenanceCharges || ""} onChange={(e) => updateField("maintenanceCharges", e.target.value)} placeholder="e.g. ₹4/sqft" className="flex-1 min-w-0 px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
+                      <select value={formData.maintenancePeriod || "month"} onChange={(e) => updateField("maintenancePeriod", e.target.value as "month" | "quarter" | "year")} className="px-3 py-3 border border-[#E4E0E7] rounded-xl text-[13px] bg-white"><option value="month">/ month</option><option value="quarter">/ quarter</option><option value="year">/ year</option></select>
                     </div>
                   </div>
                 </div>
@@ -1044,11 +1155,11 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
               {/* Age & Badges */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {!isStructuredType(formData.propertyType) && <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Age of Property</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Age of Property</label>
                   <select
                     value={formData.ageOfProperty || ""}
                     onChange={(e) => updateField("ageOfProperty", e.target.value)}
-                    className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                    className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                   >
                     {ageOptions.map((o) => (
                       <option key={o} value={o}>{o}</option>
@@ -1056,7 +1167,7 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                   </select>
                 </div>}
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Badges</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Badges</label>
                   <div className="flex flex-wrap gap-2">
                     {badgeOptions.map((badge) => (
                       <button
@@ -1066,11 +1177,11 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                         className={`px-3 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 border ${
                           formData.badges?.includes(badge)
                             ? badge === "RERA"
-                              ? "bg-[#C9A24E] text-white border-[#C9A24E]"
+                              ? "bg-[#DDAA42] text-[#0B1328] border-[#DDAA42]"
                               : badge === "Premium"
-                              ? "bg-gradient-to-r from-[#C9A24E] to-[#E3C25A] text-white border-[#C9A24E]"
-                              : "bg-[#E8C66A] text-white border-[#E8C66A]"
-                            : "bg-[#F1F5FF] text-[#6E7488] border-[#D5DEF2]/30 hover:border-[#C9A24E]/40"
+                              ? "bg-gradient-to-r from-[#DDAA42] to-[#273559] text-white border-[#DDAA42]"
+                              : "bg-[#F2C052] text-[#0B1328] border-[#F2C052]"
+                            : "bg-[#F8F7FA] text-[#68646F] border-[#E4E0E7]/30 hover:border-[#DDAA42]/40"
                         }`}
                       >
                         {badge}
@@ -1083,109 +1194,123 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
               {/* Homepage Placement (admin only) */}
               {!isPublic && (
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">Homepage Placement</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Homepage Placement</label>
                   <select
                     value={formData.websiteSection || "None"}
                     onChange={(e) => updateField("websiteSection", e.target.value)}
-                    className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                    className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                   >
                     {sectionOptions.map((o) => (
                       <option key={o.value} value={o.value}>{o.label}</option>
                     ))}
                   </select>
-                  <p className="text-[12px] text-[#6E7488] mt-1.5">Choose which homepage section this property appears in</p>
+                  <p className="text-[12px] text-[#68646F] mt-1.5">Choose which homepage section this property appears in</p>
                 </div>
               )}
 
               {/* RERA */}
-              <div className="flex items-center gap-3 p-4 bg-[#F1F5FF] rounded-xl border border-[#D5DEF2]/30">
+              <div className="flex items-center gap-3 p-4 bg-[#F8F7FA] rounded-xl border border-[#E4E0E7]/30">
                 <button
                   type="button"
                   onClick={() => setFormData((prev) => ({ ...prev, reraRegistered: !prev.reraRegistered, ...(!prev.reraRegistered ? {} : { reraNumber: "" }) }))}
                   className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-200 ${
                     formData.reraRegistered
-                      ? "bg-[#C9A24E] text-white"
-                      : "border-2 border-[#D5DEF2] bg-white"
+                      ? "bg-[#DDAA42] text-[#0B1328]"
+                      : "border-2 border-[#E4E0E7] bg-white"
                   }`}
                 >
                   {formData.reraRegistered && <Check className="w-4 h-4" />}
                 </button>
                 <div>
-                  <p className="text-[14px] font-semibold text-[#1E3A8A]">RERA Registered</p>
-                  <p className="text-[12px] text-[#6E7488]">This property is registered under RERA guidelines</p>
+                  <p className="text-[14px] font-semibold text-[#121B35]">RERA Registered</p>
+                  <p className="text-[12px] text-[#68646F]">This property is registered under RERA guidelines</p>
                 </div>
               </div>
               {isStructuredType(formData.propertyType) && formData.reraRegistered && (
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#243559] mb-2">RERA Number <span className="text-[#E8C66A]">*</span></label>
-                  <input value={formData.reraNumber || ""} onChange={(e) => updateField("reraNumber", e.target.value)} placeholder="PRM/KA/RERA/..." className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px]" />
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">RERA Number <span className="text-[#F2C052]">*</span></label>
+                  <input value={formData.reraNumber || ""} onChange={(e) => updateField("reraNumber", e.target.value)} placeholder="PRM/KA/RERA/..." className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
                   {validationErrors.reraNumber && <p className="text-[12px] text-red-600 mt-1">{validationErrors.reraNumber}</p>}
                 </div>
               )}
 
               {/* Description */}
               <div>
-                <label className="block text-[13px] font-semibold text-[#243559] mb-2">Property Description</label>
+                <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Property Description</label>
                 <textarea
                   value={formData.description || ""}
                   onChange={(e) => updateField("description", e.target.value)}
                   placeholder="Describe the property in detail — location benefits, features, nearby landmarks..."
                   rows={4}
-                  className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all resize-none"
+                  className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all resize-none"
                 />
-                {formData.propertyType === "Apartment" && <p className={`text-[12px] mt-1 ${validationErrors.description ? "text-red-600" : "text-[#6E7488]"}`}>{validationErrors.description || `${(formData.description || "").trim().length}/50 minimum characters`}</p>}
+                {formData.propertyType === "Apartment" && <p className={`text-[12px] mt-1 ${validationErrors.description ? "text-red-600" : "text-[#68646F]"}`}>{validationErrors.description || `${(formData.description || "").trim().length}/50 minimum characters`}</p>}
               </div>
             </div>
           )}
 
-          {/* STEP 2: Photos & Videos */}
+          {/* STEP 2: Photos */}
           {currentStep === 2 && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-              <h2 className="text-[20px] font-bold text-[#1E3A8A] mb-6" style={{ fontFamily: "var(--font-outfit)" }}>
-                Property Photos & Videos
+              <h2 className="text-[20px] font-bold text-[#121B35] mb-6" style={{ fontFamily: "var(--font-outfit)" }}>
+                Property Photos
               </h2>
+              <HeroImageUploader
+                images={formData.heroImages || []}
+                onChange={(imgs) => updateField("heroImages", imgs)}
+              />
+              <div className="my-8 border-t border-[#E4E0E7]" />
               <MediaUploader
                 images={formData.images || []}
-                videos={formData.videos || []}
                 onImagesChange={(imgs) => updateField("images", imgs)}
-                onVideosChange={(vids) => updateField("videos", vids)}
               />
-
-              {isStructuredType(formData.propertyType) && (
-                <div className="mt-8 pt-6 border-t border-[#E2E9FB]">
-                  <label className="block text-[15px] font-bold text-[#1E3A8A] mb-2">Virtual Tour / 3D Walkthrough</label>
-                  <input type="url" value={formData.virtualTourUrl || ""} onChange={(e) => updateField("virtualTourUrl", e.target.value)} placeholder="https://example.com/virtual-tour" className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px]" />
-                  <p className="text-[12px] text-[#6E7488] mt-1">Optional secure HTTP(S) link.</p>
-                  {validationErrors.virtualTourUrl && <p className="text-[12px] text-red-600 mt-1">{validationErrors.virtualTourUrl}</p>}
+              <div className="mt-8 border-t border-[#F3F1F5] pt-6">
+                <div className="mb-4">
+                  <h3 className="text-[15px] font-bold text-[#121B35]">Optional Project Presentation</h3>
+                  <p className="mt-1 text-[12px] text-[#68646F]">These files improve the public property page but are never required to continue.</p>
                 </div>
-              )}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <OptionalMediaField
+                    label="Developer logo"
+                    value={formData.developerLogoUrl}
+                    onChange={(value) => updateField("developerLogoUrl", value)}
+                    description="Displayed in the Developer Profile section when provided."
+                  />
+                  <OptionalMediaField
+                    label="Locality map image"
+                    value={formData.localityMapImageUrl}
+                    onChange={(value) => updateField("localityMapImageUrl", value)}
+                    description="Displayed in Locality & Neighbourhood instead of the default placeholder."
+                  />
+                </div>
+              </div>
 
               {formData.propertyType === "Plot" && (
-                <div className="mt-8 pt-6 border-t border-[#E2E9FB]">
-                  <h3 className="text-[15px] font-bold text-[#1E3A8A] mb-1">Master Plan / Layout Map <span className="text-[#E8C66A]">*</span></h3>
-                  <p className="text-[13px] text-[#6E7488] mb-4">Required for buyers to verify plot numbers and availability. Upload JPG, PNG, WebP, or PDF (max 5 MB).</p>
-                  {formData.plotDetails?.layoutMapUrl ? <div className="flex items-center gap-3 p-4 bg-[#F1F5FF] border border-[#D5DEF2]/40 rounded-2xl"><FileText className="w-6 h-6 text-[#C9A24E]" /><span className="flex-1 text-[13px] font-semibold text-[#1E3A8A]">Layout map attached</span><button type="button" onClick={() => updateField("plotDetails", { ...(formData.plotDetails || initialPlotDetails()), layoutMapUrl: "" })} className="text-[12px] font-bold text-red-500">Remove</button></div> : <label className="flex flex-col items-center justify-center gap-2 p-7 border-2 border-dashed border-[#D5DEF2] rounded-2xl cursor-pointer hover:border-[#D4AF37]/60"><FileText className="w-7 h-7 text-[#D4AF37]" /><span className="text-[14px] font-semibold text-[#1E3A8A]">Upload master plan / layout map</span><input type="file" accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf" className="hidden" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; const isPdf = file.type === "application/pdf"; const isImage = ["image/jpeg", "image/png", "image/webp"].includes(file.type); if ((!isPdf && !isImage) || file.size > 5 * 1024 * 1024) { setSubmitError("Layout map must be a JPG, PNG, WebP, or PDF no larger than 5 MB."); event.target.value = ""; return; } try { const url = await uploadPropertyMedia(file, isPdf ? "layout-map-pdf" : "layout-map-image"); updateField("plotDetails", { ...(formData.plotDetails || initialPlotDetails()), layoutMapUrl: url, layoutMapType: isPdf ? "pdf" : "image" }); setSubmitError(""); } catch (error) { setSubmitError(error instanceof Error ? error.message : "Layout-map upload failed."); } }} /></label>}
+                <div className="mt-8 pt-6 border-t border-[#F3F1F5]">
+                  <h3 className="text-[15px] font-bold text-[#121B35] mb-1">Master Plan / Layout Map <span className="text-[#F2C052]">*</span></h3>
+                  <p className="text-[13px] text-[#68646F] mb-4">Required for buyers to verify plot numbers and availability. Upload JPG, PNG, WebP, or PDF (max 5 MB).</p>
+                  {formData.plotDetails?.layoutMapUrl ? <div className="flex items-center gap-3 p-4 bg-[#F8F7FA] border border-[#E4E0E7]/40 rounded-2xl"><FileText className="w-6 h-6 text-[#DDAA42]" /><span className="flex-1 text-[13px] font-semibold text-[#121B35]">Layout map attached</span><button type="button" onClick={() => updateField("plotDetails", { ...(formData.plotDetails || initialPlotDetails()), layoutMapUrl: "" })} className="text-[12px] font-bold text-red-500">Remove</button></div> : <label className="flex flex-col items-center justify-center gap-2 p-7 border-2 border-dashed border-[#E4E0E7] rounded-2xl cursor-pointer hover:border-[#DDAA42]/60"><FileText className="w-7 h-7 text-[#DDAA42]" /><span className="text-[14px] font-semibold text-[#121B35]">Upload master plan / layout map</span><input type="file" accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf" className="hidden" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; const isPdf = file.type === "application/pdf"; const isImage = ["image/jpeg", "image/png", "image/webp"].includes(file.type); if ((!isPdf && !isImage) || file.size > 5 * 1024 * 1024) { setSubmitError("Layout map must be a JPG, PNG, WebP, or PDF no larger than 5 MB."); event.target.value = ""; return; } try { const url = await uploadPropertyMedia(file, isPdf ? "layout-map-pdf" : "layout-map-image"); updateField("plotDetails", { ...(formData.plotDetails || initialPlotDetails()), layoutMapUrl: url, layoutMapType: isPdf ? "pdf" : "image" }); setSubmitError(""); } catch (error) { setSubmitError(error instanceof Error ? error.message : "Layout-map upload failed."); } }} /></label>}
                   {validationErrors.layoutMapUrl && <p className="text-[12px] text-red-600 mt-2">{validationErrors.layoutMapUrl}</p>}
                 </div>
               )}
 
               {/* Brochure Upload */}
-              <div className="mt-8 pt-6 border-t border-[#E2E9FB]">
-                <h3 className="text-[15px] font-bold text-[#1E3A8A] mb-1">Property Brochure</h3>
-                <p className="text-[13px] text-[#6E7488] mb-4">
+              <div className="mt-8 pt-6 border-t border-[#F3F1F5]">
+                <h3 className="text-[15px] font-bold text-[#121B35] mb-1">Property Brochure</h3>
+                <p className="text-[13px] text-[#68646F] mb-4">
                   Upload a PDF brochure buyers can download from the property page (optional).
                 </p>
 
                 {formData.brochure ? (
-                  <div className="flex items-center gap-3 p-4 bg-[#F1F5FF] border border-[#D5DEF2]/40 rounded-2xl">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#E0B84A] to-[#D4AF37] flex items-center justify-center shrink-0">
-                      <FileText className="w-5 h-5 text-[#1E3A8A]" />
+                  <div className="flex items-center gap-3 p-4 bg-[#F8F7FA] border border-[#E4E0E7]/40 rounded-2xl">
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#F2C052] to-[#DDAA42] flex items-center justify-center shrink-0">
+                      <FileText className="w-5 h-5 text-[#121B35]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[14px] font-semibold text-[#1E3A8A] truncate">
+                      <p className="text-[14px] font-semibold text-[#121B35] truncate">
                         {formData.brochureName || "Brochure attached"}
                       </p>
-                      <p className="text-[12px] text-[#6E7488]">Ready to publish</p>
+                      <p className="text-[12px] text-[#68646F]">Ready to publish</p>
                     </div>
                     <button
                       onClick={() => {
@@ -1198,10 +1323,10 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center gap-2 p-8 border-2 border-dashed border-[#D5DEF2] rounded-2xl cursor-pointer hover:border-[#D4AF37]/60 hover:bg-[#F1F5FF]/50 transition-all">
-                    <FileText className="w-8 h-8 text-[#D4AF37]" />
-                    <span className="text-[14px] font-semibold text-[#1E3A8A]">Click to upload brochure</span>
-                    <span className="text-[12px] text-[#6E7488]">PDF, max ~5 MB</span>
+                  <label className="flex flex-col items-center justify-center gap-2 p-8 border-2 border-dashed border-[#E4E0E7] rounded-2xl cursor-pointer hover:border-[#DDAA42]/60 hover:bg-[#F8F7FA]/50 transition-all">
+                    <FileText className="w-8 h-8 text-[#DDAA42]" />
+                    <span className="text-[14px] font-semibold text-[#121B35]">Click to upload brochure</span>
+                    <span className="text-[12px] text-[#68646F]">PDF, max ~5 MB</span>
                     <input
                       type="file"
                       accept="application/pdf,.pdf"
@@ -1235,18 +1360,18 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
               <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
                 <div>
-                  <h2 className="text-[20px] font-bold text-[#1E3A8A] mb-2" style={{ fontFamily: "var(--font-outfit)" }}>
+                  <h2 className="text-[20px] font-bold text-[#121B35] mb-2" style={{ fontFamily: "var(--font-outfit)" }}>
                     Select Amenities
                   </h2>
-                  <p className="text-[14px] text-[#6E7488]">Choose all the amenities available in this property</p>
+                  <p className="text-[14px] text-[#68646F]">Choose all the amenities available in this property</p>
                 </div>
                 <button
                   type="button"
                   onClick={toggleAllAmenities}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-bold border transition-all ${
                     allAmenitiesSelected
-                      ? "bg-[#C9A24E] text-white border-[#C9A24E] shadow-md"
-                      : "bg-white text-[#1E3A8A] border-[#D5DEF2] hover:border-[#C9A24E]/50"
+                      ? "bg-[#DDAA42] text-[#0B1328] border-[#DDAA42] shadow-md"
+                      : "bg-white text-[#121B35] border-[#E4E0E7] hover:border-[#DDAA42]/50"
                   }`}
                 >
                   {allAmenitiesSelected ? (
@@ -1267,8 +1392,8 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                       onClick={() => toggleAmenity(name)}
                       className={`flex flex-col items-center gap-3 p-4 rounded-2xl border-2 transition-all duration-300 ${
                         isSelected
-                          ? "border-[#C9A24E] bg-[#E2E9FB] shadow-md scale-[1.02]"
-                          : "border-[#D5DEF2]/30 bg-[#F1F5FF] hover:border-[#C9A24E]/40 hover:shadow-sm"
+                          ? "border-[#DDAA42] bg-[#F3F1F5] shadow-md scale-[1.02]"
+                          : "border-[#E4E0E7]/30 bg-[#F8F7FA] hover:border-[#DDAA42]/40 hover:shadow-sm"
                       }`}
                     >
                       <div
@@ -1278,11 +1403,11 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                       >
                         <Icon className="w-6 h-6" style={{ color }} />
                       </div>
-                      <span className="text-[12px] font-medium text-[#243559] text-center leading-tight">
+                      <span className="text-[12px] font-medium text-[#3F3D46] text-center leading-tight">
                         {name}
                       </span>
                       {isSelected && (
-                        <div className="w-5 h-5 bg-[#C9A24E] rounded-full flex items-center justify-center">
+                        <div className="w-5 h-5 bg-[#DDAA42] rounded-full flex items-center justify-center">
                           <Check className="w-3 h-3 text-white" />
                         </div>
                       )}
@@ -1292,9 +1417,25 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
               </div>
 
               {(formData.amenities?.length || 0) > 0 && (
-                <p className="mt-4 text-[13px] text-[#C9A24E] font-medium">
-                  ✓ {formData.amenities?.length} amenities selected
-                </p>
+                <div className="mt-6 space-y-4 border-t border-[#F3F1F5] pt-5">
+                  <div><p className="text-[13px] font-bold text-[#121B35]">Facility presentation details</p><p className="mt-1 text-[12px] text-[#68646F]">Optional details appear when a visitor selects a facility on the property page.</p></div>
+                  {formData.amenities?.map((name) => {
+                    const facility = formData.facilities?.find((item) => item.name === name);
+                    return (
+                      <div key={name} className="rounded-xl border border-[#E4E0E7] bg-[#F8F7FA] p-4">
+                        <p className="mb-3 text-[13px] font-bold text-[#3F3D46]">{name}</p>
+                        <div className="grid gap-3 md:grid-cols-3">
+                          <div><label className="mb-1 block text-[11px] font-semibold text-[#5A5762]">Category</label><input value={facility?.category || ""} onChange={(event) => updateFacility(name, { category: event.target.value })} placeholder="Wellness, sports..." className="w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[12px]" /></div>
+                          <div><label className="mb-1 block text-[11px] font-semibold text-[#5A5762]">Status</label><select value={facility?.status || "Available"} onChange={(event) => updateFacility(name, { status: event.target.value as FacilityDetail["status"] })} className="w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[12px]"><option>Available</option><option>Planned</option><option>Under Construction</option></select></div>
+                          <div><label className="mb-1 block text-[11px] font-semibold text-[#5A5762]">Hours</label><input value={facility?.hours || ""} onChange={(event) => updateFacility(name, { hours: event.target.value })} placeholder="e.g. 6 AM – 10 PM" className="w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[12px]" /></div>
+                          <div className="md:col-span-2"><label className="mb-1 block text-[11px] font-semibold text-[#5A5762]">Description</label><textarea rows={2} value={facility?.description || ""} onChange={(event) => updateFacility(name, { description: event.target.value })} placeholder="Access, size and notable features" className="w-full resize-none rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[12px]" /></div>
+                          <OptionalMediaField label={`${name} image`} value={facility?.imageUrl} onChange={(imageUrl) => updateFacility(name, { imageUrl })} description="Upload a facility photo or paste its URL." />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <p className="text-[12px] font-medium text-[#DDAA42]">✓ {formData.amenities?.length} amenities selected</p>
+                </div>
               )}
             </div>
           )}
@@ -1303,7 +1444,7 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
           {currentStep === 4 && (
             <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
               <div>
-                <h2 className="text-[20px] font-bold text-[#1E3A8A] mb-6" style={{ fontFamily: "var(--font-outfit)" }}>
+                <h2 className="text-[20px] font-bold text-[#121B35] mb-6" style={{ fontFamily: "var(--font-outfit)" }}>
                   Society Details
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1316,40 +1457,40 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                     { key: "maintenanceStaff", label: "Maintenance Staff", placeholder: "e.g. Available" },
                   ].map(({ key, label, placeholder }) => (
                     <div key={key}>
-                      <label className="block text-[13px] font-semibold text-[#243559] mb-2">{label}</label>
+                      <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">{label}</label>
                       <input
                         type="text"
                         value={(formData.society as Record<string, string>)?.[key] || ""}
                         onChange={(e) => updateNestedField("society", key, e.target.value)}
                         placeholder={placeholder}
-                        className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                        className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                       />
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="border-t border-[#E2E9FB] pt-8">
-                <h2 className="text-[20px] font-bold text-[#1E3A8A] mb-6" style={{ fontFamily: "var(--font-outfit)" }}>
+              <div className="border-t border-[#F3F1F5] pt-8">
+                <h2 className="text-[20px] font-bold text-[#121B35] mb-6" style={{ fontFamily: "var(--font-outfit)" }}>
                   Locality & Nearby
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                   <div>
-                    <label className="block text-[13px] font-semibold text-[#243559] mb-2">City</label>
+                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">City</label>
                     <input
                       type="text"
                       value={formData.locality?.city || ""}
                       onChange={(e) => updateNestedField("locality", "city", e.target.value)}
                       placeholder="e.g. Bangalore"
-                      className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                      className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-[13px] font-semibold text-[#243559] mb-2">Zone</label>
+                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Zone</label>
                     <select
                       value={formData.locality?.zone || ""}
                       onChange={(e) => updateNestedField("locality", "zone", e.target.value)}
-                      className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                      className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                     >
                       <option value="">Select Zone</option>
                       {["East", "West", "North", "South", "Central"].map((z) => (
@@ -1358,30 +1499,30 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[13px] font-semibold text-[#243559] mb-2">Landmark</label>
+                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Landmark</label>
                     <input
                       type="text"
                       value={formData.locality?.landmark || ""}
                       onChange={(e) => updateNestedField("locality", "landmark", e.target.value)}
                       placeholder="e.g. Near Whitefield Metro"
-                      className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                      className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                     />
                   </div>
                   {isStructuredType(formData.propertyType) && <div>
-                    <label className="block text-[13px] font-semibold text-[#243559] mb-2">PIN Code</label>
-                    <input inputMode="numeric" maxLength={6} value={formData.locality?.pinCode || ""} onChange={(e) => updateNestedField("locality", "pinCode", e.target.value.replace(/\D/g, ""))} placeholder="e.g. 560066" className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px]" />
+                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">PIN Code</label>
+                    <input inputMode="numeric" maxLength={6} value={formData.locality?.pinCode || ""} onChange={(e) => updateNestedField("locality", "pinCode", e.target.value.replace(/\D/g, ""))} placeholder="e.g. 560066" className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
                     {validationErrors.pinCode && <p className="text-[12px] text-red-600 mt-1">{validationErrors.pinCode}</p>}
                   </div>}
                 </div>
 
-                <h3 className="text-[15px] font-semibold text-[#243559] mb-3">Nearby Amenities</h3>
+                <h3 className="text-[15px] font-semibold text-[#3F3D46] mb-3">Nearby Amenities</h3>
                 {isStructuredType(formData.propertyType) ? <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {(["schools", "hospitals", "shopping", "metro"] as const).map((key) => (
-                    <div key={key} className="rounded-xl border border-[#D5DEF2] bg-[#F1F5FF]/40 p-4">
-                      <label className="block text-[13px] font-semibold text-[#243559] mb-2 capitalize">{key === "metro" ? "Metro / Train" : key}</label>
+                    <div key={key} className="rounded-xl border border-[#E4E0E7] bg-[#F8F7FA]/40 p-4">
+                      <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2 capitalize">{key === "metro" ? "Metro / Train" : key}</label>
                       <div className="grid grid-cols-2 gap-2">
-                        <input type="number" min={0} step={1} value={formData.nearbyDetails?.[key]?.count ?? ""} onChange={(e) => updateNearbyDetail(key, "count", e.target.value ? Number(e.target.value) : undefined)} placeholder="Count" className="w-full px-3 py-2.5 border border-[#D5DEF2] rounded-lg text-[13px]" />
-                        <input value={formData.nearbyDetails?.[key]?.distance || ""} onChange={(e) => updateNearbyDetail(key, "distance", e.target.value)} placeholder="Distance, e.g. 2 km" className="w-full px-3 py-2.5 border border-[#D5DEF2] rounded-lg text-[13px]" />
+                        <input type="number" min={0} step={1} value={formData.nearbyDetails?.[key]?.count ?? ""} onChange={(e) => updateNearbyDetail(key, "count", e.target.value ? Number(e.target.value) : undefined)} placeholder="Count" className="w-full px-3 py-2.5 border border-[#E4E0E7] rounded-lg text-[13px]" />
+                        <input value={formData.nearbyDetails?.[key]?.distance || ""} onChange={(e) => updateNearbyDetail(key, "distance", e.target.value)} placeholder="Distance, e.g. 2 km" className="w-full px-3 py-2.5 border border-[#E4E0E7] rounded-lg text-[13px]" />
                       </div>
                       {(validationErrors[`nearby.${key}.count`] || validationErrors[`nearby.${key}.distance`]) && <p className="text-[11px] text-red-600 mt-1">{validationErrors[`nearby.${key}.count`] || validationErrors[`nearby.${key}.distance`]}</p>}
                     </div>
@@ -1394,13 +1535,13 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                     { key: "metro", label: "Metro / Train", placeholder: "e.g. 1.5 km away" },
                   ].map(({ key, label, placeholder }) => (
                     <div key={key}>
-                      <label className="block text-[13px] font-semibold text-[#243559] mb-2">{label}</label>
+                      <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">{label}</label>
                       <input
                         type="text"
                         value={(formData.nearbyAmenities as Record<string, string>)?.[key] || ""}
                         onChange={(e) => updateNestedField("nearbyAmenities", key, e.target.value)}
                         placeholder={placeholder}
-                        className="w-full px-4 py-3 border border-[#D5DEF2] rounded-xl text-[14px] focus:outline-none focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/10 transition-all"
+                        className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                       />
                     </div>
                   ))}
@@ -1413,34 +1554,34 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
           {currentStep === 5 && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#C9A24E] to-[#E3C25A] rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#DDAA42] to-[#273559] rounded-xl flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-[20px] font-bold text-[#1E3A8A]" style={{ fontFamily: "var(--font-outfit)" }}>
+                  <h2 className="text-[20px] font-bold text-[#121B35]" style={{ fontFamily: "var(--font-outfit)" }}>
                     Review Your Property
                   </h2>
-                  <p className="text-[13px] text-[#6E7488]">Verify all details before publishing</p>
+                  <p className="text-[13px] text-[#68646F]">Verify all details before publishing</p>
                 </div>
               </div>
 
               {/* Preview Card */}
-              <div className="bg-[#F1F5FF] rounded-2xl p-6 border border-[#D5DEF2]/30 space-y-6">
+              <div className="bg-[#F8F7FA] rounded-2xl p-6 border border-[#E4E0E7]/30 space-y-6">
                 {/* Header */}
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-[20px] font-bold text-[#1E3A8A]" style={{ fontFamily: "var(--font-outfit)" }}>
+                    <h3 className="text-[20px] font-bold text-[#121B35]" style={{ fontFamily: "var(--font-outfit)" }}>
                       {formData.title || "Untitled Property"}
                     </h3>
-                    <p className="text-[14px] text-[#6E7488] flex items-center gap-1 mt-1">
-                      <MapPin className="w-4 h-4 text-[#C9A24E]" />
+                    <p className="text-[14px] text-[#68646F] flex items-center gap-1 mt-1">
+                      <MapPin className="w-4 h-4 text-[#DDAA42]" />
                       {formData.subtitle || "Location not specified"}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[22px] font-bold text-[#C9A24E]">{previewData.price || "Price TBD"}</p>
+                    <p className="text-[22px] font-bold text-[#DDAA42]">{previewData.price || "Price TBD"}</p>
                     {formData.pricePerSqft && (
-                      <p className="text-[13px] text-[#6E7488]">{formData.pricePerSqft}</p>
+                      <p className="text-[13px] text-[#68646F]">{formData.pricePerSqft}</p>
                     )}
                   </div>
                 </div>
@@ -1448,48 +1589,48 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                 {/* Key Details */}
                 <div className="grid grid-cols-4 gap-3">
                   <div className="bg-white rounded-xl p-3 text-center">
-                    <Bed className="w-5 h-5 text-[#C9A24E] mx-auto mb-1" />
-                    <p className="text-[16px] font-semibold text-[#1E3A8A]">{previewData.bedrooms}</p>
-                    <p className="text-[11px] text-[#6E7488]">Bedrooms</p>
+                    <Bed className="w-5 h-5 text-[#DDAA42] mx-auto mb-1" />
+                    <p className="text-[16px] font-semibold text-[#121B35]">{previewData.bedrooms}</p>
+                    <p className="text-[11px] text-[#68646F]">Bedrooms</p>
                   </div>
                   <div className="bg-white rounded-xl p-3 text-center">
-                    <Bath className="w-5 h-5 text-[#D4AF37] mx-auto mb-1" />
-                    <p className="text-[16px] font-semibold text-[#1E3A8A]">{previewData.bathrooms}</p>
-                    <p className="text-[11px] text-[#6E7488]">Bathrooms</p>
+                    <Bath className="w-5 h-5 text-[#DDAA42] mx-auto mb-1" />
+                    <p className="text-[16px] font-semibold text-[#121B35]">{previewData.bathrooms}</p>
+                    <p className="text-[11px] text-[#68646F]">Bathrooms</p>
                   </div>
                   <div className="bg-white rounded-xl p-3 text-center">
-                    <Maximize className="w-5 h-5 text-[#E8C66A] mx-auto mb-1" />
-                    <p className="text-[16px] font-semibold text-[#1E3A8A]">{previewData.area || "-"}</p>
-                    <p className="text-[11px] text-[#6E7488]">Sq.ft</p>
+                    <Maximize className="w-5 h-5 text-[#F2C052] mx-auto mb-1" />
+                    <p className="text-[16px] font-semibold text-[#121B35]">{previewData.area || "-"}</p>
+                    <p className="text-[11px] text-[#68646F]">Sq.ft</p>
                   </div>
                   <div className="bg-white rounded-xl p-3 text-center">
-                    <Home className="w-5 h-5 text-[#A8842C] mx-auto mb-1" />
-                    <p className="text-[13px] font-semibold text-[#1E3A8A]">{formatPossession(previewData)}</p>
-                    <p className="text-[11px] text-[#6E7488]">Possession</p>
+                    <Home className="w-5 h-5 text-[#B98428] mx-auto mb-1" />
+                    <p className="text-[13px] font-semibold text-[#121B35]">{formatPossession(previewData)}</p>
+                    <p className="text-[11px] text-[#68646F]">Possession</p>
                   </div>
                 </div>
 
                 {formData.propertyType === "Apartment" && (formData.configurationDetails?.length || 0) > 0 && (
-                  <div className="overflow-x-auto rounded-xl border border-[#D5DEF2] bg-white">
+                  <div className="overflow-x-auto rounded-xl border border-[#E4E0E7] bg-white">
                     <table className="w-full min-w-[850px] text-left text-[12px]">
-                      <thead className="bg-[#1E3A8A] text-white"><tr>{["Config", "Price", "Super area", "Carpet area", "Beds", "Baths", "Balconies", "Facing"].map((label) => <th key={label} className="px-3 py-2.5">{label}</th>)}</tr></thead>
-                      <tbody>{formData.configurationDetails!.map((row) => <tr key={row.configuration} className="border-t border-[#E2E9FB]"><td className="px-3 py-2 font-bold">{row.configuration}</td><td className="px-3 py-2">{row.price}</td><td className="px-3 py-2">{row.superBuiltUpArea}</td><td className="px-3 py-2">{row.carpetArea}</td><td className="px-3 py-2">{row.bedrooms}</td><td className="px-3 py-2">{row.bathrooms}</td><td className="px-3 py-2">{row.balconies}</td><td className="px-3 py-2">{row.facings.join(", ")}</td></tr>)}</tbody>
+                      <thead className="bg-[#121B35] text-white"><tr>{["Config", "Price", "Super area", "Carpet area", "Beds", "Baths", "Balconies", "Facing"].map((label) => <th key={label} className="px-3 py-2.5">{label}</th>)}</tr></thead>
+                      <tbody>{formData.configurationDetails!.map((row) => <tr key={row.configuration} className="border-t border-[#F3F1F5]"><td className="px-3 py-2 font-bold">{row.configuration}</td><td className="px-3 py-2">{row.price}</td><td className="px-3 py-2">{row.superBuiltUpArea}</td><td className="px-3 py-2">{row.carpetArea}</td><td className="px-3 py-2">{row.bedrooms}</td><td className="px-3 py-2">{row.bathrooms}</td><td className="px-3 py-2">{row.balconies}</td><td className="px-3 py-2">{row.facings.join(", ")}</td></tr>)}</tbody>
                     </table>
                   </div>
                 )}
 
                 {formData.propertyType === "Villa" && (formData.villaDetails?.configurationDetails.length || 0) > 0 && (
-                  <div className="overflow-x-auto rounded-xl border border-[#D5DEF2] bg-white">
+                  <div className="overflow-x-auto rounded-xl border border-[#E4E0E7] bg-white">
                     <table className="w-full min-w-[760px] text-left text-[12px]">
-                      <thead className="bg-[#1E3A8A] text-white"><tr>{["Config", "Price", "Plot area", "Built-up area", "Super area", "Beds", "Baths"].map((label) => <th key={label} className="px-3 py-2.5">{label}</th>)}</tr></thead>
-                      <tbody>{formData.villaDetails!.configurationDetails.map((row) => <tr key={row.configuration} className="border-t border-[#E2E9FB]"><td className="px-3 py-2 font-bold">{row.configuration}</td><td className="px-3 py-2">{row.price}</td><td className="px-3 py-2">{row.plotArea}</td><td className="px-3 py-2">{row.builtUpArea}</td><td className="px-3 py-2">{row.superArea}</td><td className="px-3 py-2">{row.bedrooms}</td><td className="px-3 py-2">{row.bathrooms}</td></tr>)}</tbody>
+                      <thead className="bg-[#121B35] text-white"><tr>{["Config", "Price", "Plot area", "Built-up area", "Super area", "Beds", "Baths"].map((label) => <th key={label} className="px-3 py-2.5">{label}</th>)}</tr></thead>
+                      <tbody>{formData.villaDetails!.configurationDetails.map((row) => <tr key={row.configuration} className="border-t border-[#F3F1F5]"><td className="px-3 py-2 font-bold">{row.configuration}</td><td className="px-3 py-2">{row.price}</td><td className="px-3 py-2">{row.plotArea}</td><td className="px-3 py-2">{row.builtUpArea}</td><td className="px-3 py-2">{row.superArea}</td><td className="px-3 py-2">{row.bedrooms}</td><td className="px-3 py-2">{row.bathrooms}</td></tr>)}</tbody>
                     </table>
                   </div>
                 )}
 
                 {formData.propertyType === "Villa" && formData.villaDetails && (
                   <div>
-                    <p className="text-[13px] font-semibold text-[#243559] mb-2">Villa & Plot Details</p>
+                    <p className="text-[13px] font-semibold text-[#3F3D46] mb-2">Villa & Plot Details</p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px]">
                       {[
                         ["Villa Type", formData.villaDetails.villaType],
@@ -1504,14 +1645,14 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                         ["Gated Community", formData.villaDetails.gatedCommunity ? "Yes" : "No"],
                         ["Transaction", formData.transactionType],
                         ["Listing", formData.listingType],
-                      ].filter(([, value]) => value).map(([label, value]) => <div key={String(label)} className="bg-white rounded-lg p-2.5"><span className="text-[#6E7488] text-[10px]">{label}</span><p className="font-medium text-[#1E3A8A]">{value}</p></div>)}
+                      ].filter(([, value]) => value).map(([label, value]) => <div key={String(label)} className="bg-white rounded-lg p-2.5"><span className="text-[#68646F] text-[10px]">{label}</span><p className="font-medium text-[#121B35]">{value}</p></div>)}
                     </div>
                   </div>
                 )}
 
                 {formData.propertyType === "Villa" && (
                   <div>
-                    <p className="text-[13px] font-semibold text-[#243559] mb-2">Society, Locality & Media</p>
+                    <p className="text-[13px] font-semibold text-[#3F3D46] mb-2">Society, Locality & Media</p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px]">
                       {[
                         ["Security", formData.society?.security],
@@ -1524,32 +1665,48 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                         ["Zone", formData.locality?.zone],
                         ["PIN Code", formData.locality?.pinCode],
                         ["Landmark", formData.locality?.landmark],
-                        ["Virtual Tour", formData.virtualTourUrl ? "Added" : "Not added"],
                         ["Brochure", formData.brochure ? formData.brochureName || "Added" : "Not added"],
-                      ].filter(([, value]) => value).map(([label, value]) => <div key={String(label)} className="bg-white rounded-lg p-2.5"><span className="text-[#6E7488] text-[10px]">{label}</span><p className="font-medium text-[#1E3A8A] break-words">{value}</p></div>)}
+                      ].filter(([, value]) => value).map(([label, value]) => <div key={String(label)} className="bg-white rounded-lg p-2.5"><span className="text-[#68646F] text-[10px]">{label}</span><p className="font-medium text-[#121B35] break-words">{value}</p></div>)}
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px] mt-3">
                       {(["schools", "hospitals", "shopping", "metro"] as const).map((key) => {
                         const item = formData.nearbyDetails?.[key];
                         if (!item || (item.count === undefined && !item.distance)) return null;
-                        return <div key={key} className="bg-white rounded-lg p-2.5"><span className="text-[#6E7488] text-[10px] capitalize">{key === "metro" ? "Metro / Train" : key}</span><p className="font-medium text-[#1E3A8A]">{item.count ?? "—"} · {item.distance || "—"}</p></div>;
+                        return <div key={key} className="bg-white rounded-lg p-2.5"><span className="text-[#68646F] text-[10px] capitalize">{key === "metro" ? "Metro / Train" : key}</span><p className="font-medium text-[#121B35]">{item.count ?? "—"} · {item.distance || "—"}</p></div>;
                       })}
                     </div>
                   </div>
                 )}
 
-                {/* Photos Preview */}
+                {/* Main display photos preview */}
+                {(formData.heroImages?.length || 0) > 0 && (
+                  <div>
+                    <p className="mb-2 text-[13px] font-semibold text-[#3F3D46]">
+                      🖼️ {formData.heroImages!.length}/3 Project Overview photos
+                    </p>
+                    <div className="flex gap-2 overflow-x-auto pb-2">
+                      {formData.heroImages!.map((img, i) => (
+                        <div key={`${img}-${i}`} className="relative h-16 w-28 flex-shrink-0 overflow-hidden rounded-lg bg-[#0B1328]">
+                          <img src={img} alt={`Project Overview slide ${i + 1}`} className="h-full w-full object-contain" />
+                          <span className="absolute bottom-1 left-1 rounded bg-black/65 px-1.5 py-0.5 text-[9px] font-bold text-white">{i + 1}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Gallery photos preview */}
                 {(formData.images?.length || 0) > 0 && (
                   <div>
-                    <p className="text-[13px] font-semibold text-[#243559] mb-2">
-                      📷 {formData.images!.length} Photos uploaded
+                    <p className="text-[13px] font-semibold text-[#3F3D46] mb-2">
+                      📷 {formData.images!.length} Gallery photos uploaded
                     </p>
                     <div className="flex gap-2 overflow-x-auto pb-2">
                       {formData.images!.slice(0, 5).map((img, i) => (
                         <img key={i} src={img} alt="" className="w-20 h-14 rounded-lg object-cover flex-shrink-0" />
                       ))}
                       {formData.images!.length > 5 && (
-                        <div className="w-20 h-14 rounded-lg bg-[#E2E9FB] flex items-center justify-center text-[13px] font-medium text-[#6E7488] flex-shrink-0">
+                        <div className="w-20 h-14 rounded-lg bg-[#F3F1F5] flex items-center justify-center text-[13px] font-medium text-[#68646F] flex-shrink-0">
                           +{formData.images!.length - 5}
                         </div>
                       )}
@@ -1557,22 +1714,15 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                   </div>
                 )}
 
-                {/* Videos Preview */}
-                {(formData.videos?.length || 0) > 0 && (
-                  <p className="text-[13px] font-semibold text-[#243559]">
-                    🎬 {formData.videos!.length} Video{formData.videos!.length > 1 ? "s" : ""} uploaded
-                  </p>
-                )}
-
                 {/* Configs & Badges */}
                 <div className="flex flex-wrap gap-2">
                   {formData.configs.map((c) => (
-                    <span key={c} className="bg-[#E2E9FB] text-[#C9A24E] text-[12px] font-medium px-3 py-1 rounded-lg">
+                    <span key={c} className="bg-[#F3F1F5] text-[#DDAA42] text-[12px] font-medium px-3 py-1 rounded-lg">
                       {c}
                     </span>
                   ))}
                   {formData.badges?.map((b) => (
-                    <span key={b} className="bg-gradient-to-r from-[#C9A24E] to-[#E3C25A] text-white text-[12px] font-semibold px-3 py-1 rounded-lg">
+                    <span key={b} className="bg-gradient-to-r from-[#DDAA42] to-[#273559] text-white text-[12px] font-semibold px-3 py-1 rounded-lg">
                       {b}
                     </span>
                   ))}
@@ -1581,10 +1731,10 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                 {/* Amenities */}
                 {(formData.amenities?.length || 0) > 0 && (
                   <div>
-                    <p className="text-[13px] font-semibold text-[#243559] mb-2">Amenities</p>
+                    <p className="text-[13px] font-semibold text-[#3F3D46] mb-2">Amenities</p>
                     <div className="flex flex-wrap gap-2">
                       {formData.amenities!.map((a) => (
-                        <span key={a} className="text-[12px] text-[#243559] bg-white px-3 py-1.5 rounded-lg border border-[#D5DEF2]/30">
+                        <span key={a} className="text-[12px] text-[#3F3D46] bg-white px-3 py-1.5 rounded-lg border border-[#E4E0E7]/30">
                           {a}
                         </span>
                       ))}
@@ -1596,38 +1746,38 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[13px]">
                   {formData.propertyType && (
                     <div className="bg-white rounded-lg p-2.5">
-                      <span className="text-[#6E7488] text-[11px]">Type</span>
-                      <p className="font-medium text-[#1E3A8A]">{formData.propertyType}</p>
+                      <span className="text-[#68646F] text-[11px]">Type</span>
+                      <p className="font-medium text-[#121B35]">{formData.propertyType}</p>
                     </div>
                   )}
                   {formData.furnishing && (
                     <div className="bg-white rounded-lg p-2.5">
-                      <span className="text-[#6E7488] text-[11px]">Furnishing</span>
-                      <p className="font-medium text-[#1E3A8A]">{formData.furnishing}</p>
+                      <span className="text-[#68646F] text-[11px]">Furnishing</span>
+                      <p className="font-medium text-[#121B35]">{formData.furnishing}</p>
                     </div>
                   )}
                   {formData.facing && (
                     <div className="bg-white rounded-lg p-2.5">
-                      <span className="text-[#6E7488] text-[11px]">Facing</span>
-                      <p className="font-medium text-[#1E3A8A]">{formData.facing}</p>
+                      <span className="text-[#68646F] text-[11px]">Facing</span>
+                      <p className="font-medium text-[#121B35]">{formData.facing}</p>
                     </div>
                   )}
                   {formData.parking && (
                     <div className="bg-white rounded-lg p-2.5">
-                      <span className="text-[#6E7488] text-[11px]">Parking</span>
-                      <p className="font-medium text-[#1E3A8A]">{formData.parking}</p>
+                      <span className="text-[#68646F] text-[11px]">Parking</span>
+                      <p className="font-medium text-[#121B35]">{formData.parking}</p>
                     </div>
                   )}
                   {formData.builder && (
                     <div className="bg-white rounded-lg p-2.5">
-                      <span className="text-[#6E7488] text-[11px]">Builder</span>
-                      <p className="font-medium text-[#1E3A8A]">{formData.builder}</p>
+                      <span className="text-[#68646F] text-[11px]">Builder</span>
+                      <p className="font-medium text-[#121B35]">{formData.builder}</p>
                     </div>
                   )}
                   {formData.reraRegistered && (
                     <div className="bg-white rounded-lg p-2.5 flex items-center gap-1">
-                      <Verified className="w-4 h-4 text-[#C9A24E]" />
-                      <p className="font-medium text-[#1E3A8A]">RERA {formData.reraNumber || "Registered"}</p>
+                      <Verified className="w-4 h-4 text-[#DDAA42]" />
+                      <p className="font-medium text-[#121B35]">RERA {formData.reraNumber || "Registered"}</p>
                     </div>
                   )}
                 </div>
@@ -1635,8 +1785,8 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
                 {/* Description */}
                 {formData.description && (
                   <div>
-                    <p className="text-[13px] font-semibold text-[#243559] mb-1">Description</p>
-                    <p className="text-[13px] text-[#243559] leading-relaxed">{formData.description}</p>
+                    <p className="text-[13px] font-semibold text-[#3F3D46] mb-1">Description</p>
+                    <p className="text-[13px] text-[#3F3D46] leading-relaxed">{formData.description}</p>
                   </div>
                 )}
               </div>
@@ -1646,14 +1796,14 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
 
         {/* Navigation Footer */}
         {submitError && <div role="alert" className="mx-6 lg:mx-8 mb-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">{submitError}</div>}
-        <div className="px-6 lg:px-8 py-4 bg-[#F1F5FF]/50 border-t border-[#E2E9FB] flex items-center justify-between">
+        <div className="px-6 lg:px-8 py-4 bg-[#F8F7FA]/50 border-t border-[#F3F1F5] flex items-center justify-between">
           <button
             onClick={prevStep}
             disabled={currentStep === 1}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[14px] font-medium transition-all duration-200 ${
               currentStep === 1
-                ? "text-[#D5DEF2] cursor-not-allowed"
-                : "text-[#243559] hover:bg-white border border-[#D5DEF2]/30"
+                ? "text-[#E4E0E7] cursor-not-allowed"
+                : "text-[#3F3D46] hover:bg-white border border-[#E4E0E7]/30"
             }`}
           >
             <ChevronLeft className="w-4 h-4" />
@@ -1664,29 +1814,26 @@ export default function PropertyForm({ mode = "admin" }: PropertyFormProps) {
             {currentStep < 5 ? (
               <button
                 onClick={nextStep}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-[14px] font-semibold transition-all duration-200 bg-gradient-to-r from-[#C9A24E] to-[#E3C25A] text-white shadow-md hover:shadow-lg"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-[14px] font-semibold transition-all duration-200 bg-gradient-to-r from-[#DDAA42] to-[#273559] text-white shadow-md hover:shadow-lg"
               >
                 Next Step
                 <ChevronRight className="w-4 h-4" />
               </button>
             ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-[#E8C66A] to-[#FBBF24] text-white rounded-xl text-[14px] font-bold shadow-lg hover:shadow-xl hover:from-[#A8842C] hover:to-[#E8C66A] transition-all duration-200 disabled:opacity-60"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    {isPublic ? "Submitting..." : "Publishing..."}
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-5 h-5" />
-                    {isPublic ? "Submit for Review" : "Publish Property"}
-                  </>
-                )}
-              </button>
+              <>
+                {isPublic && !submissionId && <button onClick={handleSaveDraft} disabled={isSubmitting} className="px-5 py-3 rounded-xl border border-[#E4E0E7] bg-white text-[#121B35] text-[14px] font-bold disabled:opacity-60">Save Draft</button>}
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-[#F2C052] to-[#FBBF24] text-white rounded-xl text-[14px] font-bold shadow-lg hover:shadow-xl hover:from-[#B98428] hover:to-[#F2C052] transition-all duration-200 disabled:opacity-60"
+                >
+                  {isSubmitting ? (
+                    <><Loader2 className="w-5 h-5 animate-spin" />{isPublic ? "Submitting..." : isAdminEdit ? "Updating..." : "Publishing..."}</>
+                  ) : (
+                    <><Sparkles className="w-5 h-5" />{isPublic ? (isResubmission ? "Resubmit Property" : "Submit for Review") : isAdminEdit ? "Update Property" : "Publish Property"}</>
+                  )}
+                </button>
+              </>
             )}
           </div>
         </div>

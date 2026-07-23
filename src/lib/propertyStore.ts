@@ -171,6 +171,11 @@ export function getPropertyCount() {
   };
 }
 
+/** Reload the public-listing cache after an out-of-band admin workflow update. */
+export async function refreshProperties(): Promise<void> {
+  await cache.refresh();
+}
+
 export async function addProperty(property: Omit<Property, "id">): Promise<Property | null> {
   const data = await apiCreateProperty(property as Record<string, unknown>);
   await cache.refresh();

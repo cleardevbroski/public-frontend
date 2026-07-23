@@ -29,7 +29,7 @@ export default function Home() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-[#F1F5FF]">
+      <main className="flex-1 bg-[#F8F7FA]">
         {/* Cinematic navy hero with search */}
         <HeroBanner />
 

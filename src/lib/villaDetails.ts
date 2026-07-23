@@ -78,13 +78,10 @@ export function validateVillaDraft(property: Partial<Property>): VillaErrors {
   if (!rows.length) errors.configurations = "Add at least one Villa BHK configuration.";
   if (!details || !["Independent", "Row Villa", "Twin Villa"].includes(details.villaType)) errors.villaType = "Select a valid Villa type.";
   if (!details || !["East", "West", "North", "South", "North-East", "North-West", "South-East", "South-West"].includes(details.plotFacing)) errors.plotFacing = "Select a valid plot facing.";
-  const seen = new Set<string>();
-  rows.forEach((row) => {
-    const prefix = `villaConfiguration.${row.configuration}`;
+  rows.forEach((row, index) => {
+    const prefix = `villaConfiguration.${index}`;
     const normalized = normalizeBhkLabel(row.configuration);
     if (!normalized) errors[`${prefix}.configuration`] = "Use a positive whole-number BHK label.";
-    else if (seen.has(normalized.toLowerCase())) errors.configurations = `Duplicate configuration: ${normalized}.`;
-    else seen.add(normalized.toLowerCase());
     if (!positiveDisplay(row.price, true)) errors[`${prefix}.price`] = "Enter a positive price.";
     if (!positiveDisplay(row.plotArea)) errors[`${prefix}.plotArea`] = "Enter a positive plot area.";
     if (!positiveDisplay(row.builtUpArea)) errors[`${prefix}.builtUpArea`] = "Enter a positive built-up area.";
@@ -127,14 +124,6 @@ export function validateVillaDraft(property: Partial<Property>): VillaErrors {
     errors.reraNumber = "Use 8–50 letters, numbers, /, ., _, or -.";
   }
   if (property.locality?.pinCode && !/^\d{6}$/.test(property.locality.pinCode)) errors.pinCode = "Enter a 6-digit PIN code.";
-  if (property.virtualTourUrl) {
-    try {
-      const url = new URL(property.virtualTourUrl);
-      if (!["http:", "https:"].includes(url.protocol)) throw new Error();
-    } catch {
-      errors.virtualTourUrl = "Enter a valid HTTP(S) virtual-tour URL.";
-    }
-  }
   for (const key of ["schools", "hospitals", "shopping", "metro"] as const) {
     const item = property.nearbyDetails?.[key];
     if (!item || (item.count === undefined && !item.distance?.trim())) continue;

@@ -61,10 +61,10 @@ export default function PropertyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F1F5FF] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8F7FA] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-10 h-10 border-3 border-[#C9A24E] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[14px] text-[#6E7488]">Loading property...</p>
+          <div className="w-10 h-10 border-3 border-[#DDAA42] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[14px] text-[#68646F]">Loading property...</p>
         </div>
       </div>
     );
@@ -72,10 +72,10 @@ export default function PropertyPage() {
 
   if (notFound || !property) {
     return (
-      <div className="min-h-screen bg-[#F1F5FF] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8F7FA] flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-[24px] font-bold text-[#1E3A8A] mb-2">Property Not Found</h1>
-          <p className="text-[14px] text-[#6E7488]">The property you&apos;re looking for doesn&apos;t exist.</p>
+          <h1 className="text-[24px] font-bold text-[#121B35] mb-2">Property Not Found</h1>
+          <p className="text-[14px] text-[#68646F]">The property you&apos;re looking for doesn&apos;t exist.</p>
         </div>
       </div>
     );

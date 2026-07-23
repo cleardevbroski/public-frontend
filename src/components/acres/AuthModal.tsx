@@ -92,12 +92,12 @@ export default function AuthModal() {
           onClick={() => setIsAuthModalOpen(false)}
           className="absolute top-4 right-4 z-10 size-8 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 transition-colors"
         >
-          <X className="size-4 text-[#1E3A8A]" />
+          <X className="size-4 text-[#121B35]" />
         </button>
 
         {/* Header Graphic */}
-        <div className="h-32 bg-gradient-to-br from-[#1E3A8A] via-[#25459E] to-[#C9A24E] p-6 flex flex-col justify-end relative overflow-hidden">
-          <div className="absolute -right-10 -top-10 w-40 h-40 bg-[#D4AF37]/20 rounded-full blur-2xl" />
+        <div className="h-32 bg-gradient-to-br from-[#121B35] via-[#273559] to-[#DDAA42] p-6 flex flex-col justify-end relative overflow-hidden">
+          <div className="absolute -right-10 -top-10 w-40 h-40 bg-[#DDAA42]/20 rounded-full blur-2xl" />
           <h2 className="text-white text-2xl font-bold relative z-10" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
             {step === "phone" ? "Welcome Back" : "Verify Number"}
           </h2>
@@ -125,11 +125,11 @@ export default function AuthModal() {
           {step === "phone" ? (
             <form onSubmit={handleSendOtp} className="space-y-6">
               <div>
-                <label className="block text-xs font-bold text-[#6E7488] uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-[#68646F] uppercase tracking-wider mb-2">
                   Mobile Number
                 </label>
                 <div className="relative flex items-center">
-                  <div className="absolute left-0 top-0 bottom-0 flex items-center px-3 border-r border-[#D5DEF2]/50 bg-slate-50 text-[#1E3A8A] font-semibold text-sm rounded-l-xl">
+                  <div className="absolute left-0 top-0 bottom-0 flex items-center px-3 border-r border-[#E4E0E7]/50 bg-slate-50 text-[#121B35] font-semibold text-sm rounded-l-xl">
                     +91
                   </div>
                   <input
@@ -137,19 +137,19 @@ export default function AuthModal() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                     placeholder="Enter 10 digit number"
-                    className="w-full h-12 pl-16 pr-4 rounded-xl border border-[#D5DEF2] focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/20 outline-none text-[#1E3A8A] font-semibold transition-all placeholder:font-normal placeholder:text-[#6E7488]/60"
+                    className="w-full h-12 pl-16 pr-4 rounded-xl border border-[#E4E0E7] focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/20 outline-none text-[#121B35] font-semibold transition-all placeholder:font-normal placeholder:text-[#68646F]/60"
                     autoFocus
                     required
                     disabled={isLoading}
                   />
-                  <Smartphone className="absolute right-4 size-5 text-[#6E7488]/50 pointer-events-none" />
+                  <Smartphone className="absolute right-4 size-5 text-[#68646F]/50 pointer-events-none" />
                 </div>
               </div>
               
               <button 
                 type="submit"
                 disabled={phone.length < 10 || isLoading}
-                className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] text-[#E8C66A] font-bold hover:bg-[#C9A24E] hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-[#121B35] text-[#F2C052] font-bold hover:bg-[#DDAA42] hover:text-[#0B1328] transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 {isLoading ? (
                   <Loader2 className="size-5 animate-spin" />
@@ -164,7 +164,7 @@ export default function AuthModal() {
           ) : (
             <form onSubmit={handleVerifyOtp} className="space-y-6">
               <div>
-                <label className="block text-xs font-bold text-[#6E7488] uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-[#68646F] uppercase tracking-wider mb-2">
                   Enter 6-Digit OTP
                 </label>
                 <div className="relative flex items-center">
@@ -173,16 +173,16 @@ export default function AuthModal() {
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="• • • • • •"
-                    className="w-full h-12 px-4 text-center tracking-[0.8em] rounded-xl border border-[#D5DEF2] focus:border-[#C9A24E] focus:ring-2 focus:ring-[#C9A24E]/20 outline-none text-[20px] text-[#1E3A8A] font-bold transition-all placeholder:tracking-normal placeholder:text-sm placeholder:text-[#6E7488]/60"
+                    className="w-full h-12 px-4 text-center tracking-[0.8em] rounded-xl border border-[#E4E0E7] focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/20 outline-none text-[20px] text-[#121B35] font-bold transition-all placeholder:tracking-normal placeholder:text-sm placeholder:text-[#68646F]/60"
                     autoFocus
                     required
                     disabled={isLoading}
                   />
-                  <ShieldCheck className="absolute right-4 size-5 text-[#6E7488]/50 pointer-events-none" />
+                  <ShieldCheck className="absolute right-4 size-5 text-[#68646F]/50 pointer-events-none" />
                 </div>
                 <div className="mt-3 flex justify-between items-center text-xs">
-                  <span className="text-[#6E7488]">Didn&apos;t receive it?</span>
-                  <button type="button" onClick={handleResend} className="text-[#C9A24E] font-bold hover:underline" disabled={isLoading}>
+                  <span className="text-[#68646F]">Didn&apos;t receive it?</span>
+                  <button type="button" onClick={handleResend} className="text-[#DDAA42] font-bold hover:underline" disabled={isLoading}>
                     Resend Code
                   </button>
                 </div>
@@ -191,7 +191,7 @@ export default function AuthModal() {
               <button 
                 type="submit"
                 disabled={otp.length < 6 || isLoading}
-                className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#E8C66A] text-[#1E3A8A] font-bold hover:from-[#C5A55A] hover:to-[#D4AF37] shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#DDAA42] to-[#F2C052] text-[#121B35] font-bold hover:from-[#B98428] hover:to-[#DDAA42] shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <Loader2 className="size-5 animate-spin" />
@@ -203,7 +203,7 @@ export default function AuthModal() {
               <button 
                 type="button"
                 onClick={() => { setStep("phone"); setError(""); }}
-                className="w-full py-2 text-center text-xs font-semibold text-[#6E7488] hover:text-[#1E3A8A]"
+                className="w-full py-2 text-center text-xs font-semibold text-[#68646F] hover:text-[#121B35]"
                 disabled={isLoading}
               >
                 Change mobile number
@@ -211,9 +211,9 @@ export default function AuthModal() {
             </form>
           )}
 
-          <div className="mt-6 text-center text-[11px] text-[#6E7488]/80 leading-relaxed">
+          <div className="mt-6 text-center text-[11px] text-[#68646F]/80 leading-relaxed">
             By proceeding, you agree to ClearTitle One&apos;s <br/>
-            <a href="#" className="underline hover:text-[#C9A24E]">Terms of Service</a> & <a href="#" className="underline hover:text-[#C9A24E]">Privacy Policy</a>
+            <a href="#" className="underline hover:text-[#DDAA42]">Terms of Service</a> & <a href="#" className="underline hover:text-[#DDAA42]">Privacy Policy</a>
           </div>
         </div>
       </div>

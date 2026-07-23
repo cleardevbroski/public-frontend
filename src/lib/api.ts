@@ -1,45 +1,86 @@
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const CUSTOMER_TOKEN_KEY = "cleartitle_token";
+const CUSTOMER_TOKEN_BACKUP_KEY = "cleartitle_customer_token";
+const ADMIN_TOKEN_KEY = "cleartitle_admin_token";
+const ADMIN_FLAG_KEY = "cleartitle_admin_auth";
 
 /**
- * Get stored JWT token
+ * Get the token for the currently active application area. Admin and customer
+ * sessions intentionally live separately so an admin review cannot replace a
+ * customer's My Properties session in the same browser.
  */
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("cleartitle_token");
+  if (localStorage.getItem(ADMIN_FLAG_KEY) === "1") {
+    // The fallback retains compatibility with an existing admin session until
+    // that administrator signs in again after this update.
+    return localStorage.getItem(ADMIN_TOKEN_KEY) || localStorage.getItem(CUSTOMER_TOKEN_KEY);
+  }
+  return getCustomerToken();
+}
+
+function getCustomerToken(): string | null {
+  if (typeof window === "undefined") return null;
+  const customerToken = localStorage.getItem(CUSTOMER_TOKEN_BACKUP_KEY);
+  if (customerToken) return customerToken;
+  // Do not accidentally use an old, shared admin token for customer-only APIs.
+  return localStorage.getItem(ADMIN_FLAG_KEY) === "1" ? null : localStorage.getItem(CUSTOMER_TOKEN_KEY);
 }
 
 /**
- * Store JWT token
+ * Store a customer JWT without disturbing a separate administrator session.
  */
 export function setToken(token: string): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem("cleartitle_token", token);
+  localStorage.removeItem(ADMIN_FLAG_KEY);
+  localStorage.setItem(CUSTOMER_TOKEN_KEY, token);
+  localStorage.setItem(CUSTOMER_TOKEN_BACKUP_KEY, token);
+}
+
+export function setAdminToken(token: string): void {
+  if (typeof window === "undefined") return;
+  // Preserve a pre-existing customer session before the admin session becomes active.
+  if (!localStorage.getItem(CUSTOMER_TOKEN_BACKUP_KEY)) {
+    const customerToken = localStorage.getItem(CUSTOMER_TOKEN_KEY);
+    if (customerToken) localStorage.setItem(CUSTOMER_TOKEN_BACKUP_KEY, customerToken);
+  }
+  localStorage.setItem(ADMIN_TOKEN_KEY, token);
 }
 
 /**
- * Remove JWT token
+ * Remove only the customer JWT.
  */
 export function removeToken(): void {
   if (typeof window === "undefined") return;
-  localStorage.removeItem("cleartitle_token");
+  localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+  localStorage.removeItem(CUSTOMER_TOKEN_BACKUP_KEY);
+}
+
+export function removeAdminToken(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(ADMIN_TOKEN_KEY);
 }
 
 /**
- * Check if user is logged in (has a token)
+ * Check whether a customer is logged in.
  */
 export function hasToken(): boolean {
-  return !!getToken();
+  return !!getCustomerToken();
+}
+
+export function hasAdminToken(): boolean {
+  if (typeof window === "undefined") return false;
+  return !!localStorage.getItem(ADMIN_TOKEN_KEY) || (localStorage.getItem(ADMIN_FLAG_KEY) === "1" && !!localStorage.getItem(CUSTOMER_TOKEN_KEY));
 }
 
 /**
  * Core fetch wrapper with auth header injection and error handling
  */
-async function apiFetch(
+async function apiFetchWithToken(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  token: string | null
 ): Promise<Response> {
-  const token = getToken();
-
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
@@ -55,6 +96,14 @@ async function apiFetch(
   });
 
   return response;
+}
+
+async function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
+  return apiFetchWithToken(endpoint, options, getToken());
+}
+
+async function customerApiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
+  return apiFetchWithToken(endpoint, options, getCustomerToken());
 }
 
 // ─── Auth API ───────────────────────────────────────────────────
@@ -81,25 +130,44 @@ export async function verifyOtp(phone: string, otp: string) {
   if (data.token) {
     setToken(data.token);
   }
-
   return data;
 }
 
 export async function getMe() {
-  const res = await apiFetch("/api/auth/me");
+  const res = await customerApiFetch("/api/auth/me");
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to get profile");
   return data;
 }
 
 export async function updateProfile(updates: { name?: string; email?: string }) {
-  const res = await apiFetch("/api/auth/profile", {
+  const res = await customerApiFetch("/api/auth/profile", {
     method: "PUT",
     body: JSON.stringify(updates),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to update profile");
   return data;
+}
+
+export async function customerRegister(input: { name: string; phone: string; email: string; password: string }) {
+  const data = await readJson(await apiFetch("/api/auth/register", { method: "POST", body: JSON.stringify(input) }), "Registration failed");
+  if (data.token) setToken(data.token);
+  return data;
+}
+
+export async function customerLogin(email: string, password: string) {
+  const data = await readJson(await apiFetch("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }), "Login failed");
+  if (data.token) setToken(data.token);
+  return data;
+}
+
+export async function forgotPassword(email: string) {
+  return readJson(await apiFetch("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }), "Unable to request password reset");
+}
+
+export async function resetPassword(email: string, token: string, password: string) {
+  return readJson(await apiFetch("/api/auth/reset-password", { method: "POST", body: JSON.stringify({ email, token, password }) }), "Unable to reset password");
 }
 
 // ─── Properties API ─────────────────────────────────────────────
@@ -114,6 +182,31 @@ export interface PropertyFilters {
   sort?: string;
 }
 
+/**
+ * Mongo-backed property responses expose `_id`, while the frontend consistently
+ * uses `id`. Keep the wire value for compatibility and add the frontend alias at
+ * the API boundary so selects, links and mutations receive a real identifier.
+ */
+function normalizePropertyRecord(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const record = value as Record<string, unknown>;
+  if (record.id || !record._id) return record;
+  return { ...record, id: String(record._id) };
+}
+
+function normalizePropertyResponse<T>(value: T): T {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const response = value as Record<string, unknown>;
+  const normalized = { ...response };
+  if (Array.isArray(response.properties)) {
+    normalized.properties = response.properties.map(normalizePropertyRecord);
+  }
+  if (response.property) {
+    normalized.property = normalizePropertyRecord(response.property);
+  }
+  return normalized as T;
+}
+
 export async function fetchProperties(filters: PropertyFilters = {}) {
   const params = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
@@ -125,14 +218,14 @@ export async function fetchProperties(filters: PropertyFilters = {}) {
   const res = await apiFetch(`/api/properties?${params.toString()}`);
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to fetch properties");
-  return data;
+  return normalizePropertyResponse(data);
 }
 
 export async function fetchPropertyById(id: string) {
   const res = await apiFetch(`/api/properties/${id}`);
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to fetch property");
-  return data;
+  return normalizePropertyResponse(data);
 }
 
 export async function fetchAdminProperties(filters: PropertyFilters = {}) {
@@ -146,22 +239,32 @@ export async function fetchAdminProperties(filters: PropertyFilters = {}) {
   const res = await apiFetch(`/api/properties/admin?${params.toString()}`);
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to fetch admin properties");
-  return data;
+  return normalizePropertyResponse(data);
+}
+
+/** Fetch one listing with its complete media and workflow data for admin editing. */
+export async function fetchAdminProperty(id: string) {
+  const data = await readJson(
+    await apiFetch(`/api/properties/admin/property/${encodeURIComponent(id)}`),
+    "Failed to fetch property"
+  );
+  return normalizePropertyResponse(data);
 }
 
 export async function createProperty(propertyData: Record<string, unknown>) {
-  return readJson(
+  const data = await readJson(
     await apiFetch("/api/properties", {
       method: "POST",
       body: JSON.stringify(propertyData),
     }),
     "Failed to create property"
   );
+  return normalizePropertyResponse(data);
 }
 
 export async function createPublicProperty(propertyData: Record<string, unknown>) {
   return readJson(
-    await apiFetch("/api/properties/public", {
+    await customerApiFetch("/api/properties/public", {
       method: "POST",
       body: JSON.stringify(propertyData),
     }),
@@ -169,7 +272,35 @@ export async function createPublicProperty(propertyData: Record<string, unknown>
   );
 }
 
-export async function uploadPropertyMedia(file: File, kind: "image" | "video" | "brochure" | "layout-map-image" | "layout-map-pdf"): Promise<string> {
+export async function createPropertyDraft(propertyData: Record<string, unknown>) {
+  return readJson(await customerApiFetch("/api/properties/draft", { method: "POST", body: JSON.stringify(propertyData) }), "Failed to save draft");
+}
+
+export async function fetchMyProperties() {
+  return readJson(await customerApiFetch("/api/properties/my"), "Failed to fetch your properties");
+}
+
+export async function fetchMyProperty(id: string) {
+  return readJson(await customerApiFetch(`/api/properties/my/${id}`), "Failed to fetch your property");
+}
+
+export async function resubmitProperty(id: string, propertyData: Record<string, unknown>) {
+  return readJson(await customerApiFetch(`/api/properties/my/${id}/resubmit`, { method: "PUT", body: JSON.stringify(propertyData) }), "Failed to resubmit property");
+}
+
+export async function fetchPublicSubmissions(status = "all") {
+  return readJson(await apiFetch(`/api/properties/admin/submissions?status=${encodeURIComponent(status)}`), "Failed to fetch public submissions");
+}
+
+export async function fetchPublicSubmission(id: string) {
+  return readJson(await apiFetch(`/api/properties/admin/submissions/${id}`), "Failed to fetch submission");
+}
+
+export async function reviewPublicSubmission(id: string, action: "start_review" | "request_changes" | "publish" | "reject", message = "") {
+  return readJson(await apiFetch(`/api/properties/admin/submissions/${id}/review`, { method: "PUT", body: JSON.stringify({ action, message }) }), "Failed to update submission");
+}
+
+export async function uploadPropertyMedia(file: File, kind: "image" | "brochure" | "layout-map-image" | "layout-map-pdf" | "legal-document-image" | "legal-document-pdf"): Promise<string> {
   const res = await apiFetch(`/api/property-media?kind=${kind}`, {
     method: "POST",
     headers: { "Content-Type": file.type },
@@ -187,7 +318,7 @@ export async function updateProperty(id: string, updates: Record<string, unknown
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to update property");
-  return data;
+  return normalizePropertyResponse(data);
 }
 
 export async function deleteProperty(id: string) {
@@ -222,7 +353,7 @@ export async function adminLogin(username: string, password: string) {
     body: JSON.stringify({ username, password }),
   });
   const data = await readJson(res, "Admin login failed");
-  if (data.token) setToken(data.token);
+  if (data.token) setAdminToken(data.token);
   return data;
 }
 
@@ -258,14 +389,38 @@ export async function deleteBuilder(id: string) {
 export async function fetchHeroBanners() {
   return readJson(await apiFetch("/api/hero/banners"), "Failed to fetch hero banners");
 }
+export async function fetchAdminHeroBanners() {
+  return readJson(await apiFetch("/api/hero/banners/admin"), "Failed to fetch hero banners");
+}
 export async function createHeroBanner(data: Record<string, unknown>) {
   return readJson(await apiFetch("/api/hero/banners", { method: "POST", body: JSON.stringify(data) }), "Failed to create hero banner");
 }
 export async function updateHeroBanner(id: string, data: Record<string, unknown>) {
   return readJson(await apiFetch(`/api/hero/banners/${id}`, { method: "PUT", body: JSON.stringify(data) }), "Failed to update hero banner");
 }
+export async function updateHeroBannerOrder(id: string, order: number) {
+  return readJson(await apiFetch(`/api/hero/banners/${id}/order`, { method: "PATCH", body: JSON.stringify({ order }) }), "Failed to update hero banner order");
+}
 export async function deleteHeroBanner(id: string) {
   return readJson(await apiFetch(`/api/hero/banners/${id}`, { method: "DELETE" }), "Failed to delete hero banner");
+}
+
+// ─── Advertisements ────────────────────────────────────────────
+export async function fetchAdvertisements(admin = false) {
+  return readJson(await apiFetch(`/api/advertisements${admin ? "/admin" : ""}`), "Failed to fetch advertisements");
+}
+export async function createAdvertisement(data: Record<string, unknown>) {
+  return readJson(await apiFetch("/api/advertisements", { method: "POST", body: JSON.stringify(data) }), "Failed to create advertisement");
+}
+export async function updateAdvertisement(id: string, data: Record<string, unknown>) {
+  return readJson(await apiFetch(`/api/advertisements/${id}`, { method: "PUT", body: JSON.stringify(data) }), "Failed to update advertisement");
+}
+export async function deleteAdvertisement(id: string) {
+  return readJson(await apiFetch(`/api/advertisements/${id}`, { method: "DELETE" }), "Failed to delete advertisement");
+}
+
+export async function fetchLoginReports(params: Record<string, unknown> = {}) {
+  return readJson(await apiFetch(`/api/login-reports${toQuery(params)}`), "Failed to fetch login reports");
 }
 
 // ─── Leads ──────────────────────────────────────────────────────
@@ -278,10 +433,19 @@ export async function submitContactLead(data: Record<string, unknown>) {
 export async function submitConsultationLead(data: Record<string, unknown>) {
   return readJson(await apiFetch("/api/leads/consultation", { method: "POST", body: JSON.stringify(data) }), "Failed to submit request");
 }
+export async function submitPropertyConsultation(data: Record<string, unknown>) {
+  return readJson(await customerApiFetch("/api/leads/consultation/property", { method: "POST", body: JSON.stringify(data) }), "Failed to submit consultation request");
+}
+export async function submitPropertyInterest(data: Record<string, unknown>) {
+  return readJson(await apiFetch("/api/leads/property-interest", { method: "POST", body: JSON.stringify(data) }), "Failed to submit verified property request");
+}
 
 // ─── Analytics ──────────────────────────────────────────────────
-export async function fetchAnalyticsDashboard() {
-  return readJson(await apiFetch("/api/analytics/dashboard"), "Failed to fetch analytics dashboard");
+export async function fetchAnalyticsDashboard(days: 7 | 30 | 90 = 30) {
+  return readJson(await apiFetch(`/api/analytics/dashboard?days=${days}`), "Failed to fetch analytics dashboard");
+}
+export async function submitAnalyticsEvent(data: Record<string, unknown>) {
+  return readJson(await apiFetch("/api/analytics/track", { method: "POST", body: JSON.stringify(data), keepalive: true }), "Failed to track analytics event");
 }
 
 // ─── Search ─────────────────────────────────────────────────────
@@ -306,6 +470,9 @@ export async function deleteTestimonial(id: string) {
 // ─── CMS: Lawyers ───────────────────────────────────────────────
 export async function fetchLawyers(params: Record<string, unknown> = {}) {
   return readJson(await apiFetch(`/api/cms/lawyers${toQuery(params)}`), "Failed to fetch lawyers");
+}
+export async function fetchAdminLawyers() {
+  return readJson(await apiFetch("/api/cms/lawyers/admin"), "Failed to fetch lawyers");
 }
 export async function createLawyer(data: Record<string, unknown>) {
   return readJson(await apiFetch("/api/cms/lawyers", { method: "POST", body: JSON.stringify(data) }), "Failed to create lawyer");

@@ -32,20 +32,20 @@ const footerHref = (label: string) =>
 
 export default function Footer() {
   return (
-    <footer className="bg-[#1E3A8A] text-white pt-16 pb-8 border-t border-[#C9A24E]/25 relative overflow-hidden">
+    <footer className="bg-[#121B35] text-white pt-16 pb-8 border-t border-[#DDAA42]/25 relative overflow-hidden">
       {/* Decorative elements */}
-      <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-gradient-to-bl from-[#C9A24E]/5 to-transparent rounded-full blur-3xl" />
+      <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-gradient-to-bl from-[#DDAA42]/5 to-transparent rounded-full blur-3xl" />
       
       <div className="max-w-[1200px] mx-auto px-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 relative z-10">
         {Object.entries(footerColumns).map(([col, links]) => (
           <div key={col}>
-            <h4 className="text-[15px] font-bold text-[#D4AF37] mb-4">{col}</h4>
+            <h4 className="text-[15px] font-bold text-[#DDAA42] mb-4">{col}</h4>
             <ul className="space-y-2">
               {links.map((l) => (
                 <li key={l}>
                   <a
                     href={footerHref(l)}
-                    className="text-[12px] text-white/60 hover:text-[#E3C25A] hover:underline transition-colors duration-200"
+                    className="text-[12px] text-white/60 hover:text-[#273559] hover:underline transition-colors duration-200"
                   >
                     {l}
                   </a>
@@ -56,21 +56,21 @@ export default function Footer() {
         ))}
 
         <div>
-          <h4 className="text-[15px] font-bold text-[#D4AF37] mb-4">Contact Us</h4>
+          <h4 className="text-[15px] font-bold text-[#DDAA42] mb-4">Contact Us</h4>
           <p className="text-[12px] text-white/60 mb-2 flex items-center gap-2">
-            <Phone className="size-3.5 text-[#C9A24E]" /> Toll Free: 1800 41 99099
+            <Phone className="size-3.5 text-[#DDAA42]" /> Toll Free: 1800 41 99099
           </p>
           <p className="text-[12px] text-white/60 mb-4 flex items-center gap-2">
-            <Mail className="size-3.5 text-[#C9A24E]" /> feedback@cleartitleone.com
+            <Mail className="size-3.5 text-[#DDAA42]" /> feedback@cleartitleone.com
           </p>
 
-          <h4 className="text-[15px] font-bold text-[#D4AF37] mb-3 mt-6">Connect with us</h4>
+          <h4 className="text-[15px] font-bold text-[#DDAA42] mb-3 mt-6">Connect with us</h4>
           <div className="flex items-center gap-2">
             {socials.map((s) => (
               <a
                 key={s.name}
                 href="/Bangalore-Real-Estate.htm"
-                className="size-8 rounded-full bg-white/10 hover:bg-[#C9A24E]/30 hover:text-[#E3C25A] flex items-center justify-center transition-all duration-200"
+                className="size-8 rounded-full bg-white/10 hover:bg-[#DDAA42]/30 hover:text-[#273559] flex items-center justify-center transition-all duration-200"
                 aria-label={s.name}
               >
                 <SocialIcon d={s.d} />
@@ -78,16 +78,16 @@ export default function Footer() {
             ))}
           </div>
 
-          <h4 className="text-[15px] font-bold text-[#D4AF37] mt-6 mb-3">Download the App</h4>
+          <h4 className="text-[15px] font-bold text-[#DDAA42] mt-6 mb-3">Download the App</h4>
           <div className="flex gap-2">
             <a href="/Bangalore-Real-Estate.htm" className="block">
-              <div className="h-9 px-3 bg-black/40 border border-white/15 rounded-lg flex items-center gap-2 text-[11px] hover:border-[#C9A24E]/50 transition-colors duration-200">
+              <div className="h-9 px-3 bg-black/40 border border-white/15 rounded-lg flex items-center gap-2 text-[11px] hover:border-[#DDAA42]/50 transition-colors duration-200">
                 <span className="text-white/50">Get it on</span>
                 <span className="font-semibold">Google Play</span>
               </div>
             </a>
             <a href="/Bangalore-Real-Estate.htm" className="block">
-              <div className="h-9 px-3 bg-black/40 border border-white/15 rounded-lg flex items-center gap-2 text-[11px] hover:border-[#C9A24E]/50 transition-colors duration-200">
+              <div className="h-9 px-3 bg-black/40 border border-white/15 rounded-lg flex items-center gap-2 text-[11px] hover:border-[#DDAA42]/50 transition-colors duration-200">
                 <span className="text-white/50">App Store</span>
               </div>
             </a>

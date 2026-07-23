@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   CircleOff,
   UserRound,
+  Pencil,
 } from "lucide-react";
 import { deleteProperty, togglePublish, toggleFeatured, setPropertyStatus } from "@/lib/propertyStore";
 import StatusControls from "@/components/admin/StatusControls";
@@ -35,6 +36,8 @@ export default function PropertyTable({
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "pending" | "admin" | "mock">("all");
   const [deleteModal, setDeleteModal] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [now, setNow] = useState(0);
   const perPage = 8;
@@ -58,7 +61,7 @@ export default function PropertyTable({
       p.builder?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter =
       filter === "all" ||
-      (filter === "pending" && (p.status ? p.status !== "approved" : p.published === false)) ||
+      (filter === "pending" && (p.status ? !["approved", "published"].includes(p.status) : p.published === false)) ||
       (filter === "admin" && adminIds.has(p.id)) ||
       (filter === "mock" && !adminIds.has(p.id));
     return matchesSearch && matchesFilter;
@@ -71,9 +74,17 @@ export default function PropertyTable({
   );
 
   const handleDelete = async (id: string) => {
-    await deleteProperty(id);
-    setDeleteModal(null);
-    onPropertyDeleted();
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      await deleteProperty(id);
+      setDeleteModal(null);
+      onPropertyDeleted();
+    } catch (cause) {
+      setDeleteError(cause instanceof Error ? cause.message : "Unable to delete this property.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handlePublish = async (id: string, currentState: boolean) => {
@@ -102,8 +113,8 @@ export default function PropertyTable({
     <div>
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="flex-1 flex items-center gap-2 bg-white rounded-xl px-4 py-2.5 border border-[#D5DEF2]/30 focus-within:border-[#C9A24E]/40 focus-within:ring-2 focus-within:ring-[#C9A24E]/10 transition-all">
-          <Search className="w-4 h-4 text-[#6E7488]" />
+        <div className="flex-1 flex items-center gap-2 bg-white rounded-xl px-4 py-2.5 border border-[#E4E0E7]/30 focus-within:border-[#DDAA42]/40 focus-within:ring-2 focus-within:ring-[#DDAA42]/10 transition-all">
+          <Search className="w-4 h-4 text-[#68646F]" />
           <input
             type="text"
             value={searchQuery}
@@ -112,12 +123,12 @@ export default function PropertyTable({
               setCurrentPage(1);
             }}
             placeholder="Search by name, location, builder..."
-            className="flex-1 bg-transparent text-[14px] text-[#1E3A8A] placeholder-[#6E7488] outline-none"
+            className="flex-1 bg-transparent text-[14px] text-[#121B35] placeholder-[#68646F] outline-none"
           />
         </div>
         <div className="flex gap-2 flex-wrap">
           {(["all", "pending", "admin", "mock"] as const).map((f) => {
-            const pendingCount = properties.filter((p) => (p.status ? p.status !== "approved" : p.published === false)).length;
+            const pendingCount = properties.filter((p) => (p.status ? !["approved", "published"].includes(p.status) : p.published === false)).length;
             const label =
               f === "all" ? "All" : f === "pending" ? "Pending" : f === "admin" ? "Admin Posted" : "Mock Data";
             return (
@@ -129,10 +140,10 @@ export default function PropertyTable({
                 }}
                 className={`px-4 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 border flex items-center gap-1.5 ${
                   filter === f
-                    ? "bg-[#C9A24E] text-white border-[#C9A24E] shadow-md"
+                    ? "bg-[#DDAA42] text-[#0B1328] border-[#DDAA42] shadow-md"
                     : f === "pending" && pendingCount > 0
                     ? "bg-amber-50 text-amber-700 border-amber-200 hover:border-amber-300"
-                    : "bg-white text-[#6E7488] border-[#D5DEF2]/30 hover:border-[#C9A24E]/40"
+                    : "bg-white text-[#68646F] border-[#E4E0E7]/30 hover:border-[#DDAA42]/40"
                 }`}
               >
                 {label}
@@ -148,9 +159,9 @@ export default function PropertyTable({
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-[#D5DEF2]/30 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-[#E4E0E7]/30 overflow-hidden">
         {/* Header */}
-        <div className="hidden md:grid grid-cols-[1fr_1fr_130px_110px_110px_150px] gap-4 px-6 py-3 bg-[#F1F5FF] border-b border-[#E2E9FB] text-[11px] font-bold text-[#6E7488] uppercase tracking-wider">
+        <div className="hidden md:grid grid-cols-[1fr_1fr_130px_110px_110px_150px] gap-4 px-6 py-3 bg-[#F8F7FA] border-b border-[#F3F1F5] text-[11px] font-bold text-[#68646F] uppercase tracking-wider">
           <span>Property</span>
           <span>Location</span>
           <span>Price</span>
@@ -162,9 +173,9 @@ export default function PropertyTable({
         {/* Rows */}
         {paged.length === 0 ? (
           <div className="p-12 text-center">
-            <Building2 className="w-12 h-12 text-[#D5DEF2] mx-auto mb-3" />
-            <p className="text-[15px] font-semibold text-[#6E7488]">No properties found</p>
-            <p className="text-[13px] text-[#6E7488]/70 mt-1">
+            <Building2 className="w-12 h-12 text-[#E4E0E7] mx-auto mb-3" />
+            <p className="text-[15px] font-semibold text-[#68646F]">No properties found</p>
+            <p className="text-[13px] text-[#68646F]/70 mt-1">
               {searchQuery ? "Try adjusting your search" : "Post your first property"}
             </p>
           </div>
@@ -174,11 +185,11 @@ export default function PropertyTable({
             return (
               <div
                 key={property.id}
-                className="grid grid-cols-1 md:grid-cols-[1fr_1fr_130px_110px_110px_150px] gap-3 md:gap-4 px-4 md:px-6 py-4 border-b border-[#E2E9FB]/50 hover:bg-[#F1F5FF]/50 transition-colors items-center"
+                className="grid grid-cols-1 md:grid-cols-[1fr_1fr_130px_110px_110px_150px] gap-3 md:gap-4 px-4 md:px-6 py-4 border-b border-[#F3F1F5]/50 hover:bg-[#F8F7FA]/50 transition-colors items-center"
               >
                 {/* Property Name + Thumbnail */}
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-[#E2E9FB] border border-[#D5DEF2]/30">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-[#F3F1F5] border border-[#E4E0E7]/30">
                     {property.images?.[0] || property.image ? (
                       <img
                         src={property.images?.[0] || property.image}
@@ -187,29 +198,29 @@ export default function PropertyTable({
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Building2 className="w-5 h-5 text-[#D5DEF2]" />
+                        <Building2 className="w-5 h-5 text-[#E4E0E7]" />
                       </div>
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[14px] font-semibold text-[#1E3A8A] truncate">{property.title}</p>
+                    <p className="text-[14px] font-semibold text-[#121B35] truncate">{property.title}</p>
                     {property.configs.length > 0 && (
-                      <p className="text-[11px] text-[#6E7488] truncate">{property.configs.join(", ")}</p>
+                      <p className="text-[11px] text-[#68646F] truncate">{property.configs.join(", ")}</p>
                     )}
                   </div>
                 </div>
 
                 {/* Location */}
-                <div className="flex items-center gap-1 text-[13px] text-[#243559]">
-                  <MapPin className="w-3.5 h-3.5 text-[#C9A24E] flex-shrink-0" />
+                <div className="flex items-center gap-1 text-[13px] text-[#3F3D46]">
+                  <MapPin className="w-3.5 h-3.5 text-[#DDAA42] flex-shrink-0" />
                   <span className="truncate">{property.subtitle}</span>
                 </div>
 
                 {/* Price */}
                 <div>
-                  <p className="text-[14px] font-bold text-[#C9A24E]">{property.price}</p>
+                  <p className="text-[14px] font-bold text-[#DDAA42]">{property.price}</p>
                   {property.pricePerSqft && (
-                    <p className="text-[11px] text-[#6E7488]">{property.pricePerSqft}</p>
+                    <p className="text-[11px] text-[#68646F]">{property.pricePerSqft}</p>
                   )}
                 </div>
 
@@ -220,8 +231,8 @@ export default function PropertyTable({
                       property.submittedBy === "user"
                         ? "bg-blue-50 text-blue-600"
                         : isAdmin
-                        ? "bg-[#E2E9FB] text-[#C9A24E]"
-                        : "bg-[#FAF3E2] text-[#D4AF37]"
+                        ? "bg-[#F3F1F5] text-[#DDAA42]"
+                        : "bg-[#FFF8E8] text-[#DDAA42]"
                     }`}
                   >
                     {property.submittedBy === "user" ? (
@@ -235,7 +246,7 @@ export default function PropertyTable({
                     )}
                   </span>
                   {isAdmin && property.postedDate && (
-                    <p className="text-[10px] text-[#6E7488] mt-0.5">{getTimeAgo(property.postedDate)}</p>
+                    <p className="text-[10px] text-[#68646F] mt-0.5">{getTimeAgo(property.postedDate)}</p>
                   )}
                 </div>
 
@@ -246,8 +257,8 @@ export default function PropertyTable({
                     onChange={(s) => setPropertyStatus(property.id, s).then(onPropertyDeleted)}
                   />
                   {property.featured && (
-                    <p className="text-[10px] text-[#C9A24E] font-bold mt-0.5 flex items-center gap-0.5">
-                      <Star className="w-3 h-3 fill-[#C9A24E]" /> Featured
+                    <p className="text-[10px] text-[#DDAA42] font-bold mt-0.5 flex items-center gap-0.5">
+                      <Star className="w-3 h-3 fill-[#DDAA42]" /> Featured
                     </p>
                   )}
                 </div>
@@ -256,26 +267,33 @@ export default function PropertyTable({
                 <div className="flex items-center justify-center gap-1.5">
                   <Link
                     href={`/property/${property.id}`}
-                    className="w-8 h-8 rounded-lg bg-[#F1F5FF] flex items-center justify-center hover:bg-[#E2E9FB] transition-colors border border-[#D5DEF2]/30"
+                    className="w-8 h-8 rounded-lg bg-[#F8F7FA] flex items-center justify-center hover:bg-[#F3F1F5] transition-colors border border-[#E4E0E7]/30"
                     title="View on site"
                   >
-                    <Eye className="w-4 h-4 text-[#C9A24E]" />
+                    <Eye className="w-4 h-4 text-[#DDAA42]" />
+                  </Link>
+                  <Link
+                    href={`/admin/post?edit=${encodeURIComponent(property.id)}`}
+                    className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center hover:bg-blue-100 transition-colors border border-blue-100"
+                    title="Edit property"
+                  >
+                    <Pencil className="w-4 h-4 text-blue-600" />
                   </Link>
                   {isAdmin && (
                     <button
                       onClick={() => handleFeature(property.id, !!property.featured)}
                       className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border ${
                         property.featured
-                          ? "bg-[#FAF3E2] hover:bg-[#F5EACC] border-[#E8C66A]/40"
-                          : "bg-[#F1F5FF] hover:bg-[#E2E9FB] border-[#D5DEF2]/30"
+                          ? "bg-[#FFF8E8] hover:bg-[#FAEBC8] border-[#F2C052]/40"
+                          : "bg-[#F8F7FA] hover:bg-[#F3F1F5] border-[#E4E0E7]/30"
                       }`}
                       title={property.featured ? "Remove from featured" : "Mark as featured"}
                     >
-                      <Star className={`w-4 h-4 ${property.featured ? "fill-[#C9A24E] text-[#C9A24E]" : "text-[#6E7488]"}`} />
+                      <Star className={`w-4 h-4 ${property.featured ? "fill-[#DDAA42] text-[#DDAA42]" : "text-[#68646F]"}`} />
                     </button>
                   )}
                   <button
-                    onClick={() => setDeleteModal(property.id)}
+                    onClick={() => { setDeleteError(""); setDeleteModal(property.id); }}
                     className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center hover:bg-red-100 transition-colors border border-red-100"
                     title="Delete"
                   >
@@ -289,8 +307,8 @@ export default function PropertyTable({
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-3 bg-[#F1F5FF]/50 border-t border-[#E2E9FB]">
-            <p className="text-[12px] text-[#6E7488]">
+          <div className="flex items-center justify-between px-6 py-3 bg-[#F8F7FA]/50 border-t border-[#F3F1F5]">
+            <p className="text-[12px] text-[#68646F]">
               Showing {(currentPage - 1) * perPage + 1}–
               {Math.min(currentPage * perPage, filteredProperties.length)} of{" "}
               {filteredProperties.length}
@@ -299,7 +317,7 @@ export default function PropertyTable({
               <button
                 onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                 disabled={currentPage === 1}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#6E7488] hover:bg-white disabled:opacity-30 transition-colors"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#68646F] hover:bg-white disabled:opacity-30 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -309,8 +327,8 @@ export default function PropertyTable({
                   onClick={() => setCurrentPage(page)}
                   className={`w-8 h-8 rounded-lg flex items-center justify-center text-[13px] font-medium transition-colors ${
                     currentPage === page
-                      ? "bg-[#C9A24E] text-white"
-                      : "text-[#6E7488] hover:bg-white"
+                      ? "bg-[#DDAA42] text-[#0B1328]"
+                      : "text-[#68646F] hover:bg-white"
                   }`}
                 >
                   {page}
@@ -319,7 +337,7 @@ export default function PropertyTable({
               <button
                 onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#6E7488] hover:bg-white disabled:opacity-30 transition-colors"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#68646F] hover:bg-white disabled:opacity-30 transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -337,27 +355,29 @@ export default function PropertyTable({
                 <AlertTriangle className="w-6 h-6 text-red-500" />
               </div>
               <div>
-                <h3 className="text-[16px] font-bold text-[#1E3A8A]">Delete Property</h3>
-                <p className="text-[13px] text-[#6E7488]">This action cannot be undone</p>
+                <h3 className="text-[16px] font-bold text-[#121B35]">Delete Property</h3>
+                <p className="text-[13px] text-[#68646F]">This action cannot be undone</p>
               </div>
-              <button onClick={() => setDeleteModal(null)} className="ml-auto text-[#6E7488] hover:text-[#1E3A8A]">
+              <button onClick={() => setDeleteModal(null)} className="ml-auto text-[#68646F] hover:text-[#121B35]">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setDeleteModal(null)}
-                className="flex-1 px-4 py-2.5 rounded-xl text-[14px] font-medium border border-[#D5DEF2]/30 text-[#243559] hover:bg-[#F1F5FF] transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-xl text-[14px] font-medium border border-[#E4E0E7]/30 text-[#3F3D46] hover:bg-[#F8F7FA] transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleDelete(deleteModal)}
+                disabled={deleting}
                 className="flex-1 px-4 py-2.5 rounded-xl text-[14px] font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors shadow-md"
               >
-                Delete
+                {deleting ? "Deleting…" : "Delete"}
               </button>
             </div>
+            {deleteError && <p role="alert" className="mt-3 text-[12.5px] text-red-700">{deleteError}</p>}
           </div>
         </div>
       )}

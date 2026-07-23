@@ -78,10 +78,6 @@ export function validatePlotDraft(property: Partial<Property>): PlotErrors {
   if (!property.listingType || !["For Sale", "For Rent"].includes(property.listingType)) errors.listingType = "Select a listing type.";
   if (property.reraRegistered && !/^[A-Za-z0-9/._-]{8,50}$/.test(property.reraNumber?.trim() || "")) errors.reraNumber = "Use 8–50 letters, numbers, /, ., _, or -.";
   if (property.locality?.pinCode && !/^\d{6}$/.test(property.locality.pinCode)) errors.pinCode = "Enter a 6-digit PIN code.";
-  if (property.virtualTourUrl) {
-    try { const url = new URL(property.virtualTourUrl); if (!['http:', 'https:'].includes(url.protocol)) throw new Error(); }
-    catch { errors.virtualTourUrl = "Enter a valid HTTP(S) virtual-tour URL."; }
-  }
   return errors;
 }
 

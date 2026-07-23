@@ -24,7 +24,7 @@ export default function PostPropertyRail() {
       {/* Floating Shield Rail — full label on large screens */}
       <button
         onClick={() => setIsOpen(true)}
-        className="hidden lg:flex fixed right-0 top-[40%] z-40 bg-[#1E3A8A] text-[#E8C66A] border-l-4 border-[#C9A24E] hover:bg-[#C9A24E] hover:text-white pl-4 pr-5 py-3 rounded-l-2xl shadow-2xl items-center gap-2.5 transition-all duration-300 hover:-translate-x-1.5 hover:scale-102 group cursor-pointer"
+        className="hidden lg:flex fixed right-0 top-[40%] z-40 bg-[#121B35] text-[#F2C052] border-l-4 border-[#DDAA42] hover:bg-[#DDAA42] hover:text-[#0B1328] pl-4 pr-5 py-3 rounded-l-2xl shadow-2xl items-center gap-2.5 transition-all duration-300 hover:-translate-x-1.5 hover:scale-102 group cursor-pointer"
         aria-label="Legal Consultation Helpdesk"
       >
         <Scale className="size-5 group-hover:rotate-12 transition-transform duration-300" />
@@ -37,28 +37,28 @@ export default function PostPropertyRail() {
       {/* Compact floating button on mobile/tablet */}
       <button
         onClick={() => setIsOpen(true)}
-        className="lg:hidden fixed right-4 bottom-24 z-40 size-14 rounded-full bg-[#1E3A8A] text-[#E8C66A] border-2 border-[#C9A24E] shadow-2xl flex items-center justify-center active:scale-95 transition-transform"
+        className="lg:hidden fixed right-4 bottom-24 z-40 size-14 rounded-full bg-[#121B35] text-[#F2C052] border-2 border-[#DDAA42] shadow-2xl flex items-center justify-center active:scale-95 transition-transform"
         aria-label="Legal Consultation Helpdesk"
       >
         <Scale className="size-6" />
-        <span className="absolute -top-1 -right-1 bg-[#C9A24E] text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">CT</span>
+        <span className="absolute -top-1 -right-1 bg-[#DDAA42] text-[#0B1328] text-[8px] font-bold px-1.5 py-0.5 rounded-full">CT</span>
       </button>
 
       {/* Glassmorphic Legal Modal */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-[460px] bg-[#1E3A8A] text-white rounded-3xl border border-[#C9A24E]/35 p-6 shadow-2xl relative overflow-hidden">
+          <div className="w-full max-w-[460px] bg-[#121B35] text-white rounded-3xl border border-[#DDAA42]/35 p-6 shadow-2xl relative overflow-hidden">
             {/* Radial background glow */}
-            <div className="absolute -right-20 -top-20 w-48 h-48 bg-gradient-to-br from-[#E8C66A]/10 to-transparent rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute -right-20 -top-20 w-48 h-48 bg-gradient-to-br from-[#F2C052]/10 to-transparent rounded-full blur-2xl pointer-events-none" />
             
             {/* Modal Header */}
             <div className="flex items-start justify-between mb-5 relative z-10">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 bg-white/10 border border-white/20 rounded-xl flex items-center justify-center text-white">
-                  <Scale className="size-5.5 text-[#E8C66A]" />
+                  <Scale className="size-5.5 text-[#F2C052]" />
                 </div>
                 <div>
-                  <h3 className="text-[18px] font-bold text-[#E8C66A]">Ask a Real Estate Lawyer</h3>
+                  <h3 className="text-[18px] font-bold text-[#F2C052]">Ask a Real Estate Lawyer</h3>
                   <p className="text-[12px] text-white/55">Assigned counsel reviews within 2 hours</p>
                 </div>
               </div>
@@ -91,7 +91,7 @@ export default function PostPropertyRail() {
                         onClick={() => setCategory(cat)}
                         className={`py-2 px-3 rounded-xl font-bold border transition-all text-center ${
                           category === cat
-                            ? "bg-[#C9A24E] text-white border-transparent"
+                            ? "bg-[#DDAA42] text-[#0B1328] border-transparent"
                             : "bg-white/5 text-white/80 border-white/15 hover:bg-white/10"
                         }`}
                       >
@@ -111,18 +111,18 @@ export default function PostPropertyRail() {
                     onChange={(e) => setQuery(e.target.value)}
                     rows={4}
                     placeholder="Enter details about title deeds, encumbrance certificates, builder extensions, or plot boundaries..."
-                    className="w-full p-3.5 bg-white/10 border border-white/15 rounded-2xl text-[13px] text-white outline-none focus:border-[#E8C66A] transition-colors resize-none placeholder:text-white/40 leading-relaxed"
+                    className="w-full p-3.5 bg-white/10 border border-white/15 rounded-2xl text-[13px] text-white outline-none focus:border-[#F2C052] transition-colors resize-none placeholder:text-white/40 leading-relaxed"
                   />
                 </div>
 
-                <div className="bg-[#C9A24E]/15 border border-[#C9A24E]/25 p-3 rounded-xl flex items-center gap-2.5 text-[11px] text-white/85">
-                  <ShieldCheck className="size-4.5 text-[#E8C66A] shrink-0" />
+                <div className="bg-[#DDAA42]/15 border border-[#DDAA42]/25 p-3 rounded-xl flex items-center gap-2.5 text-[11px] text-white/85">
+                  <ShieldCheck className="size-4.5 text-[#F2C052] shrink-0" />
                   <span>Submission assigned only to Bar Council registered attorneys.</span>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full h-11 bg-gradient-to-r from-[#D4AF37] to-[#E8C66A] hover:from-[#C5A55A] hover:to-[#D4AF37] text-[#1E3A8A] font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
+                  className="w-full h-11 bg-gradient-to-r from-[#DDAA42] to-[#F2C052] hover:from-[#B98428] hover:to-[#DDAA42] text-[#121B35] font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
                 >
                   <Send className="size-4" />
                   Send Query to Legal Panel
@@ -130,10 +130,10 @@ export default function PostPropertyRail() {
               </form>
             ) : (
               <div className="text-center py-8 animate-in zoom-in duration-300 relative z-10">
-                <CheckCircle2 className="size-14 text-[#C9A24E] mx-auto mb-4 animate-bounce" />
+                <CheckCircle2 className="size-14 text-[#DDAA42] mx-auto mb-4 animate-bounce" />
                 <h4 className="text-[18px] font-bold text-white">Query Lodged Successfully!</h4>
                 <p className="text-[13px] text-white/60 mt-2 max-w-xs mx-auto">
-                  Assigned category: <span className="text-[#E8C66A] font-semibold">{category}</span>.
+                  Assigned category: <span className="text-[#F2C052] font-semibold">{category}</span>.
                   A Bar Council auditor is verifying your details. Check your phone updates.
                 </p>
               </div>

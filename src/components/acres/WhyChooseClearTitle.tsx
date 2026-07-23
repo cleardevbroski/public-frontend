@@ -25,11 +25,11 @@ export default function WhyChooseClearTitle() {
     <section className="bg-white py-20">
       <div className="max-w-[1100px] mx-auto px-5">
         <div className="text-center mb-12">
-          <h2 className="text-[30px] md:text-[40px] font-bold text-[#1E3A8A]">
+          <h2 className="text-[30px] md:text-[40px] font-bold text-[#121B35]">
             Why <span className="text-gold-gradient">Choose Cleartitleone</span>
           </h2>
           <div className="gold-divider mx-auto mt-4" />
-          <p className="text-[15px] text-[#6E7488] mt-4">
+          <p className="text-[15px] text-[#68646F] mt-4">
             Your Trusted Partner in Bangalore Real Estate
           </p>
         </div>
@@ -38,13 +38,13 @@ export default function WhyChooseClearTitle() {
           {reasons.map(({ icon: Icon, title, desc }) => (
             <div
               key={title}
-              className="group bg-[#F1F5FF] rounded-2xl p-8 text-center border border-[#D5DEF2]/60 hover:border-[#D4AF37]/50 hover:shadow-xl transition-all duration-300"
+              className="group bg-[#F8F7FA] rounded-2xl p-8 text-center border border-[#E4E0E7]/60 hover:border-[#DDAA42]/50 hover:shadow-xl transition-all duration-300"
             >
-              <div className="mx-auto mb-5 size-16 rounded-2xl bg-gradient-to-br from-[#1E3A8A] to-[#2E54B8] flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <Icon className="size-7 text-[#E8C66A]" />
+              <div className="mx-auto mb-5 size-16 rounded-2xl bg-gradient-to-br from-[#121B35] to-[#273559] flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                <Icon className="size-7 text-[#F2C052]" />
               </div>
-              <h3 className="text-[20px] font-bold text-[#1E3A8A]">{title}</h3>
-              <p className="text-[13.5px] text-[#6E7488] mt-2 leading-relaxed">{desc}</p>
+              <h3 className="text-[20px] font-bold text-[#121B35]">{title}</h3>
+              <p className="text-[13.5px] text-[#68646F] mt-2 leading-relaxed">{desc}</p>
             </div>
           ))}
         </div>

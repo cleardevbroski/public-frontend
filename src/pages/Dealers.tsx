@@ -24,23 +24,23 @@ export default function DealersPage() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-[#F1F5FF]">
+      <main className="flex-1 bg-[#F8F7FA]">
         {/* Hero band */}
-        <section className="bg-gradient-to-br from-[#0B1B43] via-[#1E3A8A] to-[#25459E] text-white">
+        <section className="bg-gradient-to-br from-[#0B1328] via-[#121B35] to-[#273559] text-white">
           <div className="max-w-[1200px] mx-auto px-5 py-14">
-            <nav className="text-[12px] text-[#D5DEF2]/70 flex items-center gap-1.5">
-              <Link href="/" className="hover:text-[#E8C66A]">Home</Link>
-              <ChevronRight className="size-3.5" /> <span className="text-[#E8C66A]">Dealers</span>
+            <nav className="text-[12px] text-[#E4E0E7]/70 flex items-center gap-1.5">
+              <Link href="/" className="hover:text-[#F2C052]">Home</Link>
+              <ChevronRight className="size-3.5" /> <span className="text-[#F2C052]">Dealers</span>
             </nav>
             <div className="flex items-center gap-3 mt-4">
-              <span className="size-14 rounded-full bg-gradient-to-br from-[#E8C66A] to-[#D4AF37] flex items-center justify-center text-[#1E3A8A] shadow">
+              <span className="size-14 rounded-full bg-gradient-to-br from-[#F2C052] to-[#DDAA42] flex items-center justify-center text-[#121B35] shadow">
                 <Award className="size-7" />
               </span>
               <div>
                 <h1 className="text-[32px] md:text-[40px] font-bold">
                   Verified <span className="text-gold-gradient">Dealers</span> &amp; Channel Partners
                 </h1>
-                <p className="text-[14px] text-[#D5DEF2]/85 mt-1">
+                <p className="text-[14px] text-[#E4E0E7]/85 mt-1">
                   Connect with {dealers.length} trusted real-estate dealers across Bangalore.
                 </p>
               </div>
@@ -48,12 +48,12 @@ export default function DealersPage() {
 
             <div className="mt-7 flex flex-col sm:flex-row gap-3 max-w-2xl">
               <div className="flex-1 flex items-center gap-2 bg-white rounded-xl px-4 h-12 shadow">
-                <Search className="size-5 text-[#6E7488]" />
+                <Search className="size-5 text-[#68646F]" />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search dealers by name, agency or locality"
-                  className="flex-1 outline-none text-[14px] text-[#1E3A8A] bg-transparent"
+                  className="flex-1 outline-none text-[14px] text-[#121B35] bg-transparent"
                 />
               </div>
               <Link href="/account" className="h-12 px-5 btn-gold rounded-xl flex items-center justify-center gap-2 text-[14px] font-bold whitespace-nowrap">
@@ -64,11 +64,11 @@ export default function DealersPage() {
         </section>
 
         <section className="max-w-[1200px] mx-auto px-5 py-12">
-          <p className="text-[14px] text-[#6E7488] mb-6">
-            Showing <span className="font-bold text-[#1E3A8A]">{filtered.length}</span> dealers
+          <p className="text-[14px] text-[#68646F] mb-6">
+            Showing <span className="font-bold text-[#121B35]">{filtered.length}</span> dealers
           </p>
           {filtered.length === 0 ? (
-            <div className="text-center py-20 text-[#6E7488]">No dealers match your search.</div>
+            <div className="text-center py-20 text-[#68646F]">No dealers match your search.</div>
           ) : (
             <div className="flex flex-wrap gap-6 justify-center md:justify-start">
               {filtered.map((d) => (
