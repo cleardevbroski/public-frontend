@@ -48,28 +48,22 @@ import type { ConfigurationDetail, FacilityDetail, Property, VillaConfigurationD
 import {
   createConfigurationDetail,
   normalizeBhkLabel,
-  preparePropertyPayload,
   formatPossession,
-  validateApartmentDraft,
   type ApartmentErrors,
 } from "@/lib/propertyDetails";
 import {
   createVillaConfigurationDetail,
   initialVillaDetails,
-  prepareVillaPropertyPayload,
-  validateVillaDraft,
 } from "@/lib/villaDetails";
 import {
   createPlotSizeDetail,
   initialPlotDetails,
   normalizePlotSize,
-  preparePlotPropertyPayload,
-  validatePlotDraft,
 } from "@/lib/plotDetails";
-import { initialCommercialDetails, prepareCommercialPropertyPayload, validateCommercialDraft } from "@/lib/commercialDetails";
-import { initialPgDetails, preparePgPropertyPayload, validatePgDraft } from "@/lib/pgDetails";
-import { initialRentDetails, prepareRentPayload, validateRentDraft } from "@/lib/rentDetails";
-import { initialLeaseDetails, prepareLeasePayload, validateLeaseDraft } from "@/lib/leaseDetails";
+import { initialCommercialDetails } from "@/lib/commercialDetails";
+import { initialPgDetails } from "@/lib/pgDetails";
+import { initialRentDetails } from "@/lib/rentDetails";
+import { initialLeaseDetails } from "@/lib/leaseDetails";
 
 const steps = [
   { id: 1, label: "Basic Details", icon: Building2 },
@@ -157,44 +151,44 @@ const initialFormData: FormData = {
   leaseDetails: undefined,
   area: "",
   possession: "",
-  possessionDetails: { status: "Ready to Move", launchDate: "" },
+  possessionDetails: undefined,
   builder: "",
   developerLogoUrl: "",
   localityMapImageUrl: "",
   image: "",
   badges: [],
   description: "",
-  propertyType: "Apartment",
-  bedrooms: 2,
-  bathrooms: 2,
-  parking: "1 Covered",
-  furnishing: "Semi-Furnished",
-  facing: "East",
+  propertyType: "",
+  bedrooms: undefined,
+  bathrooms: undefined,
+  parking: "",
+  furnishing: "",
+  facing: "",
   floor: "",
   floorLabel: "",
-  transactionType: "New Property",
-  listingType: "For Sale",
-  ageOfProperty: "Under Construction",
+  transactionType: "",
+  listingType: "" as Property["listingType"],
+  ageOfProperty: "",
   heroImages: [],
   images: [],
   amenities: [],
   facilities: [],
-  ownershipType: "Freehold",
+  ownershipType: "",
   overlooking: [],
   bookingAmount: "",
   maintenanceCharges: "",
   maintenancePeriod: "month",
   society: {
-    security: "24x7 Security",
-    waterSupply: "24 Hours",
-    powerBackup: "Full Backup",
-    lift: "2 Lifts",
-    visitorParking: "Available",
-    maintenanceStaff: "Available",
+    security: "",
+    waterSupply: "",
+    powerBackup: "",
+    lift: "",
+    visitorParking: "",
+    maintenanceStaff: "",
   },
   locality: {
-    city: "Bangalore",
-    zone: "East",
+    city: "",
+    zone: "",
     landmark: "",
   },
   nearbyAmenities: {
@@ -220,6 +214,27 @@ interface PropertyFormProps {
   mode?: "admin" | "public";
   initialData?: Partial<FormData>;
   submissionId?: string;
+}
+
+/** Keep only information entered in the form. Empty fields must not become
+ * fallback text, defaults, or empty nested records in a property listing. */
+function compactPropertyPayload<T>(value: T): T | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return (trimmed ? trimmed : undefined) as T | undefined;
+  }
+  if (Array.isArray(value)) {
+    const entries = value.map((item) => compactPropertyPayload(item)).filter((item) => item !== undefined);
+    return (entries.length ? entries : undefined) as T | undefined;
+  }
+  if (typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .map(([key, item]) => [key, compactPropertyPayload(item)] as const)
+      .filter(([, item]) => item !== undefined);
+    return (entries.length ? Object.fromEntries(entries) : undefined) as T | undefined;
+  }
+  return value;
 }
 
 function mergeInitialData(initialData?: Partial<FormData>): FormData {
@@ -250,13 +265,12 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
   const [configError, setConfigError] = useState("");
   const [submitError, setSubmitError] = useState("");
 
-  const buildPropertyPayload = () => prepareLeasePayload(prepareRentPayload(preparePgPropertyPayload(prepareCommercialPropertyPayload(preparePlotPropertyPayload(prepareVillaPropertyPayload(preparePropertyPayload({
+  const buildPropertyPayload = () => compactPropertyPayload({
     ...formData,
     heroImages: (formData.heroImages || []).slice(0, 3),
-    image: formData.heroImages?.[0] || formData.images?.[0] || "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80",
     // Retain the original submitter when an admin edits a customer listing.
     submittedBy: formData.submittedBy || (isPublic ? "user" : "admin"),
-  })))))));
+  }) || {};
 
   useEffect(() => {
     if (isPublic) return;
@@ -455,24 +469,24 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
             plotDetails: undefined,
             commercialDetails: undefined,
             pgDetails: undefined,
-            possessionDetails: { status: "Ready to Move", launchDate: "" },
+            possessionDetails: undefined,
           }
         : propertyType === "Villa"
           ? {
               configs: [],
               configurationDetails: undefined,
-              villaDetails: initialVillaDetails(),
+              villaDetails: undefined,
               plotDetails: undefined,
               commercialDetails: undefined,
               pgDetails: undefined,
-              possessionDetails: { status: "Ready to Move", launchDate: "" },
+              possessionDetails: undefined,
             }
           : propertyType === "Plot"
             ? {
                 configs: [],
                 configurationDetails: undefined,
                 villaDetails: undefined,
-                plotDetails: initialPlotDetails(),
+                plotDetails: undefined,
                 commercialDetails: undefined,
                 pgDetails: undefined,
                 possessionDetails: undefined,
@@ -480,11 +494,11 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
           : propertyType === "Commercial"
             ? {
                 configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined,
-                commercialDetails: initialCommercialDetails(), possessionDetails: { status: "Ready to Move", launchDate: "" },
+                commercialDetails: undefined, possessionDetails: undefined,
               }
-          : propertyType === "PG/Co-living" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: initialPgDetails(), possessionDetails: undefined, reraRegistered: false, reraNumber: "" }
-          : propertyType === "Rent" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: undefined, rentDetails: initialRentDetails(), listingType: "For Rent", possessionDetails: undefined, reraRegistered: false, reraNumber: "" }
-          : propertyType === "Lease" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: undefined, rentDetails: undefined, leaseDetails: initialLeaseDetails(), listingType: "For Rent", possessionDetails: undefined, reraRegistered: false, reraNumber: "" }
+          : propertyType === "PG/Co-living" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: undefined, possessionDetails: undefined, reraRegistered: false, reraNumber: "" }
+          : propertyType === "Rent" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: undefined, rentDetails: undefined, listingType: "", possessionDetails: undefined, reraRegistered: false, reraNumber: "" }
+          : propertyType === "Lease" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: undefined, rentDetails: undefined, leaseDetails: undefined, listingType: "", possessionDetails: undefined, reraRegistered: false, reraNumber: "" }
           : {
               ...(isStructuredType(prev.propertyType) ? { configs: [] } : {}),
               configurationDetails: undefined,
@@ -517,17 +531,6 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
   };
 
   const nextStep = () => {
-    if (!isStepValid(currentStep)) {
-      if (formData.propertyType === "Apartment") setValidationErrors(validateApartmentDraft(formData));
-      else if (formData.propertyType === "Villa") setValidationErrors(validateVillaDraft(formData));
-      else if (formData.propertyType === "Plot") setValidationErrors(validatePlotDraft(formData));
-      else if (formData.propertyType === "Commercial") setValidationErrors(validateCommercialDraft(formData));
-      else if (formData.propertyType === "PG/Co-living") setValidationErrors(validatePgDraft(formData));
-      else if (formData.propertyType === "Rent") setValidationErrors(validateRentDraft(formData));
-      else if (formData.propertyType === "Lease") setValidationErrors(validateLeaseDraft(formData));
-      else setValidationErrors({ basic: "Complete all required fields before continuing." });
-      return;
-    }
     setValidationErrors({});
     setCurrentStep((s) => Math.min(s + 1, 5));
   };
@@ -535,33 +538,6 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
-    if (formData.propertyType === "Apartment") {
-      const errors = validateApartmentDraft(formData);
-      if (Object.keys(errors).length) {
-        setValidationErrors(errors);
-        setSubmitError("Some Apartment details are invalid. Return to the highlighted step and correct them.");
-        return;
-      }
-    } else if (formData.propertyType === "Villa") {
-      const errors = validateVillaDraft(formData);
-      if (Object.keys(errors).length) {
-        setValidationErrors(errors);
-        setSubmitError("Some Villa details are invalid. Return to the highlighted step and correct them.");
-        return;
-      }
-    } else if (formData.propertyType === "Plot") {
-      const errors = validatePlotDraft(formData);
-      if (Object.keys(errors).length) {
-        setValidationErrors(errors);
-        setSubmitError("Some Plot details are invalid. Return to the highlighted step and correct them.");
-        return;
-      }
-    } else if (formData.propertyType === "Commercial") {
-      const errors = validateCommercialDraft(formData);
-      if (Object.keys(errors).length) { setValidationErrors(errors); setSubmitError("Some Commercial details are invalid. Return to the highlighted step and correct them."); return; }
-    } else if (formData.propertyType === "PG/Co-living") { const errors = validatePgDraft(formData); if (Object.keys(errors).length) { setValidationErrors(errors); setSubmitError("Some PG details are invalid. Return to the highlighted step and correct them."); return; }
-    } else if (formData.propertyType === "Rent") { const errors=validateRentDraft(formData); if(Object.keys(errors).length){setValidationErrors(errors);return;} }
-    else if (formData.propertyType === "Lease") { const errors=validateLeaseDraft(formData); if(Object.keys(errors).length){setValidationErrors(errors);return;} }
     setIsSubmitting(true);
     setSubmitError("");
     try {
@@ -629,38 +605,6 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     }
   };
 
-  const isStepValid = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        if (!(formData.title.trim() && formData.subtitle.trim())) return false;
-        if (formData.propertyType === "Apartment") return Object.keys(validateApartmentDraft(formData)).length === 0;
-        if (formData.propertyType === "Villa") return Object.keys(validateVillaDraft(formData)).length === 0;
-        if (formData.propertyType === "Plot") return Object.keys(validatePlotDraft(formData)).filter((key) => !["layoutMapUrl", "pinCode"].includes(key)).length === 0;
-        if (formData.propertyType === "Commercial") return Object.keys(validateCommercialDraft(formData)).length === 0;
-        if (formData.propertyType === "PG/Co-living") return Object.keys(validatePgDraft(formData)).length === 0;
-        if (formData.propertyType === "Rent") return Object.keys(validateRentDraft(formData)).length === 0;
-        if (formData.propertyType === "Lease") return Object.keys(validateLeaseDraft(formData)).length === 0;
-        return !!(formData.price && formData.area && formData.configs.length > 0);
-      case 2:
-        if (formData.propertyType === "Apartment" || formData.propertyType === "Villa") return true;
-        if (formData.propertyType === "Plot") return !validatePlotDraft(formData).layoutMapUrl;
-        if (formData.propertyType === "Commercial") return true;
-        return true;
-      case 3:
-        return true; // amenities optional
-      case 4:
-        if (formData.propertyType === "Apartment") return !Object.keys(validateApartmentDraft(formData)).some((key) => key === "pinCode" || key.startsWith("nearby."));
-        if (formData.propertyType === "Villa") return !Object.keys(validateVillaDraft(formData)).some((key) => key === "pinCode" || key.startsWith("nearby."));
-        if (formData.propertyType === "Plot") return !Object.keys(validatePlotDraft(formData)).some((key) => key === "pinCode" || key.startsWith("nearby."));
-        if (formData.propertyType === "Commercial") return true;
-        return true;
-      case 5:
-        return true;
-      default:
-        return false;
-    }
-  };
-
   if (submitted && isPublic) {
     return (
       <div className="max-w-2xl mx-auto text-center bg-white rounded-3xl p-10 md:p-14 shadow-md border border-[#E4E0E7]/40">
@@ -700,7 +644,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     );
   }
 
-  const previewData = prepareLeasePayload(prepareRentPayload(preparePgPropertyPayload(prepareCommercialPropertyPayload(preparePlotPropertyPayload(prepareVillaPropertyPayload(preparePropertyPayload(formData)))))));
+  const previewData = compactPropertyPayload(formData) || {};
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -775,7 +719,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
               {/* Property Type */}
               <div>
                 <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">
-                  Property Type <span className="text-[#F2C052]">*</span>
+                  Property Type
                 </label>
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                   {propertyTypes.map((type) => (
@@ -799,7 +743,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">
-                    Property / Project Name <span className="text-[#F2C052]">*</span>
+                    Property / Project Name
                   </label>
                   <input
                     type="text"
@@ -811,7 +755,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 </div>
                 <div>
                   <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">
-                    Location / Subtitle <span className="text-[#F2C052]">*</span>
+                    Location / Subtitle
                   </label>
                   <input
                     type="text"
@@ -882,7 +826,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 <LeaseDetailsFields details={formData.leaseDetails || initialLeaseDetails()} setDetails={(value) => updateField("leaseDetails", value)} errors={validationErrors} />
               ) : (
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Configurations <span className="text-[#F2C052]">*</span></label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Configurations</label>
                   <div className="flex gap-2 mb-2">
                     <input type="text" value={configInput} onChange={(e) => setConfigInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addConfig())} placeholder="e.g. 3 BHK" className="flex-1 px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42]" />
                     <button type="button" onClick={addConfig} className="px-4 py-3 bg-[#DDAA42] text-[#0B1328] rounded-xl text-[13px] font-medium">Add</button>
@@ -895,7 +839,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
               {(!isStructuredType(formData.propertyType) || formData.propertyType === "Commercial") && <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">
-                    Price <span className="text-[#F2C052]">*</span>
+                    Price
                   </label>
                   <input
                     type="text"
@@ -917,7 +861,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 </div>
                 <div>
                   <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">
-                    Area <span className="text-[#F2C052]">*</span>
+                    Area
                   </label>
                   <input
                     type="text"
@@ -995,7 +939,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   </select>
                 </div>}
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Builder / Developer {(formData.propertyType === "Villa" || formData.propertyType === "Plot") && <span className="text-[#F2C052]">*</span>}</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Builder / Developer</label>
                   <input
                     type="text"
                     list={!isPublic ? "builder-options" : undefined}
@@ -1008,7 +952,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   {validationErrors.builder && <p className="text-[12px] text-red-600 mt-1">{validationErrors.builder}</p>}
                 </div>
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Transaction Type {(formData.propertyType === "Villa" || formData.propertyType === "Plot") && <span className="text-[#F2C052]">*</span>}</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Transaction Type</label>
                   <div className="flex gap-2">
                     {transactionTypes.map((type) => (
                       <button
@@ -1028,7 +972,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   {validationErrors.transactionType && <p className="text-[12px] text-red-600 mt-1">{validationErrors.transactionType}</p>}
                 </div>
                 {formData.propertyType !== "Apartment" && <div>
-                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Listing Type {(formData.propertyType === "Villa" || formData.propertyType === "Plot") && <span className="text-[#F2C052]">*</span>}</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Listing Type</label>
                   <div className="flex gap-2">
                     {["For Sale", "For Rent"].map((type) => (
                       <button
@@ -1138,7 +1082,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                     </div>
                   </div>
                   {formData.transactionType === "New Property" && <div>
-                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Booking Amount <span className="text-[#F2C052]">*</span></label>
+                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Booking Amount</label>
                     <input value={formData.bookingAmount || ""} onChange={(e) => updateField("bookingAmount", e.target.value)} placeholder="e.g. ₹5,00,000" className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
                     {validationErrors.bookingAmount && <p className="text-[12px] text-red-600 mt-1">{validationErrors.bookingAmount}</p>}
                   </div>}
@@ -1228,7 +1172,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
               </div>
               {isStructuredType(formData.propertyType) && formData.reraRegistered && (
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">RERA Number <span className="text-[#F2C052]">*</span></label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">RERA Number</label>
                   <input value={formData.reraNumber || ""} onChange={(e) => updateField("reraNumber", e.target.value)} placeholder="PRM/KA/RERA/..." className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
                   {validationErrors.reraNumber && <p className="text-[12px] text-red-600 mt-1">{validationErrors.reraNumber}</p>}
                 </div>
@@ -1267,7 +1211,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
               <div className="mt-8 border-t border-[#F3F1F5] pt-6">
                 <div className="mb-4">
                   <h3 className="text-[15px] font-bold text-[#121B35]">Optional Project Presentation</h3>
-                  <p className="mt-1 text-[12px] text-[#68646F]">These files improve the public property page but are never required to continue.</p>
+                  <p className="mt-1 text-[12px] text-[#68646F]">Add project overview photos, a gallery, and a brochure when available.</p>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <OptionalMediaField
@@ -1287,7 +1231,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
 
               {formData.propertyType === "Plot" && (
                 <div className="mt-8 pt-6 border-t border-[#F3F1F5]">
-                  <h3 className="text-[15px] font-bold text-[#121B35] mb-1">Master Plan / Layout Map <span className="text-[#F2C052]">*</span></h3>
+                  <h3 className="text-[15px] font-bold text-[#121B35] mb-1">Master Plan / Layout Map</h3>
                   <p className="text-[13px] text-[#68646F] mb-4">Required for buyers to verify plot numbers and availability. Upload JPG, PNG, WebP, or PDF (max 5 MB).</p>
                   {formData.plotDetails?.layoutMapUrl ? <div className="flex items-center gap-3 p-4 bg-[#F8F7FA] border border-[#E4E0E7]/40 rounded-2xl"><FileText className="w-6 h-6 text-[#DDAA42]" /><span className="flex-1 text-[13px] font-semibold text-[#121B35]">Layout map attached</span><button type="button" onClick={() => updateField("plotDetails", { ...(formData.plotDetails || initialPlotDetails()), layoutMapUrl: "" })} className="text-[12px] font-bold text-red-500">Remove</button></div> : <label className="flex flex-col items-center justify-center gap-2 p-7 border-2 border-dashed border-[#E4E0E7] rounded-2xl cursor-pointer hover:border-[#DDAA42]/60"><FileText className="w-7 h-7 text-[#DDAA42]" /><span className="text-[14px] font-semibold text-[#121B35]">Upload master plan / layout map</span><input type="file" accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf" className="hidden" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; const isPdf = file.type === "application/pdf"; const isImage = ["image/jpeg", "image/png", "image/webp"].includes(file.type); if ((!isPdf && !isImage) || file.size > 5 * 1024 * 1024) { setSubmitError("Layout map must be a JPG, PNG, WebP, or PDF no larger than 5 MB."); event.target.value = ""; return; } try { const url = await uploadPropertyMedia(file, isPdf ? "layout-map-pdf" : "layout-map-image"); updateField("plotDetails", { ...(formData.plotDetails || initialPlotDetails()), layoutMapUrl: url, layoutMapType: isPdf ? "pdf" : "image" }); setSubmitError(""); } catch (error) { setSubmitError(error instanceof Error ? error.message : "Layout-map upload failed."); } }} /></label>}
                   {validationErrors.layoutMapUrl && <p className="text-[12px] text-red-600 mt-2">{validationErrors.layoutMapUrl}</p>}
@@ -1570,45 +1514,45 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 {/* Header */}
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-[20px] font-bold text-[#121B35]" style={{ fontFamily: "var(--font-outfit)" }}>
-                      {formData.title || "Untitled Property"}
-                    </h3>
-                    <p className="text-[14px] text-[#68646F] flex items-center gap-1 mt-1">
+                    {formData.title && <h3 className="text-[20px] font-bold text-[#121B35]" style={{ fontFamily: "var(--font-outfit)" }}>
+                      {formData.title}
+                    </h3>}
+                    {formData.subtitle && <p className="text-[14px] text-[#68646F] flex items-center gap-1 mt-1">
                       <MapPin className="w-4 h-4 text-[#DDAA42]" />
-                      {formData.subtitle || "Location not specified"}
-                    </p>
+                      {formData.subtitle}
+                    </p>}
                   </div>
-                  <div className="text-right">
-                    <p className="text-[22px] font-bold text-[#DDAA42]">{previewData.price || "Price TBD"}</p>
+                  {(previewData as Property).price && <div className="text-right">
+                    <p className="text-[22px] font-bold text-[#DDAA42]">{(previewData as Property).price}</p>
                     {formData.pricePerSqft && (
                       <p className="text-[13px] text-[#68646F]">{formData.pricePerSqft}</p>
                     )}
-                  </div>
+                  </div>}
                 </div>
 
                 {/* Key Details */}
-                <div className="grid grid-cols-4 gap-3">
-                  <div className="bg-white rounded-xl p-3 text-center">
+                {(previewData as Property).bedrooms !== undefined || (previewData as Property).bathrooms !== undefined || Boolean((previewData as Property).area) || Boolean((previewData as Property).possession) ? <div className="grid grid-cols-4 gap-3">
+                  {(previewData as Property).bedrooms !== undefined && <div className="bg-white rounded-xl p-3 text-center">
                     <Bed className="w-5 h-5 text-[#DDAA42] mx-auto mb-1" />
-                    <p className="text-[16px] font-semibold text-[#121B35]">{previewData.bedrooms}</p>
+                    <p className="text-[16px] font-semibold text-[#121B35]">{(previewData as Property).bedrooms}</p>
                     <p className="text-[11px] text-[#68646F]">Bedrooms</p>
-                  </div>
-                  <div className="bg-white rounded-xl p-3 text-center">
+                  </div>}
+                  {(previewData as Property).bathrooms !== undefined && <div className="bg-white rounded-xl p-3 text-center">
                     <Bath className="w-5 h-5 text-[#DDAA42] mx-auto mb-1" />
-                    <p className="text-[16px] font-semibold text-[#121B35]">{previewData.bathrooms}</p>
+                    <p className="text-[16px] font-semibold text-[#121B35]">{(previewData as Property).bathrooms}</p>
                     <p className="text-[11px] text-[#68646F]">Bathrooms</p>
-                  </div>
-                  <div className="bg-white rounded-xl p-3 text-center">
+                  </div>}
+                  {Boolean((previewData as Property).area) && <div className="bg-white rounded-xl p-3 text-center">
                     <Maximize className="w-5 h-5 text-[#F2C052] mx-auto mb-1" />
-                    <p className="text-[16px] font-semibold text-[#121B35]">{previewData.area || "-"}</p>
+                    <p className="text-[16px] font-semibold text-[#121B35]">{(previewData as Property).area}</p>
                     <p className="text-[11px] text-[#68646F]">Sq.ft</p>
-                  </div>
-                  <div className="bg-white rounded-xl p-3 text-center">
+                  </div>}
+                  {Boolean((previewData as Property).possession) && <div className="bg-white rounded-xl p-3 text-center">
                     <Home className="w-5 h-5 text-[#B98428] mx-auto mb-1" />
-                    <p className="text-[13px] font-semibold text-[#121B35]">{formatPossession(previewData)}</p>
+                    <p className="text-[13px] font-semibold text-[#121B35]">{formatPossession(previewData as Property)}</p>
                     <p className="text-[11px] text-[#68646F]">Possession</p>
-                  </div>
-                </div>
+                  </div>}
+                </div> : null}
 
                 {formData.propertyType === "Apartment" && (formData.configurationDetails?.length || 0) > 0 && (
                   <div className="overflow-x-auto rounded-xl border border-[#E4E0E7] bg-white">

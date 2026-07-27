@@ -10,12 +10,14 @@ const isBase64 = (src?: string) => !!src && src.startsWith("data:");
 function statusOf(p: Property): string {
   if (p.possession || p.possessionDetails) return formatPossession(p);
   if (p.ageOfProperty) return p.ageOfProperty;
-  return p.badges?.[0] || "Available";
+  return p.badges?.[0] || "";
 }
 
 /** Wide listing-row card for a real posted Property (used in the listing feed). */
 export default function PropertyListingRow({ p }: { p: Property }) {
   const cover = p.image || p.images?.[0] || "";
+  const status = statusOf(p);
+  const lister = p.submittedBy === "user" ? "Owner" : p.builder;
   return (
     <Link
       href={`/property/${p.id}`}
@@ -23,11 +25,11 @@ export default function PropertyListingRow({ p }: { p: Property }) {
     >
       <article className="grid md:grid-cols-[250px_1fr] gap-0">
         <div className="relative h-[220px] md:h-full min-h-[220px] bg-[#F3F1F5] overflow-hidden">
-          {isBase64(cover) ? (
+          {cover && isBase64(cover) ? (
             <img src={cover} alt={p.title} className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500" />
-          ) : (
+          ) : cover ? (
             <Image src={cover} alt={p.title} fill sizes="250px" className="object-cover group-hover:scale-103 transition-transform duration-500" />
-          )}
+          ) : null}
           <div className="absolute left-3 top-3 flex flex-wrap gap-1.5 z-10">
             <span className="flex items-center gap-1.5 bg-white/95 backdrop-blur-sm pl-1 pr-2.5 py-1 rounded-full shadow-md border border-[#DDAA42]/40">
               <span className="size-5 rounded-full bg-gradient-to-br from-[#F2C052] to-[#DDAA42] flex items-center justify-center">
@@ -55,11 +57,11 @@ export default function PropertyListingRow({ p }: { p: Property }) {
                 {p.builder && (
                   <p className="text-[10px] text-[#68646F] font-extrabold uppercase tracking-widest">{p.builder}</p>
                 )}
-                <h2 className="text-[18px] font-bold text-[#121B35] mt-1 group-hover:text-[#DDAA42] transition-colors leading-snug">{p.title}</h2>
-                <p className="text-[13px] text-[#3F3D46]/80 mt-1 flex items-center gap-1">
+                {p.title && <h2 className="text-[18px] font-bold text-[#121B35] mt-1 group-hover:text-[#DDAA42] transition-colors leading-snug">{p.title}</h2>}
+                {p.subtitle && <p className="text-[13px] text-[#3F3D46]/80 mt-1 flex items-center gap-1">
                   <MapPin className="size-4 text-[#DDAA42]" />
                   {p.subtitle}
-                </p>
+                </p>}
               </div>
               {p.reraRegistered && (
                 <span className="text-[11px] text-[#DDAA42] font-bold bg-[#F3F1F5] border border-[#E4E0E7]/30 px-3 py-1 rounded-full shrink-0 flex items-center gap-1">
@@ -69,25 +71,25 @@ export default function PropertyListingRow({ p }: { p: Property }) {
               )}
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5 border-y border-[#F3F1F5]/55 py-3.5 text-left">
-              <div>
+            {(p.price || p.area || p.configs?.length || p.possession || p.possessionDetails) && <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5 border-y border-[#F3F1F5]/55 py-3.5 text-left">
+              {p.price && <div>
                 <span className="text-[9px] text-[#68646F] font-bold uppercase tracking-wider block">Estimated Price</span>
                 <span className="text-[16px] font-extrabold text-[#DDAA42] block mt-0.5">{p.price}</span>
                 {p.pricePerSqft && <span className="text-[11px] text-[#68646F] block mt-0.5">{p.pricePerSqft}</span>}
-              </div>
-              <div>
+              </div>}
+              {p.area && <div>
                 <span className="text-[9px] text-[#68646F] font-bold uppercase tracking-wider block">Carpet Area</span>
-                <span className="text-[14px] font-bold text-[#121B35] block mt-0.5">{p.area || "—"}</span>
-              </div>
-              <div>
+                <span className="text-[14px] font-bold text-[#121B35] block mt-0.5">{p.area}</span>
+              </div>}
+              {!!p.configs?.length && <div>
                 <span className="text-[9px] text-[#68646F] font-bold uppercase tracking-wider block">Configuration</span>
-                <span className="text-[14px] font-bold text-[#121B35] block mt-0.5">{p.configs?.join(", ") || "—"}</span>
-              </div>
-              <div>
+                <span className="text-[14px] font-bold text-[#121B35] block mt-0.5">{p.configs.join(", ")}</span>
+              </div>}
+              {status && <div>
                 <span className="text-[9px] text-[#68646F] font-bold uppercase tracking-wider block">Status</span>
-                <span className="text-[14px] font-bold text-[#121B35] block mt-0.5">{statusOf(p)}</span>
-              </div>
-            </div>
+                <span className="text-[14px] font-bold text-[#121B35] block mt-0.5">{status}</span>
+              </div>}
+            </div>}
 
             {(p.amenities?.length ?? 0) > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-4">
@@ -99,9 +101,9 @@ export default function PropertyListingRow({ p }: { p: Property }) {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-4 border-t border-[#F3F1F5]/40">
-            <p className="text-[12px] text-[#68646F]">
-              Listed by: <span className="font-bold text-[#121B35]">{p.submittedBy === "user" ? "Owner" : p.builder || "ClearTitle One"}</span>
-            </p>
+            {lister && <p className="text-[12px] text-[#68646F]">
+              Listed by: <span className="font-bold text-[#121B35]">{lister}</span>
+            </p>}
             <div className="flex gap-2.5 w-full sm:w-auto">
               <button className="flex-1 sm:flex-none h-10 px-4 rounded-xl border border-[#DDAA42] text-[#DDAA42] hover:bg-[#F3F1F5] text-[13px] font-bold transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>View Number</button>
               <button className="flex-1 sm:flex-none h-10 px-5 rounded-xl bg-gradient-to-r from-[#DDAA42] to-[#F2C052] hover:from-[#B98428] hover:to-[#DDAA42] text-white text-[13px] font-bold shadow-sm hover:shadow transition-all" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>Submit Enquiry</button>

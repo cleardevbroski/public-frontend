@@ -33,8 +33,8 @@ function metricArea(area: string) {
 
 export default function FloorPlanExplorer({
   details,
-  status = "New Launch",
-  possession = "Possession date on request",
+  status,
+  possession,
   onRequestCallback,
 }: Props) {
   const configurations = useMemo(() => [...new Set(details.map((detail) => detail.configuration))], [details]);
@@ -158,7 +158,7 @@ export default function FloorPlanExplorer({
 
                 <div className="space-y-3 p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div><span className="inline-flex rounded bg-[#FFF2D8] px-2 py-1 text-[10px] font-bold text-[#9A6A12]">{status}</span><p className="mt-2 text-[12px] font-semibold text-[#5A5762]">{possession}</p></div>
+                    {(status || possession) && <div>{status && <span className="inline-flex rounded bg-[#FFF2D8] px-2 py-1 text-[10px] font-bold text-[#9A6A12]">{status}</span>}{possession && <p className={status ? "mt-2 text-[12px] font-semibold text-[#5A5762]" : "text-[12px] font-semibold text-[#5A5762]"}>{possession}</p>}</div>}
                     {detail.builtUpArea && <div className="text-right"><p className="text-[10px] uppercase text-[#8A94A6]">Built-up area</p><p className="text-[12px] font-bold text-[#344467]">{detail.builtUpArea}</p></div>}
                   </div>
                   <button type="button" onClick={onRequestCallback} className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#121B35] py-2.5 text-[12px] font-bold text-[#121B35] transition-colors hover:bg-[#121B35] hover:text-white">Request Callback <ChevronRight className="size-3.5" /></button>

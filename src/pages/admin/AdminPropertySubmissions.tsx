@@ -72,8 +72,8 @@ export default function AdminPropertySubmissions() {
         <div className="bg-white rounded-2xl border border-[#E4E0E7] overflow-hidden">
           {loading ? <div className="p-12 flex justify-center"><Loader2 className="size-7 animate-spin text-[#DDAA42]" /></div> : !properties.length ? <div className="p-12 text-center text-[#68646F]">No submissions in this status.</div> : properties.map((property) => (
             <button key={property.id} onClick={() => open(property.id)} className={`w-full text-left p-4 border-b border-[#F3F1F5] hover:bg-[#F7F9FF] grid md:grid-cols-[1fr_180px_130px] gap-3 items-center ${selected?.id === property.id ? "bg-[#F8F7FA]" : ""}`}>
-              <div className="flex gap-3 min-w-0"><span className="size-10 rounded-xl bg-[#F8F7FA] flex items-center justify-center shrink-0"><Building2 className="size-4 text-[#121B35]" /></span><span className="min-w-0"><strong className="block text-[14px] text-[#121B35] truncate">{property.title}</strong><small className="text-[#68646F]">{property.propertyType} · {property.subtitle}</small></span></div>
-              <div className="text-[12px] text-[#3F3D46]"><strong className="block">{property.postedBy?.name || "Customer"}</strong><span>{property.postedBy?.phone || "—"}</span></div>
+              <div className="flex gap-3 min-w-0"><span className="size-10 rounded-xl bg-[#F8F7FA] flex items-center justify-center shrink-0"><Building2 className="size-4 text-[#121B35]" /></span><span className="min-w-0">{property.title && <strong className="block text-[14px] text-[#121B35] truncate">{property.title}</strong>}{(property.propertyType || property.subtitle) && <small className="text-[#68646F]">{[property.propertyType, property.subtitle].filter(Boolean).join(" · ")}</small>}</span></div>
+              {(property.postedBy?.name || property.postedBy?.phone) && <div className="text-[12px] text-[#3F3D46]">{property.postedBy?.name && <strong className="block">{property.postedBy.name}</strong>}{property.postedBy?.phone && <span>{property.postedBy.phone}</span>}</div>}
               <span className="text-[11px] font-bold text-[#9A7620] bg-[#FFF8E8] px-2.5 py-1.5 rounded-lg justify-self-start">{labels[property.status || "submitted"] || property.status}</span>
             </button>
           ))}
@@ -90,7 +90,7 @@ function SubmissionReview({ property, message, setMessage, act, onDelete, busy }
   const customer = property.postedBy;
   return <div>
     <div className="flex items-center justify-between"><h2 className="font-bold text-[#121B35]">Submission Details</h2><span className="text-[11px] font-bold bg-[#F8F7FA] text-[#121B35] px-2 py-1 rounded-lg">v{property.submissionVersion || 1}</span></div>
-    <div className="mt-4 rounded-xl bg-[#F7F9FF] p-4"><p className="text-[11px] uppercase font-bold text-[#68646F] flex items-center gap-1"><UserRound className="size-3.5" /> Customer</p><p className="font-bold text-[#121B35] mt-1">{customer?.name || "—"}</p><p className="text-[12.5px] text-[#3F3D46]">{customer?.phone || "—"} · {customer?.email || "—"}</p></div>
+    {(customer?.name || customer?.phone || customer?.email) && <div className="mt-4 rounded-xl bg-[#F7F9FF] p-4"><p className="text-[11px] uppercase font-bold text-[#68646F] flex items-center gap-1"><UserRound className="size-3.5" /> Customer</p>{customer?.name && <p className="font-bold text-[#121B35] mt-1">{customer.name}</p>}{(customer?.phone || customer?.email) && <p className="text-[12.5px] text-[#3F3D46]">{[customer?.phone, customer?.email].filter(Boolean).join(" · ")}</p>}</div>}
     <dl className="mt-4 grid grid-cols-2 gap-3 text-[12.5px]"><Detail label="Property" value={property.title} /><Detail label="Type" value={property.propertyType} /><Detail label="Location" value={property.subtitle} /><Detail label="Price" value={property.price} /><Detail label="Configurations" value={property.configs?.join(", ")} /><Detail label="Status" value={labels[property.status || "submitted"] || property.status} /></dl>
     {property.description && <div className="mt-4"><p className="text-[11px] uppercase font-bold text-[#68646F]">Description</p><p className="text-[13px] text-[#3F3D46] mt-1 whitespace-pre-wrap">{property.description}</p></div>}
     <details className="mt-4 rounded-xl border border-[#F3F1F5] p-3"><summary className="cursor-pointer text-[12px] font-bold text-[#121B35]">View all submitted property fields</summary><pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-words text-[11px] leading-relaxed text-[#3F3D46]">{JSON.stringify(propertyDetailsForReview(property), null, 2)}</pre></details>
@@ -100,10 +100,11 @@ function SubmissionReview({ property, message, setMessage, act, onDelete, busy }
   </div>;
 }
 
-function Detail({ label, value }: { label: string; value?: string }) { return <div><dt className="text-[10.5px] uppercase font-bold text-[#68646F]">{label}</dt><dd className="font-semibold text-[#3F3D46] mt-0.5 break-words">{value || "—"}</dd></div>; }
+function Detail({ label, value }: { label: string; value?: string }) { return value ? <div><dt className="text-[10.5px] uppercase font-bold text-[#68646F]">{label}</dt><dd className="font-semibold text-[#3F3D46] mt-0.5 break-words">{value}</dd></div> : null; }
 function Action({ icon: Icon, label, className, ...props }: { icon: typeof AlertTriangle; label: string; className: string; disabled: boolean; onClick: () => void }) { return <button {...props} className={`h-10 rounded-xl text-[11.5px] font-bold inline-flex items-center justify-center gap-1.5 disabled:opacity-50 ${className}`}><Icon className="size-3.5" />{label}</button>; }
 
 function propertyDetailsForReview(property: Property) {
   const { id, postedBy, reviewMessages, image, images, brochure, ...details } = property;
-  return { ...details, media: { coverImage: image || "Not uploaded", photos: images?.length || 0, brochure: brochure ? "Uploaded" : "Not uploaded" } };
+  const media = { ...(image ? { coverImage: image } : {}), ...(images?.length ? { photos: images.length } : {}), ...(brochure ? { brochure } : {}) };
+  return Object.keys(media).length ? { ...details, media } : details;
 }

@@ -11,7 +11,7 @@ type Props = {
   action: PropertyAction | null;
   propertyId: string;
   propertyTitle: string;
-  contactNumber: string;
+  contactNumber?: string;
   onClose: () => void;
   onComplete: (action: PropertyAction) => void;
 };
@@ -111,7 +111,7 @@ export default function VerifiedPropertyActionModal({ action, propertyId, proper
             <button disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#DDAA42] px-4 py-3.5 text-sm font-bold text-[#0B1328] disabled:opacity-60">{loading && <Loader2 className="size-4 animate-spin" />}Verify & continue</button>
             <button type="button" onClick={() => { setOtp(""); setError(""); setStep("details"); }} className="w-full text-sm font-bold text-[#121B35]">Change number</button>
           </form>}
-          {step === "success" && <div className="py-4 text-center"><CheckCircle2 className="mx-auto size-12 text-green-600" /><h3 className="mt-4 text-xl font-bold text-[#121B35]">Request verified</h3>{action === "call" ? <><p className="mt-2 text-sm text-[#68646F]">Here is the verified contact number for {propertyTitle}.</p><a href={`tel:${contactNumber}`} className="mt-4 inline-flex rounded-xl bg-[#DDAA42] px-5 py-3 text-sm font-bold text-[#0B1328]">Call {contactNumber}</a></> : <p className="mt-2 text-sm text-[#68646F]">Your request for {propertyTitle} has been recorded. Our ClearTitle One team will contact you shortly.</p>}<button type="button" onClick={onClose} className="mt-6 block w-full rounded-xl bg-[#121B35] px-5 py-3 text-sm font-bold text-white">Done</button></div>}
+          {step === "success" && <div className="py-4 text-center"><CheckCircle2 className="mx-auto size-12 text-green-600" /><h3 className="mt-4 text-xl font-bold text-[#121B35]">Request verified</h3>{action === "call" && contactNumber ? <><p className="mt-2 text-sm text-[#68646F]">Here is the verified contact number for {propertyTitle}.</p><a href={`tel:${contactNumber}`} className="mt-4 inline-flex rounded-xl bg-[#DDAA42] px-5 py-3 text-sm font-bold text-[#0B1328]">Call {contactNumber}</a></> : <p className="mt-2 text-sm text-[#68646F]">Your request for {propertyTitle} has been recorded. Our ClearTitle One team will contact you shortly.</p>}<button type="button" onClick={onClose} className="mt-6 block w-full rounded-xl bg-[#121B35] px-5 py-3 text-sm font-bold text-white">Done</button></div>}
         </div>
       </div>
     </div>

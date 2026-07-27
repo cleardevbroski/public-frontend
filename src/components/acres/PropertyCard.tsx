@@ -15,11 +15,11 @@ export default function PropertyCard({ p }: { p: Property }) {
     >
       {/* Image */}
       <div className="relative h-[170px] bg-[#F3F1F5] overflow-hidden">
-        {isBase64(p.image) ? (
+        {p.image && isBase64(p.image) ? (
           <img src={p.image} alt={p.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
-        ) : (
+        ) : p.image ? (
           <Image src={p.image} alt={p.title} fill sizes="340px" className="object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
-        )}
+        ) : null}
 
         {/* Verified tag */}
         <span className="absolute top-2.5 left-2.5 flex items-center gap-1 bg-white/95 px-2 py-1 shadow-sm">
@@ -44,35 +44,33 @@ export default function PropertyCard({ p }: { p: Property }) {
         </button>
 
         {/* Price chip */}
-        <span className="absolute bottom-0 left-0 bg-[#121B35]/90 text-white text-[15px] font-bold px-3 py-1.5">
+        {p.price && <span className="absolute bottom-0 left-0 bg-[#121B35]/90 text-white text-[15px] font-bold px-3 py-1.5">
           {p.price}
-        </span>
+        </span>}
       </div>
 
       {/* Body */}
       <div className="p-3.5">
-        <h3 className="text-[15.5px] font-bold text-[#121B35] truncate group-hover:text-[#DDAA42] transition-colors">
+        {p.title && <h3 className="text-[15.5px] font-bold text-[#121B35] truncate group-hover:text-[#DDAA42] transition-colors">
           {p.title}
-        </h3>
-        <p className="text-[12px] text-[#68646F] truncate mt-0.5 flex items-center gap-1">
+        </h3>}
+        {p.subtitle && <p className="text-[12px] text-[#68646F] truncate mt-0.5 flex items-center gap-1">
           <MapPin className="size-3.5 text-[#DDAA42] shrink-0" />
           {p.subtitle}
-        </p>
+        </p>}
 
         {/* Config row */}
-        <div className="flex items-center gap-4 mt-2.5 pt-2.5 border-t border-[#F3F1F5] text-[12px] text-[#3F3D46]">
-          <span className="flex items-center gap-1.5">
+        {(p.configs?.length || p.area) ? <div className="flex items-center gap-4 mt-2.5 pt-2.5 border-t border-[#F3F1F5] text-[12px] text-[#3F3D46]">
+          {!!p.configs?.length && <span className="flex items-center gap-1.5">
             <BedDouble className="size-4 text-[#DDAA42]" /> {p.configs.join(", ")}
-          </span>
-          <span className="flex items-center gap-1.5">
+          </span>}
+          {p.area && <span className="flex items-center gap-1.5">
             <Maximize2 className="size-4 text-[#DDAA42]" /> {p.area}
-          </span>
-        </div>
+          </span>}
+        </div> : null}
 
         <div className="flex items-center justify-between mt-2.5">
-          <span className="text-[11px] text-[#68646F] flex items-center gap-1">
-            <><Calendar className="size-3.5 text-[#DDAA42]" /> {formatPossession(p)}</>
-          </span>
+          {p.possession && <span className="text-[11px] text-[#68646F] flex items-center gap-1"><Calendar className="size-3.5 text-[#DDAA42]" /> {formatPossession(p)}</span>}
           {p.pricePerSqft && (
             <span className="text-[11px] text-[#68646F] font-medium">{p.pricePerSqft}</span>
           )}
