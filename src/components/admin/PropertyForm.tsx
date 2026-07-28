@@ -192,12 +192,14 @@ const initialFormData: FormData = {
   },
   nearbyAmenities: {
     schools: "",
+    colleges: "",
     hospitals: "",
     shopping: "",
     metro: "",
   },
   nearbyDetails: {
     schools: { count: undefined, distance: "" },
+    colleges: { count: undefined, distance: "" },
     hospitals: { count: undefined, distance: "" },
     shopping: { count: undefined, distance: "" },
     metro: { count: undefined, distance: "" },
@@ -297,7 +299,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
   };
 
   const updateNearbyPlace = (
-    category: "schools" | "hospitals" | "shopping" | "metro",
+    category: "schools" | "colleges" | "hospitals" | "shopping" | "metro",
     index: number,
     updates: Partial<NearbyPlace>
   ) => {
@@ -314,7 +316,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     });
   };
 
-  const addNearbyPlace = (category: "schools" | "hospitals" | "shopping" | "metro") => {
+  const addNearbyPlace = (category: "schools" | "colleges" | "hospitals" | "shopping" | "metro") => {
     setFormData((prev) => ({
       ...prev,
       nearbyDetails: {
@@ -326,7 +328,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     }));
   };
 
-  const removeNearbyPlace = (category: "schools" | "hospitals" | "shopping" | "metro", index: number) => {
+  const removeNearbyPlace = (category: "schools" | "colleges" | "hospitals" | "shopping" | "metro", index: number) => {
     setFormData((prev) => ({
       ...prev,
       nearbyDetails: {
@@ -1490,7 +1492,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
 
                 <h3 className="text-[15px] font-semibold text-[#3F3D46] mb-3">Nearby Amenities</h3>
                 {isStructuredType(formData.propertyType) ? <div className="grid grid-cols-1 gap-4">
-                  {(["schools", "hospitals", "shopping", "metro"] as const).map((key) => (
+                  {(["schools", "colleges", "hospitals", "shopping", "metro"] as const).map((key) => (
                     <div key={key} className="rounded-xl border border-[#E4E0E7] bg-[#F8F7FA]/40 p-4">
                       <div className="mb-3 flex items-center justify-between gap-3">
                         <label className="block text-[13px] font-semibold text-[#3F3D46] capitalize">{key === "metro" ? "Metro / Train" : key}</label>
@@ -1513,6 +1515,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 </div> : <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
                     { key: "schools", label: "Schools", placeholder: "e.g. 3 within 2 km" },
+                    { key: "colleges", label: "Colleges", placeholder: "e.g. 2 within 4 km" },
                     { key: "hospitals", label: "Hospitals", placeholder: "e.g. 2 within 3 km" },
                     { key: "shopping", label: "Shopping", placeholder: "e.g. 5 within 1 km" },
                     { key: "metro", label: "Metro / Train", placeholder: "e.g. 1.5 km away" },
@@ -1652,7 +1655,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                       ].filter(([, value]) => value).map(([label, value]) => <div key={String(label)} className="bg-white rounded-lg p-2.5"><span className="text-[#68646F] text-[10px]">{label}</span><p className="font-medium text-[#121B35] break-words">{value}</p></div>)}
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px] mt-3">
-                      {(["schools", "hospitals", "shopping", "metro"] as const).map((key) => {
+                      {(["schools", "colleges", "hospitals", "shopping", "metro"] as const).map((key) => {
                         const item = formData.nearbyDetails?.[key];
                         if (!item || (!item.places?.length && item.count === undefined && !item.distance)) return null;
                         return <div key={key} className="bg-white rounded-lg p-2.5"><span className="text-[#68646F] text-[10px] capitalize">{key === "metro" ? "Metro / Train" : key}</span><p className="font-medium text-[#121B35]">{item.places?.length ? item.places.map((place) => place.name).join(", ") : `${item.count ?? "—"} · ${item.distance || "—"}`}</p></div>;

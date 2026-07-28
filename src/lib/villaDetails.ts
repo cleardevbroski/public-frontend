@@ -126,7 +126,7 @@ export function validateVillaDraft(property: Partial<Property>): VillaErrors {
     errors.reraNumber = "Use 8–50 letters, numbers, /, ., _, or -.";
   }
   if (property.locality?.pinCode && !/^\d{6}$/.test(property.locality.pinCode)) errors.pinCode = "Enter a 6-digit PIN code.";
-  for (const key of ["schools", "hospitals", "shopping", "metro"] as const) {
+  for (const key of ["schools", "colleges", "hospitals", "shopping", "metro"] as const) {
     const item = property.nearbyDetails?.[key];
     if (!item || (!item.places?.length && item.count === undefined && !item.distance?.trim())) continue;
     item.places?.forEach((place, index) => {

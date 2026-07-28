@@ -240,7 +240,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const floorDisplay = flatFloor
     ? `${flatFloor}${property.totalFloors ? ` of ${property.totalFloors}` : ""}`
     : property.propertyType === "Apartment" ? "" : property.floor || "";
-  const nearbyValue = (key: "schools" | "hospitals" | "shopping" | "metro", legacy?: string) => {
+  const nearbyValue = (key: "schools" | "colleges" | "hospitals" | "shopping" | "metro", legacy?: string) => {
     const detail = property.nearbyDetails?.[key];
     if (detail?.places?.length) return `${detail.places.length} nearby`;
     if (detail && (detail.count !== undefined || detail.distance)) {
@@ -1004,6 +1004,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                   { icon: School, label: "Schools", val: nearbyValue("schools", property.nearbyAmenities?.schools) },
+                  { icon: School, label: "Colleges", val: nearbyValue("colleges", property.nearbyAmenities?.colleges) },
                   { icon: Hospital, label: "Hospitals", val: nearbyValue("hospitals", property.nearbyAmenities?.hospitals) },
                   { icon: ShoppingBag, label: "Shopping", val: nearbyValue("shopping", property.nearbyAmenities?.shopping) },
                   { icon: Train, label: "Metro", val: nearbyValue("metro", property.nearbyAmenities?.metro) },
@@ -1021,6 +1022,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                 <div className="grid gap-4 md:grid-cols-2">
                   {([
                     ["schools", "Schools", School],
+                    ["colleges", "Colleges", School],
                     ["hospitals", "Hospitals", Hospital],
                     ["shopping", "Shopping", ShoppingBag],
                     ["metro", "Metro / Train", Train],

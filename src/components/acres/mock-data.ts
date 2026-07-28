@@ -237,12 +237,14 @@ export type Property = {
   };
   nearbyAmenities?: {
     schools?: string;
+    colleges?: string;
     hospitals?: string;
     shopping?: string;
     metro?: string;
   };
   nearbyDetails?: {
     schools?: NearbyDetail;
+    colleges?: NearbyDetail;
     hospitals?: NearbyDetail;
     shopping?: NearbyDetail;
     metro?: NearbyDetail;

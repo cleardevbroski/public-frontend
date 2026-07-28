@@ -193,7 +193,7 @@ export function validateApartmentDraft(property: Partial<Property>): ApartmentEr
     if (!facility.name.trim()) errors[`facility.${index}.name`] = "Facility name is required.";
     if (!validImageUrl(facility.imageUrl)) errors[`facility.${index}.imageUrl`] = "Enter a valid HTTP(S) facility image URL.";
   });
-  for (const key of ["schools", "hospitals", "shopping", "metro"] as const) {
+  for (const key of ["schools", "colleges", "hospitals", "shopping", "metro"] as const) {
     const item = property.nearbyDetails?.[key];
     if (!item || (!item.places?.length && item.count === undefined && !item.distance?.trim())) continue;
     item.places?.forEach((place, index) => {
