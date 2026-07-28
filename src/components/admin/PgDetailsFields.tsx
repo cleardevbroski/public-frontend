@@ -120,9 +120,9 @@ export default function PgDetailsFields({ details, setDetails, errors }: Props) 
             <thead className="bg-[#121B35] text-white">
               <tr>
                 <th className="p-2 text-left">Sharing</th>
-                <th>Rent / bed / month</th>
+                <th>Rent / bedroom space / month</th>
                 <th>Deposit</th>
-                <th>Beds available</th>
+                <th>Bedroom spaces available</th>
                 <th />
               </tr>
             </thead>

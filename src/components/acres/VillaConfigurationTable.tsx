@@ -40,6 +40,29 @@ export default function VillaConfigurationTable({ details }: { details: VillaCon
               <span className="font-extrabold text-[#121B35]">{row.superArea}</span>
             </div>
           )}
+          {[
+            ["Plot dimensions", row.plotDimensions],
+            ["Floors", row.numberOfFloors],
+            ["Plot facing", row.plotFacing],
+            ["Corner plot", row.cornerPlot === true ? "Yes" : ""],
+            ["Road width", row.roadWidthFacing],
+            ["Private garden", row.privateGarden === true ? `Yes${row.privateGardenArea ? ` · ${row.privateGardenArea}` : ""}` : ""],
+            ["Private pool", row.privatePool === true ? "Yes" : ""],
+            ["Terrace", row.terrace === true ? `Yes${row.terraceDetails ? ` · ${row.terraceDetails}` : ""}` : ""],
+            ["Gated community", row.gatedCommunity === true ? "Yes" : ""],
+          ].some(([, value]) => Boolean(value)) && <div className="grid grid-cols-2 gap-2 border-t border-[#EAE7ED] p-4 text-[11px]">
+            {[
+              ["Plot dimensions", row.plotDimensions],
+              ["Floors", row.numberOfFloors],
+              ["Plot facing", row.plotFacing],
+              ["Corner plot", row.cornerPlot === true ? "Yes" : ""],
+              ["Road width", row.roadWidthFacing],
+              ["Private garden", row.privateGarden === true ? `Yes${row.privateGardenArea ? ` · ${row.privateGardenArea}` : ""}` : ""],
+              ["Private pool", row.privatePool === true ? "Yes" : ""],
+              ["Terrace", row.terrace === true ? `Yes${row.terraceDetails ? ` · ${row.terraceDetails}` : ""}` : ""],
+              ["Gated community", row.gatedCommunity === true ? "Yes" : ""],
+            ].filter(([, value]) => Boolean(value)).map(([label, value]) => <div key={String(label)}><span className="text-[#77717E]">{label}</span><p className="font-bold text-[#121B35]">{value}</p></div>)}
+          </div>}
         </article>
       ))}
     </div>

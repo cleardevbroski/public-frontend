@@ -10,6 +10,7 @@ export const initialCommercialDetails = (): CommercialDetails => ({
 
 const positive = (value?: string) => Number.isFinite(Number(String(value || "").replace(/[^\d.]/g, ""))) && Number(String(value || "").replace(/[^\d.]/g, "")) > 0;
 const date = (value?: string) => /^\d{4}-\d{2}-\d{2}$/.test(value || "") && !Number.isNaN(new Date(`${value}T00:00:00`).getTime());
+const month = (value?: string) => /^\d{4}-(0[1-9]|1[0-2])(?:-\d{2})?$/.test(value || "");
 
 export function validateCommercialDraft(property: Partial<Property>): CommercialErrors {
   const errors: CommercialErrors = {};
@@ -27,7 +28,7 @@ export function validateCommercialDraft(property: Partial<Property>): Commercial
   if (!['For Sale', 'For Rent'].includes(property.listingType || "")) errors.listingType = "Select a listing type.";
   const possession = property.possessionDetails;
   if (!possession || !["Ready to Move", "Under Construction"].includes(possession.status)) errors.possessionDetails = "Select Ready to Move or Under Construction.";
-  else if (possession.status === "Under Construction" ? !date(possession.expectedCompletionDate) : !date(possession.launchDate)) errors.possessionDate = "Enter the matching possession date.";
+  else if (possession.status === "Under Construction" ? !month(possession.expectedCompletionDate) : !date(possession.launchDate)) errors.possessionDate = possession.status === "Under Construction" ? "Enter the expected completion month and year." : "Enter the ready date.";
   if (property.reraRegistered && !/^[A-Za-z0-9/._-]{8,50}$/.test(property.reraNumber?.trim() || "")) errors.reraNumber = "Use 8–50 letters, numbers, /, ., _, or -.";
   return errors;
 }

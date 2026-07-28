@@ -128,7 +128,8 @@ export default function FloorPlanExplorer({
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           {visiblePlans.map(({ detail, index }) => {
-            const metric = metricArea(detail.superBuiltUpArea);
+            const displayArea = detail.builtUpArea || detail.carpetArea;
+            const metric = metricArea(displayArea);
             const canOpenPlan = Boolean(detail.floorPlan2dUrl || detail.floorPlan3dUrl || detail.rooms?.length);
             return (
               <article key={detail.id || `${detail.configuration}-${index}`} className="overflow-hidden rounded-xl border border-[#E7E3EA] bg-white transition-shadow hover:shadow-md">
@@ -138,10 +139,10 @@ export default function FloorPlanExplorer({
                     disabled={!canOpenPlan}
                     onClick={() => openPlan(index)}
                     className="relative flex items-center justify-center overflow-hidden border-r border-[#EAE7ED] bg-[#F1F4F8] disabled:cursor-default"
-                    aria-label={`View ${detail.superBuiltUpArea} floor plan`}
+                    aria-label={`View ${displayArea} floor plan`}
                   >
                     {detail.floorPlan2dUrl || detail.floorPlan3dUrl ? (
-                      <img src={detail.floorPlan2dUrl || detail.floorPlan3dUrl} alt={`${detail.configuration} ${detail.superBuiltUpArea} floor plan`} className="h-full w-full object-contain p-2 transition-transform hover:scale-105" />
+                      <img src={detail.floorPlan2dUrl || detail.floorPlan3dUrl} alt={`${detail.configuration} ${detail.builtUpArea || detail.carpetArea} floor plan`} className="h-full w-full object-contain p-2 transition-transform hover:scale-105" />
                     ) : (
                       <span className="text-center"><Box className="mx-auto size-7 text-[#A9B4C8]" /><span className="mt-2 block text-[9px] font-bold uppercase tracking-wider text-[#8B96A9]">Plan preview</span></span>
                     )}
@@ -149,9 +150,9 @@ export default function FloorPlanExplorer({
                   </button>
 
                   <div className="p-4">
-                    <p className="text-[22px] font-extrabold leading-none text-[#12172B]">{detail.superBuiltUpArea}</p>
+                    <p className="text-[22px] font-extrabold leading-none text-[#12172B]">{displayArea}</p>
                     {metric && <p className="mt-1 text-[12px] font-semibold text-[#68646F]">({metric})</p>}
-                    <p className="mt-2 text-[11px] text-[#68646F]">Super Built-up Area <span className="text-[#B0B8C6]">|</span> {detail.configuration}</p>
+                    <p className="mt-2 text-[11px] text-[#68646F]">Built-up Area <span className="text-[#B0B8C6]">|</span> {detail.configuration}</p>
                     <p className="mt-4 text-[20px] font-extrabold text-[#12172B]">{detail.price}</p>
                   </div>
                 </div>
@@ -171,7 +172,7 @@ export default function FloorPlanExplorer({
         {showViewer && selected && (
           <div className="mt-6 overflow-hidden rounded-xl border border-[#E7E3EA]" aria-label="Interactive selected floor plan">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EAE7ED] bg-[#F8F7FA] px-4 py-3">
-              <div><p className="text-[12px] font-bold text-[#3F3D46]">{selected.configuration} · {selected.superBuiltUpArea}</p><p className="text-[10px] text-[#748096]">Select a room or zoom into the plan.</p></div>
+              <div><p className="text-[12px] font-bold text-[#3F3D46]">{selected.configuration} · {selected.builtUpArea || selected.carpetArea}</p><p className="text-[10px] text-[#748096]">Select a room or zoom into the plan.</p></div>
               <div className="flex items-center gap-2">
                 {(selected.floorPlan2dUrl || selected.floorPlan3dUrl) && (
                   <div className="flex rounded-lg border border-[#E7E3EA] bg-white p-0.5">

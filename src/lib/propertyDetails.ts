@@ -26,8 +26,8 @@ export function createConfigurationDetail(configuration: string): ConfigurationD
   return {
     configuration,
     price: "",
-    superBuiltUpArea: "",
     carpetArea: "",
+    builtUpArea: "",
     bedrooms,
     bathrooms: bedrooms,
     balconies: 0,
@@ -35,7 +35,7 @@ export function createConfigurationDetail(configuration: string): ConfigurationD
   };
 }
 
-function parseDisplayNumber(value: string | undefined, field: "price" | "superBuiltUpArea"): number {
+function parseDisplayNumber(value: string | undefined, field: "price" | "builtUpArea" | "superBuiltUpArea" | "carpetArea"): number {
   const match = String(value || "").replace(/,/g, "").match(/(\d+(?:\.\d+)?)/);
   if (!match) return Number.NaN;
   const number = Number(match[1]);
@@ -48,7 +48,7 @@ function parseDisplayNumber(value: string | undefined, field: "price" | "superBu
 
 export function displayRange(
   rows: ConfigurationDetail[] | undefined,
-  field: "price" | "superBuiltUpArea"
+  field: "price" | "builtUpArea" | "superBuiltUpArea" | "carpetArea"
 ): string {
   const values = (rows || [])
     .map((row) => ({ display: row[field], value: parseDisplayNumber(row[field], field) }))
@@ -66,7 +66,7 @@ export function preparePropertyPayload<T extends Partial<Property>>(property: T)
   const nearbyDetails = property.nearbyDetails
     ? Object.fromEntries(
         Object.entries(property.nearbyDetails).filter(([, item]) =>
-          item && (item.count !== undefined || Boolean(item.distance?.trim()))
+          item && (Boolean(item.places?.length) || item.count !== undefined || Boolean(item.distance?.trim()))
         )
       )
     : undefined;
@@ -74,7 +74,7 @@ export function preparePropertyPayload<T extends Partial<Property>>(property: T)
     ...property,
     configs: rows.map((row) => row.configuration),
     price: displayRange(rows, "price") || property.price,
-    area: displayRange(rows, "superBuiltUpArea") || property.area,
+    area: displayRange(rows, "builtUpArea") || displayRange(rows, "superBuiltUpArea") || displayRange(rows, "carpetArea") || property.area,
     bedrooms: Math.min(...rows.map((row) => row.bedrooms)),
     bathrooms: Math.min(...rows.map((row) => row.bathrooms)),
     facing: rows[0]?.facings.join(", ") || property.facing,
@@ -119,8 +119,10 @@ export function formatPossession(
   if (property.propertyType === "Plot" && property.plotDetails?.layoutPossession) {
     const details = property.plotDetails.layoutPossession;
     const source = details.status === "Under Development" ? details.expectedCompletionDate : details.readyDate;
-    if (!validDate(source)) return details.status;
-    const formatted = new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(`${source}T00:00:00`));
+    const monthOnly = details.status === "Under Development";
+    if (monthOnly ? !validCompletionMonth(source) : !validDate(source)) return details.status;
+    const normalizedSource = source?.length === 7 ? `${source}-01` : source;
+    const formatted = new Intl.DateTimeFormat("en-IN", { ...(monthOnly ? {} : { day: "2-digit" as const }), month: "short", year: "numeric" }).format(new Date(`${normalizedSource}T00:00:00`));
     return details.status === "Under Development" ? `Under development · Layout expected by ${formatted}` : `Layout ready · Ready since ${formatted}`;
   }
   const details = property.possessionDetails;
@@ -155,7 +157,6 @@ export function validateApartmentDraft(property: Partial<Property>): ApartmentEr
   rows.forEach((row, index) => {
     const prefix = `configuration.${index}`;
     if (!row.price.trim()) errors[`${prefix}.price`] = "Price is required.";
-    if (!row.superBuiltUpArea.trim()) errors[`${prefix}.superBuiltUpArea`] = "Super built-up area is required.";
     if (!row.carpetArea.trim()) errors[`${prefix}.carpetArea`] = "Carpet area is required.";
     if (!Number.isInteger(row.bedrooms) || row.bedrooms < 1) errors[`${prefix}.bedrooms`] = "Enter at least 1 bedroom.";
     if (!Number.isInteger(row.bathrooms) || row.bathrooms < 1) errors[`${prefix}.bathrooms`] = "Enter at least 1 bathroom.";
@@ -194,7 +195,11 @@ export function validateApartmentDraft(property: Partial<Property>): ApartmentEr
   });
   for (const key of ["schools", "hospitals", "shopping", "metro"] as const) {
     const item = property.nearbyDetails?.[key];
-    if (!item || (item.count === undefined && !item.distance?.trim())) continue;
+    if (!item || (!item.places?.length && item.count === undefined && !item.distance?.trim())) continue;
+    item.places?.forEach((place, index) => {
+      if (!place.name.trim()) errors[`nearby.${key}.places.${index}.name`] = "Enter the place name.";
+    });
+    if (item.places?.length) continue;
     if (!Number.isInteger(item.count) || Number(item.count) < 0) errors[`nearby.${key}.count`] = "Enter a whole-number count.";
     if (!item.distance?.trim()) errors[`nearby.${key}.distance`] = "Enter the distance.";
   }

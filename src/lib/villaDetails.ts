@@ -33,6 +33,11 @@ export function createVillaConfigurationDetail(configuration: string): VillaConf
     superArea: "",
     bedrooms,
     bathrooms: bedrooms,
+    cornerPlot: false,
+    privateGarden: false,
+    privatePool: false,
+    terrace: false,
+    gatedCommunity: false,
   };
 }
 
@@ -77,7 +82,6 @@ export function validateVillaDraft(property: Partial<Property>): VillaErrors {
   const rows = details?.configurationDetails || [];
   if (!rows.length) errors.configurations = "Add at least one Villa BHK configuration.";
   if (!details || !["Independent", "Row Villa", "Twin Villa"].includes(details.villaType)) errors.villaType = "Select a valid Villa type.";
-  if (!details || !["East", "West", "North", "South", "North-East", "North-West", "South-East", "South-West"].includes(details.plotFacing)) errors.plotFacing = "Select a valid plot facing.";
   rows.forEach((row, index) => {
     const prefix = `villaConfiguration.${index}`;
     const normalized = normalizeBhkLabel(row.configuration);
@@ -91,29 +95,27 @@ export function validateVillaDraft(property: Partial<Property>): VillaErrors {
       errors[`${prefix}.bedrooms`] = `Bedrooms must equal ${expectedBedrooms || "the BHK value"}.`;
     }
     if (!Number.isInteger(row.bathrooms) || row.bathrooms < 1) errors[`${prefix}.bathrooms`] = "Enter at least 1 bathroom.";
+    if (row.plotDimensions?.trim()) {
+      const dimensions = row.plotDimensions.trim().match(/^(\d+(?:\.\d+)?)\s*(?:ft|feet|')?\s*[x×*]\s*(\d+(?:\.\d+)?)\s*(?:ft|feet|')?$/i);
+      if (!dimensions || Number(dimensions[1]) <= 0 || Number(dimensions[2]) <= 0) errors[`${prefix}.plotDimensions`] = "Use positive width × length values.";
+    }
+    if (row.numberOfFloors?.trim() && !/^(?:G(?:\s*\+\s*[1-9]\d*)?|[1-9]\d*)$/i.test(row.numberOfFloors.trim())) errors[`${prefix}.numberOfFloors`] = "Use G, G+N, or a positive whole number.";
+    if (row.roadWidthFacing?.trim() && !positiveDisplay(row.roadWidthFacing)) errors[`${prefix}.roadWidthFacing`] = "Enter a positive road width.";
+    if (row.privateGarden && row.privateGardenArea && !positiveDisplay(row.privateGardenArea)) errors[`${prefix}.privateGardenArea`] = "Enter a positive garden area.";
   });
+  // Validate the legacy project-wide garden fields when editing an older Villa.
+  if (details?.privateGarden && !positiveDisplay(details.privateGardenArea)) {
+    errors.privateGardenArea = "Garden area is required when a private garden is available.";
+  }
   const tags = (property.configs || []).map(normalizeBhkLabel);
   if (tags.some((tag) => !tag) || tags.length !== rows.length || tags.some((tag, index) => tag !== normalizeBhkLabel(rows[index]?.configuration || ""))) {
     errors.configurations = "Configuration tags and Villa rows must match in the same order.";
   }
-  if (details?.plotDimensions?.trim()) {
-    const dimensions = details.plotDimensions.trim().match(/^(\d+(?:\.\d+)?)\s*(?:ft|feet|')?\s*[x×]\s*(\d+(?:\.\d+)?)\s*(?:ft|feet|')?$/i);
-    if (!dimensions || Number(dimensions[1]) <= 0 || Number(dimensions[2]) <= 0) errors.plotDimensions = "Use positive width × length values in feet, for example 40 ft × 60 ft.";
-  }
-  if (details?.numberOfFloors?.trim() && !/^(?:G(?:\s*\+\s*[1-9]\d*)?|[1-9]\d*)$/i.test(details.numberOfFloors.trim())) {
-    errors.numberOfFloors = "Use G, G+N, or a positive whole number.";
-  }
-  if (details?.roadWidthFacing?.trim() && !positiveDisplay(details.roadWidthFacing)) {
-    errors.roadWidthFacing = "Enter a positive road width.";
-  }
-  if (details?.privateGarden && !positiveDisplay(details.privateGardenArea)) {
-    errors.privateGardenArea = "Garden area is required when a private garden is available.";
-  }
   const possession = property.possessionDetails;
   if (!possession || !["Ready to Move", "Under Construction"].includes(possession.status)) {
     errors.possessionDetails = "Select Ready to Move or Under Construction.";
-  } else if (possession.status === "Under Construction" && (!validDate(possession.expectedCompletionDate) || Boolean(possession.launchDate))) {
-    errors.possessionDate = "Under Construction requires only an expected completion date.";
+  } else if (possession.status === "Under Construction" && (!/^\d{4}-(0[1-9]|1[0-2])(?:-\d{2})?$/.test(possession.expectedCompletionDate || "") || Boolean(possession.launchDate))) {
+    errors.possessionDate = "Under Construction requires only an expected completion month and year.";
   } else if (possession.status === "Ready to Move" && (!validDate(possession.launchDate) || Boolean(possession.expectedCompletionDate))) {
     errors.possessionDate = "Ready to Move requires only a Ready Since date.";
   }
@@ -126,7 +128,11 @@ export function validateVillaDraft(property: Partial<Property>): VillaErrors {
   if (property.locality?.pinCode && !/^\d{6}$/.test(property.locality.pinCode)) errors.pinCode = "Enter a 6-digit PIN code.";
   for (const key of ["schools", "hospitals", "shopping", "metro"] as const) {
     const item = property.nearbyDetails?.[key];
-    if (!item || (item.count === undefined && !item.distance?.trim())) continue;
+    if (!item || (!item.places?.length && item.count === undefined && !item.distance?.trim())) continue;
+    item.places?.forEach((place, index) => {
+      if (!place.name.trim()) errors[`nearby.${key}.places.${index}.name`] = "Enter the place name.";
+    });
+    if (item.places?.length) continue;
     if (!Number.isInteger(item.count) || Number(item.count) < 0) errors[`nearby.${key}.count`] = "Enter a whole-number count.";
     if (!item.distance?.trim()) errors[`nearby.${key}.distance`] = "Enter the distance.";
   }
@@ -138,7 +144,7 @@ export function prepareVillaPropertyPayload<T extends Partial<Property>>(propert
   if (property.propertyType !== "Villa" || !rows?.length) return property;
   const nearbyDetails = property.nearbyDetails
     ? Object.fromEntries(Object.entries(property.nearbyDetails).filter(([, item]) =>
-        item && (item.count !== undefined || Boolean(item.distance?.trim()))
+        item && (Boolean(item.places?.length) || item.count !== undefined || Boolean(item.distance?.trim()))
       ))
     : undefined;
   return {
@@ -148,7 +154,7 @@ export function prepareVillaPropertyPayload<T extends Partial<Property>>(propert
     area: villaDisplayRange(rows, "superArea") || property.area,
     bedrooms: Math.min(...rows.map((row) => row.bedrooms)),
     bathrooms: Math.min(...rows.map((row) => row.bathrooms)),
-    facing: property.villaDetails?.plotFacing || property.facing,
+    facing: rows.find((row) => row.plotFacing)?.plotFacing || property.villaDetails?.plotFacing || property.facing,
     possession: property.possessionDetails?.status || property.possession,
     ageOfProperty: property.possessionDetails?.status === "Under Construction" ? "Under Construction" : "",
     nearbyDetails,

@@ -17,7 +17,7 @@ export const initialPlotDetails = (): PlotDetails => ({
 });
 
 export function normalizePlotSize(value: string): { plotSize: string; width: number; length: number; areaSqft: number } | null {
-  const match = value.trim().match(/^(\d+(?:\.\d+)?)\s*(?:ft|feet|')?\s*[x×]\s*(\d+(?:\.\d+)?)\s*(?:ft|feet|')?$/i);
+  const match = value.trim().match(/^(\d+(?:\.\d+)?)\s*(?:ft|feet|')?\s*[x×*]\s*(\d+(?:\.\d+)?)\s*(?:ft|feet|')?$/i);
   if (!match || Number(match[1]) <= 0 || Number(match[2]) <= 0) return null;
   const width = Number(match[1]);
   const length = Number(match[2]);
@@ -35,6 +35,9 @@ export function createPlotInventoryItem(plotSize = ""): PlotInventoryItem {
 
 function validDate(value?: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value || "") && !Number.isNaN(new Date(`${value}T00:00:00`).getTime());
+}
+function validMonth(value?: string) {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(value || "") || validDate(value);
 }
 
 export function formatPlotPrice(value: number) {
@@ -72,7 +75,7 @@ export function validatePlotDraft(property: Partial<Property>): PlotErrors {
   });
   if (!details?.layoutMapUrl) errors.layoutMapUrl = "Upload the required master plan / layout map.";
   if (details?.layoutPossession.status === "Layout Ready" && !validDate(details.layoutPossession.readyDate)) errors.layoutPossession = "Layout Ready requires a ready date.";
-  if (details?.layoutPossession.status === "Under Development" && !validDate(details.layoutPossession.expectedCompletionDate)) errors.layoutPossession = "Under Development requires an expected completion date.";
+  if (details?.layoutPossession.status === "Under Development" && !validMonth(details.layoutPossession.expectedCompletionDate)) errors.layoutPossession = "Under Development requires an expected completion month and year.";
   if (!property.builder?.trim()) errors.builder = "Builder/developer is required.";
   if (!property.transactionType || !["New Property", "Resale"].includes(property.transactionType)) errors.transactionType = "Select a transaction type.";
   if (!property.listingType || !["For Sale", "For Rent"].includes(property.listingType)) errors.listingType = "Select a listing type.";

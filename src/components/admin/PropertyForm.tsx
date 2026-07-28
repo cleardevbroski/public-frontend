@@ -44,7 +44,7 @@ import LeaseDetailsFields from "./LeaseDetailsFields";
 import { addProperty, updateProperty } from "@/lib/propertyStore";
 import { createPropertyDraft, createPublicProperty, fetchBuilders, fetchDealers, resubmitProperty, uploadPropertyMedia } from "@/lib/api";
 import { trackAnalytics } from "@/lib/analytics";
-import type { ConfigurationDetail, FacilityDetail, Property, VillaConfigurationDetail } from "@/components/acres/mock-data";
+import type { ConfigurationDetail, FacilityDetail, NearbyPlace, Property, VillaConfigurationDetail } from "@/components/acres/mock-data";
 import {
   createConfigurationDetail,
   normalizeBhkLabel,
@@ -174,7 +174,6 @@ const initialFormData: FormData = {
   amenities: [],
   facilities: [],
   ownershipType: "",
-  overlooking: [],
   bookingAmount: "",
   maintenanceCharges: "",
   maintenancePeriod: "month",
@@ -297,16 +296,44 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     }));
   };
 
-  const updateNearbyDetail = (
+  const updateNearbyPlace = (
     category: "schools" | "hospitals" | "shopping" | "metro",
-    key: "count" | "distance",
-    value: number | string | undefined
+    index: number,
+    updates: Partial<NearbyPlace>
   ) => {
+    setFormData((prev) => {
+      const places = [...(prev.nearbyDetails?.[category]?.places || [])];
+      places[index] = { ...places[index], ...updates };
+      return {
+        ...prev,
+        nearbyDetails: {
+          ...(prev.nearbyDetails || {}),
+          [category]: { places },
+        },
+      };
+    });
+  };
+
+  const addNearbyPlace = (category: "schools" | "hospitals" | "shopping" | "metro") => {
     setFormData((prev) => ({
       ...prev,
       nearbyDetails: {
         ...(prev.nearbyDetails || {}),
-        [category]: { ...(prev.nearbyDetails?.[category] || {}), [key]: value },
+        [category]: {
+          places: [...(prev.nearbyDetails?.[category]?.places || []), { name: "", address: "", distance: "", landmark: "" }],
+        },
+      },
+    }));
+  };
+
+  const removeNearbyPlace = (category: "schools" | "hospitals" | "shopping" | "metro", index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      nearbyDetails: {
+        ...(prev.nearbyDetails || {}),
+        [category]: {
+          places: (prev.nearbyDetails?.[category]?.places || []).filter((_, placeIndex) => placeIndex !== index),
+        },
       },
     }));
   };
@@ -412,7 +439,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     const villaRow = findOccurrence(formData.villaDetails?.configurationDetails);
     const plotRow = formData.plotDetails?.plotSizeDetails.find((item) => item.plotSize === config);
     const populated = apartmentRow
-      ? Boolean(apartmentRow.price || apartmentRow.superBuiltUpArea || apartmentRow.carpetArea || apartmentRow.facings.length)
+      ? Boolean(apartmentRow.price || apartmentRow.builtUpArea || apartmentRow.carpetArea || apartmentRow.facings.length)
       : villaRow
         ? Boolean(villaRow.price || villaRow.plotArea || villaRow.builtUpArea || villaRow.superArea)
         : Boolean(plotRow?.pricePerSqft || plotRow?.facings.length);
@@ -450,7 +477,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
 
   const changePropertyType = (propertyType: string) => {
     if (propertyType === formData.propertyType) return;
-    const apartmentPopulated = Boolean(formData.configurationDetails?.some((row) => row.price || row.superBuiltUpArea || row.carpetArea));
+    const apartmentPopulated = Boolean(formData.configurationDetails?.some((row) => row.price || row.builtUpArea || row.carpetArea));
     const villaPopulated = Boolean(formData.villaDetails?.configurationDetails.some((row) => row.price || row.plotArea || row.builtUpArea || row.superArea));
     const plotPopulated = Boolean(formData.plotDetails?.plotSizeDetails.some((row) => row.pricePerSqft || row.facings.length) || formData.plotDetails?.inventory.length);
     const commercialPopulated = Boolean(formData.commercialDetails?.carpetArea || formData.commercialDetails?.builtUpArea || formData.commercialDetails?.superArea);
@@ -519,7 +546,8 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
         reraNumber: undefined,
         nearbyDetails: undefined,
       } : {}),
-      ...(propertyType !== "Apartment" ? { ownershipType: undefined, overlooking: undefined, bookingAmount: undefined, maintenanceCharges: undefined, maintenancePeriod: undefined } : {}),
+      overlooking: undefined,
+      ...(propertyType !== "Apartment" ? { ownershipType: undefined, bookingAmount: undefined, maintenanceCharges: undefined, maintenancePeriod: undefined } : {}),
       amenities: propertyType === "Villa"
         ? prev.amenities
         : propertyType === "Plot"
@@ -1072,15 +1100,6 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                       {["Freehold", "Leasehold", "Co-operative Society", "Power of Attorney"].map((value) => <option key={value}>{value}</option>)}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Overlooking</label>
-                    <div className="flex flex-wrap gap-2">
-                      {["Club House", "Garden", "Pool", "Main Road", "Park"].map((value) => {
-                        const selected = formData.overlooking?.includes(value);
-                        return <button key={value} type="button" onClick={() => updateField("overlooking", selected ? formData.overlooking!.filter((item) => item !== value) : [...(formData.overlooking || []), value])} className={`px-3 py-2 rounded-lg text-[12px] border ${selected ? "bg-[#DDAA42] text-[#0B1328] border-[#DDAA42]" : "bg-white text-[#3F3D46] border-[#E4E0E7]"}`}>{value}</button>;
-                      })}
-                    </div>
-                  </div>
                   {formData.transactionType === "New Property" && <div>
                     <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Booking Amount</label>
                     <input value={formData.bookingAmount || ""} onChange={(e) => updateField("bookingAmount", e.target.value)} placeholder="e.g. ₹5,00,000" className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
@@ -1418,7 +1437,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 <h2 className="text-[20px] font-bold text-[#121B35] mb-6" style={{ fontFamily: "var(--font-outfit)" }}>
                   Locality & Nearby
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                   <div>
                     <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">City</label>
                     <input
@@ -1427,6 +1446,16 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                       onChange={(e) => updateNestedField("locality", "city", e.target.value)}
                       placeholder="e.g. Bangalore"
                       className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Locality Address</label>
+                    <input
+                      type="text"
+                      value={formData.locality?.address || ""}
+                      onChange={(e) => updateNestedField("locality", "address", e.target.value)}
+                      placeholder="Street, area or full address"
+                      className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42]"
                     />
                   </div>
                   <div>
@@ -1460,15 +1489,25 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 </div>
 
                 <h3 className="text-[15px] font-semibold text-[#3F3D46] mb-3">Nearby Amenities</h3>
-                {isStructuredType(formData.propertyType) ? <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {isStructuredType(formData.propertyType) ? <div className="grid grid-cols-1 gap-4">
                   {(["schools", "hospitals", "shopping", "metro"] as const).map((key) => (
                     <div key={key} className="rounded-xl border border-[#E4E0E7] bg-[#F8F7FA]/40 p-4">
-                      <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2 capitalize">{key === "metro" ? "Metro / Train" : key}</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input type="number" min={0} step={1} value={formData.nearbyDetails?.[key]?.count ?? ""} onChange={(e) => updateNearbyDetail(key, "count", e.target.value ? Number(e.target.value) : undefined)} placeholder="Count" className="w-full px-3 py-2.5 border border-[#E4E0E7] rounded-lg text-[13px]" />
-                        <input value={formData.nearbyDetails?.[key]?.distance || ""} onChange={(e) => updateNearbyDetail(key, "distance", e.target.value)} placeholder="Distance, e.g. 2 km" className="w-full px-3 py-2.5 border border-[#E4E0E7] rounded-lg text-[13px]" />
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <label className="block text-[13px] font-semibold text-[#3F3D46] capitalize">{key === "metro" ? "Metro / Train" : key}</label>
+                        <button type="button" onClick={() => addNearbyPlace(key)} className="rounded-lg border border-[#DDAA42] bg-white px-3 py-1.5 text-[11px] font-bold text-[#121B35]">+ Add {key === "metro" ? "station" : key.slice(0, -1)}</button>
                       </div>
-                      {(validationErrors[`nearby.${key}.count`] || validationErrors[`nearby.${key}.distance`]) && <p className="text-[11px] text-red-600 mt-1">{validationErrors[`nearby.${key}.count`] || validationErrors[`nearby.${key}.distance`]}</p>}
+                      {(formData.nearbyDetails?.[key]?.places || []).length === 0 && <p className="text-[11px] text-[#68646F]">Optional — add as many nearby places as needed.</p>}
+                      <div className="space-y-3">
+                        {(formData.nearbyDetails?.[key]?.places || []).map((place, index) => (
+                          <div key={`${key}-${index}`} className="grid gap-2 rounded-xl border border-[#E4E0E7] bg-white p-3 md:grid-cols-2 lg:grid-cols-[1fr_1.4fr_0.8fr_1fr_auto]">
+                            <div><input value={place.name} onChange={(e) => updateNearbyPlace(key, index, { name: e.target.value })} placeholder="Name *" className="w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[13px]" />{validationErrors[`nearby.${key}.places.${index}.name`] && <p className="mt-1 text-[10px] text-red-600">{validationErrors[`nearby.${key}.places.${index}.name`]}</p>}</div>
+                            <input value={place.address || ""} onChange={(e) => updateNearbyPlace(key, index, { address: e.target.value })} placeholder="Address (optional)" className="w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[13px]" />
+                            <input value={place.distance || ""} onChange={(e) => updateNearbyPlace(key, index, { distance: e.target.value })} placeholder="Distance (optional)" className="w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[13px]" />
+                            <input value={place.landmark || ""} onChange={(e) => updateNearbyPlace(key, index, { landmark: e.target.value })} placeholder="Landmark (optional)" className="w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[13px]" />
+                            <button type="button" onClick={() => removeNearbyPlace(key, index)} className="rounded-lg px-3 py-2 text-[11px] font-bold text-red-600 hover:bg-red-50">Remove</button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div> : <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1557,8 +1596,8 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 {formData.propertyType === "Apartment" && (formData.configurationDetails?.length || 0) > 0 && (
                   <div className="overflow-x-auto rounded-xl border border-[#E4E0E7] bg-white">
                     <table className="w-full min-w-[850px] text-left text-[12px]">
-                      <thead className="bg-[#121B35] text-white"><tr>{["Config", "Price", "Super area", "Carpet area", "Beds", "Baths", "Balconies", "Facing"].map((label) => <th key={label} className="px-3 py-2.5">{label}</th>)}</tr></thead>
-                      <tbody>{formData.configurationDetails!.map((row) => <tr key={row.configuration} className="border-t border-[#F3F1F5]"><td className="px-3 py-2 font-bold">{row.configuration}</td><td className="px-3 py-2">{row.price}</td><td className="px-3 py-2">{row.superBuiltUpArea}</td><td className="px-3 py-2">{row.carpetArea}</td><td className="px-3 py-2">{row.bedrooms}</td><td className="px-3 py-2">{row.bathrooms}</td><td className="px-3 py-2">{row.balconies}</td><td className="px-3 py-2">{row.facings.join(", ")}</td></tr>)}</tbody>
+                      <thead className="bg-[#121B35] text-white"><tr>{["Config", "Price", "Built-up area", "Carpet area", "Bedrooms", "Bathrooms", "Balconies", "Facing"].map((label) => <th key={label} className="px-3 py-2.5">{label}</th>)}</tr></thead>
+                      <tbody>{formData.configurationDetails!.map((row) => <tr key={row.configuration} className="border-t border-[#F3F1F5]"><td className="px-3 py-2 font-bold">{row.configuration}</td><td className="px-3 py-2">{row.price}</td><td className="px-3 py-2">{row.builtUpArea}</td><td className="px-3 py-2">{row.carpetArea}</td><td className="px-3 py-2">{row.bedrooms}</td><td className="px-3 py-2">{row.bathrooms}</td><td className="px-3 py-2">{row.balconies}</td><td className="px-3 py-2">{row.facings.join(", ")}</td></tr>)}</tbody>
                     </table>
                   </div>
                 )}
@@ -1566,7 +1605,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 {formData.propertyType === "Villa" && (formData.villaDetails?.configurationDetails.length || 0) > 0 && (
                   <div className="overflow-x-auto rounded-xl border border-[#E4E0E7] bg-white">
                     <table className="w-full min-w-[760px] text-left text-[12px]">
-                      <thead className="bg-[#121B35] text-white"><tr>{["Config", "Price", "Plot area", "Built-up area", "Super area", "Beds", "Baths"].map((label) => <th key={label} className="px-3 py-2.5">{label}</th>)}</tr></thead>
+                      <thead className="bg-[#121B35] text-white"><tr>{["Config", "Price", "Plot area", "Built-up area", "Super area", "Bedrooms", "Bathrooms"].map((label) => <th key={label} className="px-3 py-2.5">{label}</th>)}</tr></thead>
                       <tbody>{formData.villaDetails!.configurationDetails.map((row) => <tr key={row.configuration} className="border-t border-[#F3F1F5]"><td className="px-3 py-2 font-bold">{row.configuration}</td><td className="px-3 py-2">{row.price}</td><td className="px-3 py-2">{row.plotArea}</td><td className="px-3 py-2">{row.builtUpArea}</td><td className="px-3 py-2">{row.superArea}</td><td className="px-3 py-2">{row.bedrooms}</td><td className="px-3 py-2">{row.bathrooms}</td></tr>)}</tbody>
                     </table>
                   </div>
@@ -1615,8 +1654,8 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px] mt-3">
                       {(["schools", "hospitals", "shopping", "metro"] as const).map((key) => {
                         const item = formData.nearbyDetails?.[key];
-                        if (!item || (item.count === undefined && !item.distance)) return null;
-                        return <div key={key} className="bg-white rounded-lg p-2.5"><span className="text-[#68646F] text-[10px] capitalize">{key === "metro" ? "Metro / Train" : key}</span><p className="font-medium text-[#121B35]">{item.count ?? "—"} · {item.distance || "—"}</p></div>;
+                        if (!item || (!item.places?.length && item.count === undefined && !item.distance)) return null;
+                        return <div key={key} className="bg-white rounded-lg p-2.5"><span className="text-[#68646F] text-[10px] capitalize">{key === "metro" ? "Metro / Train" : key}</span><p className="font-medium text-[#121B35]">{item.places?.length ? item.places.map((place) => place.name).join(", ") : `${item.count ?? "—"} · ${item.distance || "—"}`}</p></div>;
                       })}
                     </div>
                   </div>

@@ -242,6 +242,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     : property.propertyType === "Apartment" ? "" : property.floor || "";
   const nearbyValue = (key: "schools" | "hospitals" | "shopping" | "metro", legacy?: string) => {
     const detail = property.nearbyDetails?.[key];
+    if (detail?.places?.length) return `${detail.places.length} nearby`;
     if (detail && (detail.count !== undefined || detail.distance)) {
       return [detail.count !== undefined ? `${detail.count}` : "", detail.distance].filter(Boolean).join(" · ");
     }
@@ -262,9 +263,10 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   );
   const hasLocalityContent = Boolean(
     property.localityMapImageUrl ||
+    property.locality?.address ||
     insight ||
     (property.nearbyAmenities && Object.values(property.nearbyAmenities).some(Boolean)) ||
-    (property.nearbyDetails && Object.values(property.nearbyDetails).some((item) => item && (item.count !== undefined || item.distance)))
+    (property.nearbyDetails && Object.values(property.nearbyDetails).some((item) => item && (item.places?.length || item.count !== undefined || item.distance)))
   );
   const visibleSections = sections.filter((section) =>
     (section.id !== "plans" || hasFloorPlans) &&
@@ -334,7 +336,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     if (action === "brochure") handleDownloadBrochure();
   };
 
-  const beds = property.bedrooms || property.configs?.[0]?.split(" ")[0] || "";
+  const bedrooms = property.bedrooms || property.configs?.[0]?.split(" ")[0] || "";
   const formatCurrency = (value?: number) =>
     value !== undefined && Number.isFinite(value) && value >= 0 ? `₹${value.toLocaleString("en-IN")}` : "";
   const formatDate = (value?: string) => {
@@ -376,7 +378,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     { label: "Structure", val: property.commercialDetails.structure }, { label: "Frontage", val: property.commercialDetails.frontage },
     { label: "Seating", val: property.commercialDetails.seatingCapacity ? String(property.commercialDetails.seatingCapacity) : "" }, { label: "Cabins", val: property.commercialDetails.cabins ? String(property.commercialDetails.cabins) : "" },
     { label: "Meeting rooms", val: property.commercialDetails.meetingRooms ? String(property.commercialDetails.meetingRooms) : "" }, { label: "Pantry", val: property.commercialDetails.pantry },
-    { label: "Washrooms", val: property.commercialDetails.washrooms }, { label: "Parking", val: property.commercialDetails.parking },
+    { label: "Bathrooms / Washrooms", val: property.commercialDetails.washrooms }, { label: "Parking", val: property.commercialDetails.parking },
     { label: "Power backup", val: property.commercialDetails.powerBackup }, { label: "Sanctioned load", val: property.commercialDetails.sanctionedLoadKva ? `${property.commercialDetails.sanctionedLoadKva} KVA` : "" },
     { label: "Fire safety", val: property.commercialDetails.fireSafetyCompliance }, { label: "Furnishing", val: property.commercialDetails.furnishing },
     { label: "Ownership", val: property.ownershipType }, { label: "Maintenance", val: property.maintenanceCharges ? `${property.maintenanceCharges} / ${property.maintenancePeriod || "month"}` : "" },
@@ -431,7 +433,6 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     { label: "Parking", val: property.parking },
     { label: "Floor", val: floorDisplay },
     { label: "Ownership", val: property.ownershipType },
-    { label: "Overlooking", val: property.overlooking?.join(", ") },
     { label: "Booking amount", val: property.transactionType === "New Property" ? property.bookingAmount : "" },
     { label: "Maintenance", val: property.maintenanceCharges ? `${property.maintenanceCharges} / ${property.maintenancePeriod || "month"}` : "" },
     { label: "RERA number", val: property.reraNumber },
@@ -508,7 +509,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                   { icon: Compass, label: "Facing", val: property.villaDetails.plotFacing },
                 ]
               : [
-                  { icon: Bed, label: "Bedrooms", val: beds },
+                  { icon: Bed, label: "Bedrooms", val: bedrooms },
                   { icon: Bath, label: "Bathrooms", val: property.bathrooms },
                   { icon: Maximize, label: "Area", val: property.area },
                   { icon: Compass, label: "Facing", val: property.facing },
@@ -823,7 +824,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                 <div>
                   <div className="mb-3 flex items-end justify-between gap-3">
                     <h3 className="text-[17px] font-bold text-[#121B35]">Choose a sharing option</h3>
-                    <span className="text-[11px] font-semibold text-[#77717E]">Rent shown per bed / month</span>
+                    <span className="text-[11px] font-semibold text-[#77717E]">Rent shown per bedroom space / month</span>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     {property.pgDetails.sharingDetails.map((row) => (
@@ -831,7 +832,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                         <div className="flex items-start justify-between gap-3 bg-[#121B35] px-4 py-3.5 text-white">
                           <div>
                             <p className="text-[15px] font-extrabold">{row.sharingType}</p>
-                            <p className="mt-1 text-[10px] font-semibold text-white/55">{row.bedsAvailable} beds currently available</p>
+                            <p className="mt-1 text-[10px] font-semibold text-white/55">{row.bedsAvailable} bedroom spaces currently available</p>
                           </div>
                           <p className="text-[17px] font-extrabold text-[#F2C052]">₹{row.rentPerBed.toLocaleString("en-IN")}</p>
                         </div>
@@ -994,6 +995,12 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                   </>
                 )}
               </div>
+              {property.locality?.address && (
+                <div className="flex items-start gap-3 rounded-2xl border border-[#E4E0E7]/50 bg-[#F8F7FA]/60 p-4">
+                  <MapPin className="mt-0.5 size-5 shrink-0 text-[#DDAA42]" />
+                  <div><p className="text-[10px] font-bold uppercase tracking-wider text-[#68646F]">Locality address</p><p className="mt-1 text-[13px] font-semibold text-[#121B35]">{property.locality.address}</p></div>
+                </div>
+              )}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                   { icon: School, label: "Schools", val: nearbyValue("schools", property.nearbyAmenities?.schools) },
@@ -1010,6 +1017,27 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                   </div>
                 ))}
               </div>
+              {property.nearbyDetails && Object.entries(property.nearbyDetails).some(([, detail]) => detail?.places?.length) && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {([
+                    ["schools", "Schools", School],
+                    ["hospitals", "Hospitals", Hospital],
+                    ["shopping", "Shopping", ShoppingBag],
+                    ["metro", "Metro / Train", Train],
+                  ] as const).map(([key, label, Icon]) => {
+                    const places = property.nearbyDetails?.[key]?.places || [];
+                    if (!places.length) return null;
+                    return <div key={key} className="rounded-2xl border border-[#E4E0E7]/60 p-4">
+                      <div className="mb-3 flex items-center gap-2"><Icon className="size-4 text-[#DDAA42]" /><h3 className="text-[13px] font-bold text-[#121B35]">{label}</h3></div>
+                      <div className="space-y-3">{places.map((place, index) => <div key={`${place.name}-${index}`} className="rounded-xl bg-[#F8F7FA] p-3">
+                        <p className="text-[13px] font-bold text-[#121B35]">{place.name}</p>
+                        {place.address && <p className="mt-1 text-[11px] text-[#68646F]">{place.address}</p>}
+                        {(place.distance || place.landmark) && <p className="mt-1 text-[11px] font-semibold text-[#5A5762]">{[place.distance, place.landmark].filter(Boolean).join(" · ")}</p>}
+                      </div>)}</div>
+                    </div>;
+                  })}
+                </div>
+              )}
 
               {/* Price-trend insight strip */}
               {insight && <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-gradient-to-r from-[#F8F7FA] to-[#FFF8E8] border border-[#E4E0E7]/60 rounded-2xl">

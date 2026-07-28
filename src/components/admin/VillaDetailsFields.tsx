@@ -5,6 +5,7 @@ import type {
   VillaDetails,
   VillaType,
 } from "@/components/acres/mock-data";
+import { useState } from "react";
 import { facingOptions } from "@/lib/propertyDetails";
 import type { VillaErrors } from "@/lib/villaDetails";
 
@@ -39,6 +40,7 @@ export default function VillaDetailsFields(props: Props) {
   const updateVilla = (updates: Partial<VillaDetails>) => props.setDetails({ ...props.details, ...updates });
   const underConstruction = props.possession.status === "Under Construction";
   const dateField = underConstruction ? "expectedCompletionDate" : "launchDate";
+  const [savedConfigurations, setSavedConfigurations] = useState<Set<number>>(new Set());
 
   return (
     <div className="space-y-6">
@@ -73,7 +75,7 @@ export default function VillaDetailsFields(props: Props) {
           <div className="overflow-x-auto border border-[#E4E0E7] rounded-xl">
             <table className="w-full min-w-[980px] text-left">
               <thead className="bg-[#121B35] text-white text-[11px] uppercase tracking-wide">
-                <tr>{["Config", "Price", "Plot area", "Built-up area", "Super area", "Beds", "Baths"].map((label) => <th key={label} className="px-3 py-3">{label}</th>)}</tr>
+                <tr>{["Config", "Price", "Plot area", "Built-up area", "Super area", "Bedrooms", "Bathrooms"].map((label) => <th key={label} className="px-3 py-3">{label}</th>)}</tr>
               </thead>
               <tbody>
                 {props.details.configurationDetails.map((row, index) => {
@@ -103,42 +105,35 @@ export default function VillaDetailsFields(props: Props) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-2xl border border-[#E4E0E7]/50 bg-[#F8F7FA]/40 p-5">
-        <div>
-          <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Plot Dimensions</label>
-          <input value={props.details.plotDimensions || ""} onChange={(event) => updateVilla({ plotDimensions: event.target.value })} placeholder="e.g. 40 ft × 60 ft" className={inputClass} />
-          {props.errors.plotDimensions && <p className="text-[11px] text-red-600 mt-1">{props.errors.plotDimensions}</p>}
-        </div>
-        <div>
-          <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Number of Floors</label>
-          <input value={props.details.numberOfFloors || ""} onChange={(event) => updateVilla({ numberOfFloors: event.target.value })} placeholder="e.g. G+2" className={inputClass} />
-          {props.errors.numberOfFloors && <p className="text-[11px] text-red-600 mt-1">{props.errors.numberOfFloors}</p>}
-        </div>
-        <div>
-          <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Plot Facing <span className="text-[#F2C052]">*</span></label>
-          <select value={props.details.plotFacing} onChange={(event) => updateVilla({ plotFacing: event.target.value as PlotFacing })} className={inputClass}>{facingOptions.map((facing) => <option key={facing}>{facing}</option>)}</select>
-          {props.errors.plotFacing && <p className="text-[11px] text-red-600 mt-1">{props.errors.plotFacing}</p>}
-        </div>
-        <YesNoSelect label="Corner Plot" value={props.details.cornerPlot} onChange={(cornerPlot) => updateVilla({ cornerPlot })} />
-        <div>
-          <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Road Width Facing</label>
-          <input value={props.details.roadWidthFacing || ""} onChange={(event) => updateVilla({ roadWidthFacing: event.target.value })} placeholder="e.g. 30 ft road" className={inputClass} />
-          {props.errors.roadWidthFacing && <p className="text-[11px] text-red-600 mt-1">{props.errors.roadWidthFacing}</p>}
-        </div>
-        <YesNoSelect label="Private Garden / Lawn" value={props.details.privateGarden} onChange={(privateGarden) => updateVilla({ privateGarden, ...(!privateGarden ? { privateGardenArea: "" } : {}) })} />
-        {props.details.privateGarden && <div>
-          <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Private Garden Area <span className="text-[#F2C052]">*</span></label>
-          <input value={props.details.privateGardenArea || ""} onChange={(event) => updateVilla({ privateGardenArea: event.target.value })} placeholder="e.g. 400 sqft" className={inputClass} />
-          {props.errors.privateGardenArea && <p className="text-[11px] text-red-600 mt-1">{props.errors.privateGardenArea}</p>}
-        </div>}
-        <YesNoSelect label="Private Pool" value={props.details.privatePool} onChange={(privatePool) => updateVilla({ privatePool })} />
-        <YesNoSelect label="Terrace" value={props.details.terrace} onChange={(terrace) => updateVilla({ terrace, ...(!terrace ? { terraceDetails: "" } : {}) })} />
-        {props.details.terrace && <div>
-          <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Terrace Details</label>
-          <input value={props.details.terraceDetails || ""} onChange={(event) => updateVilla({ terraceDetails: event.target.value })} placeholder="e.g. Private terrace access" className={inputClass} />
-        </div>}
-        <YesNoSelect label="Gated Community" value={props.details.gatedCommunity} onChange={(gatedCommunity) => updateVilla({ gatedCommunity })} />
-      </div>
+      {props.details.configurationDetails.map((row, index) => {
+        const saved = savedConfigurations.has(index);
+        const field = (name: string) => props.errors[`villaConfiguration.${index}.${name}`];
+        if (saved) return (
+          <div key={`villa-options-${row.configuration}-${index}`} className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <div><p className="font-bold text-[#121B35]">{row.configuration} villa details saved</p><p className="text-[11px] text-[#68646F]">Add another configuration above, or edit this one.</p></div>
+            <button type="button" onClick={() => setSavedConfigurations((current) => { const next = new Set(current); next.delete(index); return next; })} className="rounded-lg border border-[#DDAA42] bg-white px-3 py-2 text-[12px] font-bold text-[#121B35]">Edit</button>
+          </div>
+        );
+        return (
+          <div key={`villa-options-${row.configuration}-${index}`} className="rounded-2xl border border-[#E4E0E7]/70 bg-[#F8F7FA]/40 p-5">
+            <div className="mb-4"><h3 className="text-[14px] font-bold text-[#121B35]">{row.configuration} villa-specific details</h3><p className="text-[11px] text-[#68646F]">Optional. Fill any fields that apply, then save this configuration.</p></div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div><label className="mb-2 block text-[13px] font-semibold">Plot Dimensions</label><input value={row.plotDimensions || ""} onChange={(event) => props.updateDetail(index, { plotDimensions: event.target.value })} placeholder="e.g. 40 ft × 60 ft" className={inputClass} />{field("plotDimensions") && <p className="mt-1 text-[11px] text-red-600">{field("plotDimensions")}</p>}</div>
+              <div><label className="mb-2 block text-[13px] font-semibold">Number of Floors</label><input value={row.numberOfFloors || ""} onChange={(event) => props.updateDetail(index, { numberOfFloors: event.target.value })} placeholder="e.g. G+2" className={inputClass} />{field("numberOfFloors") && <p className="mt-1 text-[11px] text-red-600">{field("numberOfFloors")}</p>}</div>
+              <div><label className="mb-2 block text-[13px] font-semibold">Plot Facing</label><select value={row.plotFacing || ""} onChange={(event) => props.updateDetail(index, { plotFacing: (event.target.value || undefined) as PlotFacing | undefined })} className={inputClass}><option value="">Not specified</option>{facingOptions.map((facing) => <option key={facing}>{facing}</option>)}</select></div>
+              <YesNoSelect label="Corner Plot" value={Boolean(row.cornerPlot)} onChange={(cornerPlot) => props.updateDetail(index, { cornerPlot })} />
+              <div><label className="mb-2 block text-[13px] font-semibold">Road Width Facing</label><input value={row.roadWidthFacing || ""} onChange={(event) => props.updateDetail(index, { roadWidthFacing: event.target.value })} placeholder="e.g. 30 ft road" className={inputClass} />{field("roadWidthFacing") && <p className="mt-1 text-[11px] text-red-600">{field("roadWidthFacing")}</p>}</div>
+              <YesNoSelect label="Private Garden / Lawn" value={Boolean(row.privateGarden)} onChange={(privateGarden) => props.updateDetail(index, { privateGarden, ...(!privateGarden ? { privateGardenArea: "" } : {}) })} />
+              {row.privateGarden && <div><label className="mb-2 block text-[13px] font-semibold">Private Garden Area</label><input value={row.privateGardenArea || ""} onChange={(event) => props.updateDetail(index, { privateGardenArea: event.target.value })} placeholder="e.g. 400 sqft" className={inputClass} />{field("privateGardenArea") && <p className="mt-1 text-[11px] text-red-600">{field("privateGardenArea")}</p>}</div>}
+              <YesNoSelect label="Private Pool" value={Boolean(row.privatePool)} onChange={(privatePool) => props.updateDetail(index, { privatePool })} />
+              <YesNoSelect label="Terrace" value={Boolean(row.terrace)} onChange={(terrace) => props.updateDetail(index, { terrace, ...(!terrace ? { terraceDetails: "" } : {}) })} />
+              {row.terrace && <div><label className="mb-2 block text-[13px] font-semibold">Terrace Details</label><input value={row.terraceDetails || ""} onChange={(event) => props.updateDetail(index, { terraceDetails: event.target.value })} placeholder="e.g. Private terrace access" className={inputClass} /></div>}
+              <YesNoSelect label="Gated Community" value={Boolean(row.gatedCommunity)} onChange={(gatedCommunity) => props.updateDetail(index, { gatedCommunity })} />
+            </div>
+            <button type="button" onClick={() => setSavedConfigurations((current) => new Set(current).add(index))} className="mt-5 rounded-xl bg-[#121B35] px-5 py-2.5 text-[12px] font-bold text-white">Save {row.configuration} details</button>
+          </div>
+        );
+      })}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -148,8 +143,8 @@ export default function VillaDetailsFields(props: Props) {
           </select>
         </div>
         <div>
-          <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">{underConstruction ? "Expected Completion" : "Ready Since"} <span className="text-[#F2C052]">*</span></label>
-          <input type="date" value={props.possession[dateField] || ""} onChange={(event) => props.setPossession({ ...props.possession, [dateField]: event.target.value })} className={inputClass} />
+          <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">{underConstruction ? "Expected Completion Month / Year" : "Ready Since"} <span className="text-[#F2C052]">*</span></label>
+          <input type={underConstruction ? "month" : "date"} value={underConstruction ? String(props.possession[dateField] || "").slice(0, 7) : props.possession[dateField] || ""} onChange={(event) => props.setPossession({ ...props.possession, [dateField]: event.target.value })} className={inputClass} />
           {props.errors.possessionDate && <p className="text-[12px] text-red-600 mt-1">{props.errors.possessionDate}</p>}
         </div>
       </div>

@@ -75,9 +75,9 @@ export default function ApartmentDetailsFields(props: Props) {
         <div>
           <h3 className="text-[14px] font-bold text-[#121B35] mb-2">Per-configuration details</h3>
           <div className="overflow-x-auto border border-[#E4E0E7] rounded-xl">
-            <table className="w-full min-w-[1080px] text-left">
+            <table className="w-full min-w-[980px] text-left">
               <thead className="bg-[#121B35] text-white text-[11px] uppercase tracking-wide">
-                <tr>{["Config", "Price", "Super area", "Carpet area", "Beds", "Baths", "Balconies", "Facing"].map((label) => <th key={label} className="px-3 py-3">{label}</th>)}</tr>
+                <tr>{["Config", "Price", "Built-up area", "Carpet area", "Bedrooms", "Bathrooms", "Balconies", "Facing"].map((label) => <th key={label} className="px-3 py-3">{label}</th>)}</tr>
               </thead>
               <tbody>
                 {props.details.map((row, index) => {
@@ -86,7 +86,7 @@ export default function ApartmentDetailsFields(props: Props) {
                   return (
                     <tr key={`${row.configuration}-${index}`} className="border-t border-[#F3F1F5] align-top">
                       <td className="px-3 py-3 font-bold text-[#121B35] whitespace-nowrap">{row.configuration}</td>
-                      {(["price", "superBuiltUpArea", "carpetArea"] as const).map((key) => (
+                      {(["price", "builtUpArea", "carpetArea"] as const).map((key) => (
                         <td key={key} className="px-2 py-2">
                           <input className={inputClass} value={row[key]} placeholder={key === "price" ? "₹1.70 Cr" : "1280 sqft"} onChange={(e) => props.updateDetail(index, { [key]: e.target.value })} />
                           {field(key) && <p className="text-[10px] text-red-600 mt-1">{field(key)}</p>}
@@ -128,7 +128,6 @@ export default function ApartmentDetailsFields(props: Props) {
                 <button type="button" onClick={() => addRoom(configurationIndex)} className="rounded-lg border border-[#DDAA42] bg-white px-3 py-1.5 text-[11px] font-bold text-[#9A741E] hover:bg-[#FFF9E9]">+ Add room</button>
               </div>
               <div className="mt-3 grid gap-3 md:grid-cols-3">
-                <div><label className="mb-1 block text-[11px] font-semibold text-[#5A5762]">Built-up area</label><input value={row.builtUpArea || ""} onChange={(event) => props.updateDetail(configurationIndex, { builtUpArea: event.target.value })} placeholder="e.g. 1180 sqft" className={inputClass} /></div>
                 <OptionalMediaField label="2D floor plan" value={row.floorPlan2dUrl} onChange={(floorPlan2dUrl) => props.updateDetail(configurationIndex, { floorPlan2dUrl })} description="Upload a plan image or paste its URL." />
                 <OptionalMediaField label="3D floor plan" value={row.floorPlan3dUrl} onChange={(floorPlan3dUrl) => props.updateDetail(configurationIndex, { floorPlan3dUrl })} description="Upload a rendered 3D plan image or paste its URL." />
               </div>

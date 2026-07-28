@@ -22,7 +22,8 @@ export type ConfigurationDetail = {
   id?: string;
   configuration: string;
   price: string;
-  superBuiltUpArea: string;
+  /** Legacy apartment field retained for older listings; new forms use built-up/carpet area. */
+  superBuiltUpArea?: string;
   carpetArea: string;
   builtUpArea?: string;
   bedrooms: number;
@@ -55,6 +56,17 @@ export type VillaConfigurationDetail = {
   superArea: string;
   bedrooms: number;
   bathrooms: number;
+  plotDimensions?: string;
+  numberOfFloors?: string;
+  plotFacing?: PlotFacing;
+  cornerPlot?: boolean;
+  roadWidthFacing?: string;
+  privateGarden?: boolean;
+  privateGardenArea?: string;
+  privatePool?: boolean;
+  terrace?: boolean;
+  terraceDetails?: string;
+  gatedCommunity?: boolean;
 };
 
 export type VillaDetails = {
@@ -148,7 +160,18 @@ export type PossessionDetails = {
   expectedCompletionDate?: string;
 };
 
-export type NearbyDetail = { count?: number; distance?: string };
+export type NearbyPlace = {
+  name: string;
+  address?: string;
+  distance?: string;
+  landmark?: string;
+};
+export type NearbyDetail = {
+  /** Legacy summary fields retained for existing listings. */
+  count?: number;
+  distance?: string;
+  places?: NearbyPlace[];
+};
 
 export type Property = {
   id: string;
@@ -208,6 +231,7 @@ export type Property = {
   locality?: {
     city?: string;
     zone?: string;
+    address?: string;
     landmark?: string;
     pinCode?: string;
   };

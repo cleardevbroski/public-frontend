@@ -4,10 +4,10 @@ export default function ConfigurationTable({ details }: { details: Configuration
   const columns = [
     { label: "Config", value: (row: ConfigurationDetail) => row.configuration },
     { label: "Price", value: (row: ConfigurationDetail) => row.price },
-    { label: "Super area", value: (row: ConfigurationDetail) => row.superBuiltUpArea },
+    { label: "Built-up area", value: (row: ConfigurationDetail) => row.builtUpArea },
     { label: "Carpet area", value: (row: ConfigurationDetail) => row.carpetArea },
-    { label: "Beds", value: (row: ConfigurationDetail) => row.bedrooms },
-    { label: "Baths", value: (row: ConfigurationDetail) => row.bathrooms },
+    { label: "Bedrooms", value: (row: ConfigurationDetail) => row.bedrooms },
+    { label: "Bathrooms", value: (row: ConfigurationDetail) => row.bathrooms },
     { label: "Balconies", value: (row: ConfigurationDetail) => row.balconies },
     { label: "Facing", value: (row: ConfigurationDetail) => row.facings?.join(", ") },
   ].filter((column) => details.some((row) => {
