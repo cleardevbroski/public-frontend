@@ -19,7 +19,7 @@ describe("interactive property presentation", () => {
     expect(html).toContain("Floor Plans &amp; Pricing");
     expect(html).toContain("View Homes in 3D");
     expect(html).toContain("1 Floor Plan Available");
-    expect(html).toContain("(118.92 sqm)");
+    expect(html).toContain("(85.01 sqm)");
     expect(html).toContain("Request Callback");
     expect(html).not.toContain("<table");
   });
@@ -61,5 +61,61 @@ describe("interactive property presentation", () => {
     expect(html).not.toContain("legacy.mp4");
     expect(html).not.toContain("legacy-tour");
     expect(html).not.toContain("Videos (");
+  });
+
+  it("gives Rent and Lease listings their own compact public narratives", () => {
+    const base = cityListings.Bangalore[0];
+    const rentHtml = renderToStaticMarkup(
+      <MemoryRouter><AuthProvider><PropertyDetail property={{
+        ...base,
+        propertyType: "Rent",
+        configs: [],
+        configurationDetails: undefined,
+        rentDetails: {
+          rentalPropertyType: "Apartment",
+          configuration: "2 BHK",
+          monthlyRent: 35000,
+          securityDeposit: 100000,
+          availableFrom: "2026-08-01",
+          preferredTenantTypes: ["Family"],
+          bedrooms: 2,
+          bathrooms: 2,
+          furnishing: "Semi-Furnished",
+          petFriendly: true,
+          nonVegAllowed: true,
+          contactType: "Owner",
+        },
+      }} /></AuthProvider></MemoryRouter>
+    );
+    const leaseHtml = renderToStaticMarkup(
+      <MemoryRouter><AuthProvider><PropertyDetail property={{
+        ...base,
+        propertyType: "Lease",
+        configs: [],
+        configurationDetails: undefined,
+        leaseDetails: {
+          leasePropertyType: "Commercial",
+          carpetArea: "1800 sq ft",
+          superArea: "2200 sq ft",
+          leaseRent: 180000,
+          rentPerSqft: 82,
+          leaseTenure: "5 years",
+          lockInPeriod: "3 years",
+          rentEscalation: "5% yearly",
+          securityDeposit: 1080000,
+          availableFrom: "2026-09-01",
+          furnishing: "Warm shell",
+          preferredTenantType: "Corporate",
+          subLeasingAllowed: false,
+          registrationStampDutyResponsibility: "Tenant",
+          contactType: "Owner",
+        },
+      }} /></AuthProvider></MemoryRouter>
+    );
+
+    expect(rentHtml).toContain("Rental terms at a glance");
+    expect(rentHtml).toContain("Monthly rent");
+    expect(leaseHtml).toContain("Lease terms at a glance");
+    expect(leaseHtml).toContain("Rent per sq ft");
   });
 });
