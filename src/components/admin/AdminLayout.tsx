@@ -27,6 +27,7 @@ import {
   ClipboardCheck,
   Megaphone,
   FileText,
+  LayoutGrid,
 } from "lucide-react";
 import { isAdminAuthed, adminLogin, adminLogout, getAdminLoginError } from "@/lib/adminAuth";
 
@@ -46,6 +47,7 @@ const navItems = [
   { label: "Post Property", href: "/admin/post", icon: PlusCircle },
   { label: "Public Submissions", href: "/admin/property-submissions", icon: ClipboardCheck },
   { label: "Hero Showcase", href: "/admin/hero", icon: Images },
+  { label: "Homepage Placement", href: "/admin/homepage-placements", icon: LayoutGrid },
   { label: "Advertisements", href: "/admin/advertisements", icon: Megaphone },
   { label: "Login Reports", href: "/admin/login-reports", icon: FileText },
 ];
@@ -145,7 +147,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F7FA] flex">
+    <div className="admin-shell min-h-screen flex">
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
@@ -156,12 +158,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 h-screen w-[260px] bg-[#121B35] flex flex-col z-50 transition-transform duration-300 ${
+        className={`admin-sidebar fixed lg:sticky top-0 left-0 h-screen w-[248px] bg-[#121B35] flex flex-col z-50 transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
         {/* Logo */}
-        <div className="px-6 h-[72px] flex items-center justify-between border-b border-white/10">
+        <div className="px-5 h-[64px] flex items-center justify-between border-b border-white/10">
           <Link href="/admin" className="flex items-center gap-3">
             <div className="relative w-9 h-9 rounded-full overflow-hidden ring-2 ring-[#DDAA42]/60 shadow-lg">
               <Image
@@ -260,7 +262,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen min-w-0">
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 h-[72px] bg-white/80 backdrop-blur-xl border-b border-[#E4E0E7]/30 flex items-center px-4 lg:px-8 gap-4">
+        <header className="admin-topbar sticky top-0 z-30 backdrop-blur-xl border-b flex items-center px-4 lg:px-6 gap-4">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden w-10 h-10 rounded-xl bg-[#F8F7FA] flex items-center justify-center hover:bg-[#F3F1F5] transition-colors"
@@ -296,7 +298,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-8">{children}</main>
+        <main className="admin-content flex-1">{children}</main>
       </div>
     </div>
   );

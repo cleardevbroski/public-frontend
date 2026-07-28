@@ -22,7 +22,7 @@ const reasons = [
 
 export default function WhyChooseClearTitle() {
   return (
-    <section className="bg-white py-20">
+    <section className="bg-white py-12">
       <div className="max-w-[1100px] mx-auto px-5">
         <div className="text-center mb-12">
           <h2 className="text-[30px] md:text-[40px] font-bold text-[#121B35]">

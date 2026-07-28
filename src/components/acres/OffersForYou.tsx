@@ -41,7 +41,7 @@ export default function OffersForYou() {
       }));
 
   return (
-    <section className="bg-[#F8F7FA] py-14">
+    <section className="bg-[#F8F7FA] py-8">
       <div className="max-w-[1200px] mx-auto px-5">
         <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
           <div>

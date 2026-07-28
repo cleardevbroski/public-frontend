@@ -24,6 +24,7 @@ const AdminInsights = lazy(() => import("@/pages/admin/AdminInsights"));
 const AdminPropertySubmissions = lazy(() => import("@/pages/admin/AdminPropertySubmissions"));
 const AdminAdvertisements = lazy(() => import("@/pages/admin/AdminAdvertisements"));
 const AdminLoginReports = lazy(() => import("@/pages/admin/AdminLoginReports"));
+const AdminHomepagePlacements = lazy(() => import("@/pages/admin/AdminHomepagePlacements"));
 
 export const router = createBrowserRouter([
   {
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
       { path: "/admin/property-submissions", element: <AdminPropertySubmissions /> },
       { path: "/admin/advertisements", element: <AdminAdvertisements /> },
       { path: "/admin/login-reports", element: <AdminLoginReports /> },
+      { path: "/admin/homepage-placements", element: <AdminHomepagePlacements /> },
       { path: "/property/:id", element: <Property /> },
       { path: "/dealer/:slug", element: <Dealer /> },
       { path: "/builder/:slug", element: <Builder /> },

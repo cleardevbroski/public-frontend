@@ -47,9 +47,9 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-[#121B35]/90 backdrop-blur-md border-b border-[#DDAA42]/25 acres-shadow-header text-white transition-all duration-300">
+      <header className="site-header sticky top-0 z-50 backdrop-blur-md border-b text-white transition-all duration-300">
         {/* Main Header Bar */}
-        <div className="h-[64px] md:h-[72px] w-full flex items-center px-4 md:px-[50px] gap-3 md:gap-6">
+        <div className="site-header__bar h-[60px] md:h-[64px] w-full flex items-center px-4 gap-3 md:gap-5">
           {/* Logo — gold coin */}
           <a href="/" className="flex items-center gap-2.5 shrink-0 group">
             <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#DDAA42]/60 group-hover:ring-[#F2C052] transition-all duration-300 group-hover:scale-[1.05] shadow-lg">

@@ -26,7 +26,7 @@ export default function ClearTitleAdvisor() {
   };
 
   return (
-    <section className="bg-gradient-to-b from-[#F8F7FA]/35 to-white py-16">
+    <section className="bg-gradient-to-b from-[#F8F7FA]/35 to-white py-10">
       <div className="max-w-[1200px] mx-auto px-4">
         {/* Title Block */}
         <div className="text-center mb-12">
@@ -174,7 +174,7 @@ export default function ClearTitleAdvisor() {
                       <div>
                         <div className="flex justify-between text-[11px] font-bold text-[#3F3D46] mb-1">
                           <span>LOAN AMOUNT</span>
-                          <span className="text-[#DDAA42]">₹ {(loanAmount / 100000).toFixed(1)} Lakhs</span>
+                          <span className="text-[#DDAA42]">â‚¹ {(loanAmount / 100000).toFixed(1)} Lakhs</span>
                         </div>
                         <input
                           type="range"
@@ -216,7 +216,7 @@ export default function ClearTitleAdvisor() {
                       <div className="pt-3 border-t border-[#F3F1F5]/60 mt-3 text-center">
                         <span className="text-[10px] text-[#68646F] block font-bold uppercase">Estimated Monthly EMI</span>
                         <span className="text-[24px] font-extrabold text-[#DDAA42] block mt-1">
-                          ₹ {calculateEMI().toLocaleString("en-IN")}
+                          â‚¹ {calculateEMI().toLocaleString("en-IN")}
                         </span>
                       </div>
                     </div>

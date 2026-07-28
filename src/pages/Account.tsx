@@ -71,9 +71,9 @@ export default function AccountPage() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-[#F8F7FA]">
+      <main className="public-main flex-1">
         <section className="bg-gradient-to-br from-[#0B1328] via-[#121B35] to-[#273559] text-white">
-          <div className="max-w-[1000px] mx-auto px-5 py-12 flex items-center gap-5">
+          <div className="max-w-[1000px] mx-auto px-5 py-9 flex items-center gap-5">
             <span className="size-20 rounded-full bg-white/10 border-2 border-[#DDAA42]/50 flex items-center justify-center text-3xl font-bold">
               {user?.name ? user.name.charAt(0).toUpperCase() : <UserRound className="size-9" />}
             </span>
@@ -86,7 +86,7 @@ export default function AccountPage() {
           </div>
         </section>
 
-        <section className="max-w-[1000px] mx-auto px-5 py-10 space-y-8">
+        <section className="max-w-[1000px] mx-auto px-5 py-7 space-y-5">
           {!user && (
             <div className="bg-white rounded-2xl border border-[#E4E0E7]/60 shadow-sm p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className="text-[15px] text-[#3F3D46]">Log in to save your profile across devices.</p>

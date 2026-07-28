@@ -1,15 +1,55 @@
 "use client";
 import { useRef } from "react";
+import Link from "@/components/Link";
 import { ChevronLeft, ChevronRight, ShieldCheck, Tag, Building2 } from "lucide-react";
-import { newlyLaunchedProjects } from "./mock-data";
+import { getPropertiesBySection } from "@/lib/propertyStore";
+import { useLiveProperties } from "@/lib/useLiveProperties";
+import { newlyLaunchedProjects, type Property } from "./mock-data";
+
+type DisplayProject = {
+  id: string;
+  name: string;
+  locality: string;
+  price: string;
+  config: string;
+  image: string;
+  tag: string;
+  rera: boolean;
+  priceTrend: string;
+  href: string;
+};
 
 export default function NewlyLaunchedProjects() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const scrollBy = (dir: 1 | -1) =>
     scrollerRef.current?.scrollBy({ left: dir * 560, behavior: "smooth" });
+  const configuredProjects = useLiveProperties<Property[]>(
+    () => getPropertiesBySection("Newly Launched"),
+    []
+  );
+  const projects: DisplayProject[] = configuredProjects.length
+    ? configuredProjects.map((property) => ({
+        id: property.id,
+        name: property.title,
+        locality: property.subtitle,
+        price: property.price,
+        config: property.configs?.join(", ") || property.propertyType || "",
+        image: property.image,
+        tag: property.badges?.[0] || "New Launch",
+        rera: Boolean(property.reraRegistered),
+        priceTrend: property.pricePerSqft || "Explore launch pricing",
+        href: `/property/${property.id}`,
+      }))
+    : newlyLaunchedProjects.map((project) => ({
+      ...project,
+      tag: project.tag || "New Launch",
+      rera: Boolean(project.rera),
+      priceTrend: project.priceTrend || "Explore launch pricing",
+      href: "/new-projects-in-bangalore-ffid",
+    }));
 
   return (
-    <section className="bg-[#EEF4FB] py-14">
+    <section className="bg-[#EEF4FB] py-8">
       <div className="max-w-[1200px] mx-auto px-5">
         <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
           <div className="flex items-center gap-3">
@@ -34,8 +74,8 @@ export default function NewlyLaunchedProjects() {
         </div>
 
         <div ref={scrollerRef} className="flex gap-5 overflow-x-auto no-scrollbar pb-3 scroll-smooth">
-          {newlyLaunchedProjects.map((p) => (
-            <div key={p.id} className="shrink-0 w-[460px] max-w-[88vw] bg-white shadow-sm border border-[#E4E0E7]/50 overflow-hidden">
+          {projects.map((p) => (
+            <Link key={p.id} href={p.href} className="block shrink-0 w-[460px] max-w-[88vw] bg-white shadow-sm border border-[#E4E0E7]/50 overflow-hidden">
               <div className="p-5">
                 <div className="relative inline-block">
                   <span className="absolute -left-5 -top-2 bg-[#FAEBC8] text-[#7A5B12] text-[10px] font-bold px-2 py-1 rounded-r-md shadow-sm">{p.tag}</span>
@@ -63,9 +103,9 @@ export default function NewlyLaunchedProjects() {
                 <span className="flex items-center gap-1.5 text-[12px] text-[#68646F]">
                   <Tag className="size-3.5 text-[#DDAA42]" /> Preferred options @zero brokerage
                 </span>
-                <button className="btn-gold text-[13px] font-bold px-4 py-2 rounded-lg whitespace-nowrap">View Number</button>
+                <span className="btn-gold text-[13px] font-bold px-4 py-2 rounded-lg whitespace-nowrap">View Details</span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

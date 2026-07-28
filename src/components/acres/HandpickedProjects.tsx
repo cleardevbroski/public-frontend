@@ -49,7 +49,7 @@ export default function HandpickedProjects() {
       }));
 
   return (
-    <section className="bg-[#F8F7FA] py-14">
+    <section className="bg-[#F8F7FA] py-8">
       <div className="max-w-[1200px] mx-auto px-5">
         <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
           <div>
@@ -72,8 +72,8 @@ export default function HandpickedProjects() {
 
         <div ref={scrollerRef} className="flex gap-6 overflow-x-auto no-scrollbar pb-3 scroll-smooth">
           {projects.map((p) => (
-            <Link key={p.id} href={p.href} className="group shrink-0 w-[560px] max-w-[88vw]">
-              <div className="relative h-[280px] overflow-hidden shadow-md">
+            <Link key={p.id} href={p.href} className="group shrink-0 w-[520px] max-w-[88vw]">
+              <div className="relative h-[265px] overflow-hidden rounded-2xl border border-[#E4E0E7]/70 shadow-md">
                 <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 <span className="absolute top-3 left-0 bg-[#DDAA42] text-[#0B1328] text-[11px] font-bold px-3 py-1 rounded-r-md shadow">
                   {p.status}
@@ -83,7 +83,7 @@ export default function HandpickedProjects() {
                 </button>
                 {/* Overlapping info card */}
                 <div className="absolute left-6 right-6 -bottom-px">
-                  <div className="bg-white pt-10 px-5 pb-5 shadow-lg relative">
+                  <div className="bg-white pt-10 px-5 pb-4 shadow-lg relative rounded-t-xl">
                     <div className="absolute -top-8 left-5 size-16 rounded-full bg-white border border-[#E4E0E7] shadow flex items-center justify-center text-[#121B35] font-bold">
                       {p.name.split(" ").slice(0, 2).map((w) => w[0]).join("")}
                     </div>

@@ -2,7 +2,7 @@ import { benefits } from "./mock-data";
 
 export default function Benefits() {
   return (
-    <section className="bg-gradient-to-br from-[#121B35] via-[#273559] to-[#121B35] text-white py-14 my-12 relative overflow-hidden">
+    <section className="bg-gradient-to-br from-[#121B35] via-[#273559] to-[#121B35] text-white py-8 my-12 relative overflow-hidden">
       {/* Decorative elements */}
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-bl from-[#DDAA42]/10 to-transparent rounded-full blur-3xl" />
       <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-gradient-to-tr from-[#DDAA42]/8 to-transparent rounded-full blur-3xl" />
@@ -12,7 +12,7 @@ export default function Benefits() {
         <h2 className="text-[28px] font-bold mt-1 mb-2" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>Why choose ClearTitle One</h2>
         <p className="text-[14px] text-white/60 mb-10 max-w-2xl">
           India&apos;s most trusted real estate platform with verified listings, smart tools and
-          expert assistance — all designed to help you find, sell, or lease faster.
+          expert assistance â€” all designed to help you find, sell, or lease faster.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {benefits.map((b) => (

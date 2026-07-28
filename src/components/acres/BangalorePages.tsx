@@ -112,11 +112,11 @@ function ListingPage({ route, query = "" }: { route: BangaloreRoute; query?: str
   return (
     <>
       <Header />
-      <main className="bg-slate-50 min-h-screen pb-16">
+      <main className="public-main listing-main min-h-screen pb-10">
         
         {/* Listings Sub-Header */}
         <div className="bg-white border-b border-[#F3F1F5]/65">
-          <div className="max-w-[1200px] mx-auto px-4 py-6">
+          <div className="max-w-[1200px] mx-auto px-4 py-5">
             <div className="text-[12px] text-[#68646F] font-bold uppercase tracking-wider mb-2">
               <Link href="/" className="text-[#DDAA42] hover:underline">Home</Link>
               <span className="mx-2 text-[#68646F]/60">›</span>
@@ -165,7 +165,7 @@ function ListingPage({ route, query = "" }: { route: BangaloreRoute; query?: str
                 trackAnalytics("search", { query: q || zone || localityInfo?.name || "Bangalore", searchType: sel, location: zone || localityInfo?.name || "Bangalore", source: "listing_search" });
                 navigate(q ? `/${base}?q=${encodeURIComponent(q)}` : `/${base}`);
               }}
-              className="mt-6 flex items-center bg-white rounded-xl border border-[#E4E0E7]/50 shadow-sm overflow-hidden max-w-3xl"
+              className="mt-4 flex items-center bg-white rounded-xl border border-[#E4E0E7]/50 shadow-sm overflow-hidden max-w-3xl"
             >
               <div className="relative h-12 flex items-center border-r border-[#E4E0E7]/40 bg-slate-50 cursor-pointer">
                 <select name="type" className="appearance-none outline-none bg-transparent pl-4.5 pr-8 text-[13px] font-bold text-[#121B35] cursor-pointer h-full w-full">
@@ -208,7 +208,7 @@ function ListingPage({ route, query = "" }: { route: BangaloreRoute; query?: str
         </div>
 
         {/* Listings Section Layout */}
-        <div className="max-w-[1200px] mx-auto px-4 mt-4 lg:mt-8 grid lg:grid-cols-[300px_1fr] gap-6 lg:gap-8">
+        <div className="max-w-[1200px] mx-auto px-4 mt-4 lg:mt-6 grid lg:grid-cols-[280px_1fr] gap-5 lg:gap-6">
 
           {/* Left Filters Sidebar */}
           <aside className={`${showFilters ? "block" : "hidden"} lg:block space-y-6`}>
@@ -387,10 +387,10 @@ function CityOverview({ route }: { route: BangaloreRoute }) {
   return (
     <>
       <Header />
-      <main className="bg-white pb-16">
+      <main className="public-main pb-10">
         
         {/* Banner Area */}
-        <section className="bg-gradient-to-br from-[#121B35] via-[#273559] to-[#121B35] text-white py-16 border-b border-[#DDAA42]/25 relative overflow-hidden">
+        <section className="bg-gradient-to-br from-[#121B35] via-[#273559] to-[#121B35] text-white py-11 border-b border-[#DDAA42]/25 relative overflow-hidden">
           <div className="absolute -right-20 -top-20 w-[400px] h-[400px] bg-gradient-to-br from-[#F2C052]/10 to-transparent rounded-full blur-3xl pointer-events-none" />
           
           <div className="max-w-[1200px] mx-auto px-4 grid md:grid-cols-[1.2fr_0.8fr] gap-8 items-center relative z-10">
@@ -431,7 +431,7 @@ function CityOverview({ route }: { route: BangaloreRoute }) {
         </section>
 
         {/* Localities Rates Grid */}
-        <section className="max-w-[1200px] mx-auto px-4 py-16">
+        <section className="max-w-[1200px] mx-auto px-4 py-9">
           <div className="text-center mb-10">
             <p className="acres-overline">Price Heatmap</p>
             <h2 className="text-[26px] font-bold text-[#121B35]" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
@@ -481,11 +481,11 @@ function ToolsPage({ route }: { route: BangaloreRoute }) {
   return (
     <>
       <Header />
-      <main className="bg-slate-50 min-h-screen pb-16">
+      <main className="public-main min-h-screen pb-10">
         
         {/* Banner */}
         <section className="bg-white border-b border-[#F3F1F5]/65">
-          <div className="max-w-[1200px] mx-auto px-4 py-12 grid lg:grid-cols-[1fr_420px] gap-8 items-center text-left">
+          <div className="max-w-[1200px] mx-auto px-4 py-8 grid lg:grid-cols-[1fr_420px] gap-6 items-center text-left">
             <div>
               <p className="acres-overline">Calculators & Support</p>
               <h1 className="text-[32px] font-bold text-[#121B35] mt-1" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
@@ -519,7 +519,7 @@ function ToolsPage({ route }: { route: BangaloreRoute }) {
         </section>
 
         {/* Interactive Workspace */}
-        <section className="max-w-[1200px] mx-auto px-4 py-12 grid lg:grid-cols-[1fr_360px] gap-8 text-left">
+        <section className="max-w-[1200px] mx-auto px-4 py-8 grid lg:grid-cols-[1fr_360px] gap-6 text-left">
           <div className="bg-white border border-[#E4E0E7]/30 rounded-3xl p-6 md:p-8 shadow-sm">
             <h2 className="text-[20px] font-bold text-[#121B35] mb-4">Interactive Tool Console</h2>
             
@@ -572,7 +572,7 @@ function TrendsPage({ route }: { route: BangaloreRoute }) {
   return (
     <>
       <Header />
-      <main className="bg-slate-50 min-h-screen py-10 text-left">
+      <main className="public-main min-h-screen py-7 text-left">
         <div className="max-w-[1200px] mx-auto px-4">
           
           <div className="bg-white border border-[#E4E0E7]/30 rounded-3xl p-6 md:p-8 shadow-sm">

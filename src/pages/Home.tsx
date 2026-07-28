@@ -29,7 +29,7 @@ export default function Home() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-[#F8F7FA]">
+      <main className="home-main flex-1">
         {/* Cinematic navy hero with search */}
         <HeroBanner />
 
@@ -56,16 +56,6 @@ export default function Home() {
         {/* ClearTitle Legal Shield — submit legal consultation queries */}
         <ScrollReveal direction="up">
           <LegalConsultationConsole />
-        </ScrollReveal>
-
-        {/* Trust pillars (brand theme) */}
-        <ScrollReveal direction="up">
-          <WhyChooseClearTitle />
-        </ScrollReveal>
-
-        {/* Recommended locality insights */}
-        <ScrollReveal direction="up">
-          <RecommendedInsights />
         </ScrollReveal>
 
         {/* Newly launched projects */}
@@ -118,9 +108,19 @@ export default function Home() {
           <PopularBuilders />
         </ScrollReveal>
 
+        {/* Recommended locality insights */}
+        <ScrollReveal direction="up">
+          <RecommendedInsights />
+        </ScrollReveal>
+
         {/* Advisory / tools console */}
         <ScrollReveal direction="up">
           <ClearTitleAdvisor />
+        </ScrollReveal>
+
+        {/* Trust pillars (brand theme) */}
+        <ScrollReveal direction="up">
+          <WhyChooseClearTitle />
         </ScrollReveal>
 
         {/* Editorial customer reviews */}

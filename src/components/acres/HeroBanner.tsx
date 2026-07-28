@@ -5,7 +5,6 @@ import { Search, MapPin, ShieldCheck, Compass, BadgeCheck, ChevronDown, ChevronL
 import { bangaloreLocalities } from "./bangalore-data";
 import { getHeroSlides, heroHref, type HeroSlide } from "@/lib/heroStore";
 import { trackAnalytics } from "@/lib/analytics";
-import { promotionBadgeClass, promotionFrameClass, promotionRankLabel } from "@/lib/promotionPresentation";
 
 const propertyKinds = ["Apartments", "Villas", "Plots", "Commercial"] as const;
 
@@ -70,9 +69,9 @@ export default function HeroBanner() {
   const slide = slides[index];
 
   return (
-    <section className="bg-[#0B1328]">
+    <section className="hero-banner">
       {/* ── Showcase banner (fixed height, image fully visible) ── */}
-      <div className={`relative h-[400px] w-full overflow-hidden transition-[border-color,box-shadow] sm:h-[460px] md:h-[520px] ${promotionFrameClass(slide?.promotionSlot)}`}>
+      <div className="hero-banner__media relative h-[280px] w-full overflow-hidden sm:h-[320px] md:h-[360px]">
         {slides.map((s, i) => (
           <img
             key={s.id}
@@ -91,22 +90,19 @@ export default function HeroBanner() {
           />
         )}
 
-        {slide?.promotionSlot && (
+        {slide && (
           <>
-            <span className={`absolute right-4 top-4 z-30 rounded-full px-3 py-1.5 text-[12px] font-black tracking-wide shadow-lg sm:right-6 sm:top-6 ${promotionBadgeClass(slide.promotionSlot)}`}>
-              {promotionRankLabel(slide.promotionSlot)}
-            </span>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-[#050A16]/95 via-[#050A16]/58 to-transparent px-5 pb-11 pt-24 text-white sm:px-10 sm:pb-12 md:px-16">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-[#050A16]/90 via-[#050A16]/42 to-transparent px-5 pb-10 pt-20 text-white sm:px-10 md:px-16">
               <div className="max-w-[720px]">
-                <h2 className="text-[24px] font-extrabold leading-tight drop-shadow-md sm:text-[32px] md:text-[40px]">{slide.title}</h2>
+                <h2 className="text-[22px] font-extrabold leading-tight drop-shadow-md sm:text-[28px] md:text-[34px]">{slide.title}</h2>
                 {(slide.location || slide.priceText) && (
-                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] font-semibold text-white/85 sm:text-[14px]">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] font-semibold text-white/85 sm:text-[14px]">
                     {slide.location && <span>{slide.location}</span>}
                     {slide.priceText && <span className="text-[#F2C052]">{slide.priceText}</span>}
                   </div>
                 )}
                 {(slide.resolvedDetails?.configuration || slide.resolvedDetails?.structure) && (
-                  <p className="mt-2 line-clamp-1 text-[11px] font-medium text-white/75 sm:text-[13px]">
+                  <p className="mt-1.5 line-clamp-1 text-[11px] font-medium text-white/75 sm:text-[13px]">
                     {[slide.resolvedDetails.configuration, slide.resolvedDetails.structure].filter(Boolean).join(" · ")}
                   </p>
                 )}
@@ -134,10 +130,10 @@ export default function HeroBanner() {
       </div>
 
       {/* ── Search + filters + trust (below banner, fully visible) ── */}
-      <div className="bg-[#0B1328] pb-12">
+      <div className="bg-[#0B1328] pb-7">
         <div className="max-w-[920px] mx-auto px-4">
           {/* search panel overlaps banner bottom slightly without being clipped */}
-          <div className="-mt-8 relative z-20 bg-white shadow-2xl border border-[#E4E0E7]/60 rounded-xl p-2.5">
+          <div className="hero-search-panel -mt-8 relative z-20 bg-white border rounded-2xl p-2">
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="relative sm:w-[200px]">
                 <button type="button" onClick={() => setIsLocDropdownOpen((o) => !o)} className="w-full h-full flex items-center gap-2 px-4 py-3 text-left hover:bg-[#F8F7FA] transition-colors cursor-pointer rounded-lg">
@@ -193,7 +189,7 @@ export default function HeroBanner() {
           </div>
 
           {/* Trust strip */}
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             {[
               { icon: ShieldCheck, title: "Verified Properties", sub: "100% Clear Title Guarantee" },
               { icon: BadgeCheck, title: "Trusted Advisory", sub: "Expert Guidance, No Hidden Costs" },

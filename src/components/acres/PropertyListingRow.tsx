@@ -15,7 +15,7 @@ function statusOf(p: Property): string {
 
 /** Wide listing-row card for a real posted Property (used in the listing feed). */
 export default function PropertyListingRow({ p }: { p: Property }) {
-  const cover = p.image || p.images?.[0] || "";
+  const cover = p.heroImages?.[0] || p.images?.[0] || p.image || "";
   const status = statusOf(p);
   const lister = p.submittedBy === "user" ? "Owner" : p.builder;
   return (
@@ -24,7 +24,7 @@ export default function PropertyListingRow({ p }: { p: Property }) {
       className="block bg-white rounded-2xl border border-[#E4E0E7]/30 hover:border-[#DDAA42]/50 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group"
     >
       <article className="grid md:grid-cols-[250px_1fr] gap-0">
-        <div className="relative h-[220px] md:h-full min-h-[220px] bg-[#F3F1F5] overflow-hidden">
+        <div className="relative h-[210px] md:h-full min-h-[210px] bg-[#F3F1F5] overflow-hidden">
           {cover && isBase64(cover) ? (
             <img src={cover} alt={p.title} className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500" />
           ) : cover ? (
@@ -50,7 +50,7 @@ export default function PropertyListingRow({ p }: { p: Property }) {
           </button>
         </div>
 
-        <div className="p-5 flex flex-col justify-between">
+        <div className="p-4.5 flex flex-col justify-between">
           <div>
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -100,7 +100,7 @@ export default function PropertyListingRow({ p }: { p: Property }) {
             )}
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-4 border-t border-[#F3F1F5]/40">
+            <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-3 border-t border-[#F3F1F5]/40">
             {lister && <p className="text-[12px] text-[#68646F]">
               Listed by: <span className="font-bold text-[#121B35]">{lister}</span>
             </p>}

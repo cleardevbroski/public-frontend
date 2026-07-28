@@ -42,7 +42,7 @@ export default function DealerProfilePage() {
     return (
       <>
         <Header />
-        <main className="flex-1 bg-[#F8F7FA] flex items-center justify-center py-32">
+        <main className="public-main flex-1 flex items-center justify-center py-24">
           <div className="text-center">
             <h1 className="text-[24px] font-bold text-[#121B35]">Dealer not found</h1>
             <Link href="/dealers" className="inline-flex items-center gap-2 mt-4 text-[#DDAA42] font-bold">
@@ -62,10 +62,10 @@ export default function DealerProfilePage() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-[#F8F7FA]">
+      <main className="public-main flex-1">
         {/* Profile header */}
         <section className="bg-gradient-to-br from-[#0B1328] via-[#121B35] to-[#273559] text-white">
-          <div className="max-w-[1200px] mx-auto px-5 py-12">
+          <div className="max-w-[1200px] mx-auto px-5 py-9">
             <nav className="text-[12px] text-[#E4E0E7]/70 flex items-center gap-1.5 mb-6">
               <Link href="/" className="hover:text-[#F2C052]">Home</Link>
               <ChevronRight className="size-3.5" />
@@ -104,7 +104,7 @@ export default function DealerProfilePage() {
           </div>
         </section>
 
-        <section className="max-w-[1200px] mx-auto px-5 py-10 grid lg:grid-cols-[1fr_340px] gap-8 items-start">
+        <section className="max-w-[1200px] mx-auto px-5 py-7 grid lg:grid-cols-[1fr_340px] gap-6 items-start">
           {/* Left — about + properties */}
           <div className="space-y-8">
             {dealer.about && (

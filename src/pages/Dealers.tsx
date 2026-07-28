@@ -24,10 +24,10 @@ export default function DealersPage() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-[#F8F7FA]">
+      <main className="public-main flex-1">
         {/* Hero band */}
         <section className="bg-gradient-to-br from-[#0B1328] via-[#121B35] to-[#273559] text-white">
-          <div className="max-w-[1200px] mx-auto px-5 py-14">
+          <div className="max-w-[1200px] mx-auto px-5 py-10">
             <nav className="text-[12px] text-[#E4E0E7]/70 flex items-center gap-1.5">
               <Link href="/" className="hover:text-[#F2C052]">Home</Link>
               <ChevronRight className="size-3.5" /> <span className="text-[#F2C052]">Dealers</span>
@@ -63,7 +63,7 @@ export default function DealersPage() {
           </div>
         </section>
 
-        <section className="max-w-[1200px] mx-auto px-5 py-12">
+        <section className="max-w-[1200px] mx-auto px-5 py-8">
           <p className="text-[14px] text-[#68646F] mb-6">
             Showing <span className="font-bold text-[#121B35]">{filtered.length}</span> dealers
           </p>

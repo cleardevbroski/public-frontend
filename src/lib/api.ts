@@ -193,8 +193,23 @@ export interface PropertyFilters {
 function normalizePropertyRecord(value: unknown): unknown {
   if (!value || typeof value !== "object" || Array.isArray(value)) return value;
   const record = value as Record<string, unknown>;
-  if (record.id || !record._id) return record;
-  return { ...record, id: String(record._id) };
+  const normalizeMediaUrl = (media: unknown) => {
+    if (typeof media !== "string") return media;
+    const url = media.trim();
+    if (url.startsWith("//")) return `https:${url}`;
+    if (url.startsWith("/")) return `${API_BASE}${url}`;
+    return url;
+  };
+  const normalizeMediaList = (media: unknown) =>
+    Array.isArray(media) ? media.map(normalizeMediaUrl).filter(Boolean) : media;
+
+  return {
+    ...record,
+    ...(!record.id && record._id ? { id: String(record._id) } : {}),
+    image: normalizeMediaUrl(record.image),
+    heroImages: normalizeMediaList(record.heroImages),
+    images: normalizeMediaList(record.images),
+  };
 }
 
 function normalizePropertyResponse<T>(value: T): T {

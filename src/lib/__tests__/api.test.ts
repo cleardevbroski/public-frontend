@@ -86,6 +86,26 @@ describe("api client", () => {
     expect(data.properties[1]).toMatchObject({ _id: "mongo-2", id: "existing-id" });
   });
 
+  it("normalizes property media URLs so uploaded images resolve in the browser", async () => {
+    mockFetchOnce({
+      properties: [{
+        _id: "mongo-1",
+        image: "/uploads/cover.jpg",
+        heroImages: ["//cdn.example.com/hero.jpg"],
+        images: [" https://cdn.example.com/gallery.jpg "],
+      }],
+      pagination: {},
+    });
+    const { fetchProperties } = await import("@/lib/api");
+    const data = await fetchProperties();
+
+    expect(data.properties[0]).toMatchObject({
+      image: "http://localhost:5000/uploads/cover.jpg",
+      heroImages: ["https://cdn.example.com/hero.jpg"],
+      images: ["https://cdn.example.com/gallery.jpg"],
+    });
+  });
+
   it("fetchHeroBanners returns the banners array", async () => {
     mockFetchOnce({ banners: [{ id: "1", title: "A" }] });
     const { fetchHeroBanners } = await import("@/lib/api");

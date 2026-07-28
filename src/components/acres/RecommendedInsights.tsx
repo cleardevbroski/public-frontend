@@ -18,7 +18,7 @@ export default function RecommendedInsights() {
   }, []);
 
   return (
-    <section className="bg-white py-14">
+    <section className="bg-white py-8">
       <div className="max-w-[1200px] mx-auto px-5">
         <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
           <div>

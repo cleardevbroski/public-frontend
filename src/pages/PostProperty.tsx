@@ -42,7 +42,7 @@ export default function PostPropertyPage() {
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[#0B1328] via-[#0B1328]/90 to-[#0B1328]/70" />
         </div>
-        <div className="relative z-10 max-w-[1100px] mx-auto px-5 py-16 md:py-20">
+        <div className="relative z-10 max-w-[1100px] mx-auto px-5 py-11 md:py-14">
           <span className="inline-flex items-center gap-2 bg-white/5 backdrop-blur-md border border-[#DDAA42]/30 rounded-full px-4 py-1.5 text-[#F2C052] text-[11px] font-semibold tracking-[0.2em] uppercase">
             <Gift className="size-3.5" /> List Your Property — Free
           </span>
@@ -68,9 +68,9 @@ export default function PostPropertyPage() {
         </div>
       </section>
 
-      <main className="bg-[#F3F1F5] py-12 md:py-16">
+      <main className="public-main py-8 md:py-10">
         <div className="max-w-[1100px] mx-auto px-4">
-          <div className="mb-8 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
+          <div className="mb-5 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
             <Clock className="size-5 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-[13.5px] text-amber-800">
               <span className="font-bold">Listings are reviewed before going live.</span> After you submit, your

@@ -15,7 +15,7 @@ export default function Testimonials() {
   }, []);
 
   return (
-    <section className="bg-gradient-to-b from-white to-[#F8F7FA]/25 py-16">
+    <section className="bg-gradient-to-b from-white to-[#F8F7FA]/25 py-10">
       <div className="max-w-[1200px] mx-auto px-4">
         {/* Header Block */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">

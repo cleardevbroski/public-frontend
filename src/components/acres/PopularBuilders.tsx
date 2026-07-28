@@ -30,7 +30,7 @@ export default function PopularBuilders() {
   if (builders.length === 0) return null;
 
   return (
-    <section className="bg-[#F8F7FA] py-20">
+    <section className="bg-[#F8F7FA] py-12">
       <div className="max-w-[1200px] mx-auto px-5">
         <div className="flex items-end justify-between mb-8 flex-wrap gap-4">
           <div>
@@ -93,7 +93,7 @@ export default function PopularBuilders() {
                 <p className="text-[13px] text-[#68646F] mt-1">
                   <span className="font-semibold text-[#3F3D46]">{b.total}</span>{" "}
                   {b.total === 1 ? "Project" : "Projects"} on ClearTitle One
-                  <span className="text-[#DDAA42]"> · Bangalore</span>
+                  <span className="text-[#DDAA42]"> Â· Bangalore</span>
                 </p>
               </div>
             </Link>

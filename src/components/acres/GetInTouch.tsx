@@ -24,7 +24,7 @@ export default function GetInTouch() {
   };
 
   return (
-    <section id="contact" className="relative bg-[#0B1328] py-20 overflow-hidden">
+    <section id="contact" className="relative bg-[#0B1328] py-12 overflow-hidden">
       <div className="absolute inset-0 z-0 opacity-25">
         <img
           src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1600&q=80"

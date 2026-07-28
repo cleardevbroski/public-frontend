@@ -7,6 +7,7 @@ import {
   updateProperty as apiUpdateProperty,
   deleteProperty as apiDeleteProperty,
 } from "./api";
+import { isInHomepageSection, type HomepageSection } from "./homepagePlacements";
 
 const PROPERTIES_EVENT = "cleartitle:properties-changed";
 const BUILDERS_EVENT = "cleartitle:builders-changed";
@@ -15,7 +16,11 @@ type BuilderRecord = { id: string; name: string; slug: string; verified?: boolea
 
 const cache = createHydratedCache<Property>(async () => {
   const data = await fetchProperties({ limit: 200, sort: "-createdAt" });
-  return (data.properties as Property[]).map((p) => ({ ...p, source: "admin" as const }));
+  return (data.properties as Property[]).map((p) => ({
+    ...p,
+    image: p.heroImages?.[0] || p.images?.[0] || p.image || "",
+    source: "admin" as const,
+  }));
 }, PROPERTIES_EVENT);
 
 const builderCache = createHydratedCache<BuilderRecord>(async () => {
@@ -38,6 +43,9 @@ export function getNewlyListed(limit = 8): Property[] {
   return getPublishedProperties()
     .slice()
     .sort((a, b) => {
+      const aPlaced = isInHomepageSection(a, "Newly Listed");
+      const bPlaced = isInHomepageSection(b, "Newly Listed");
+      if (aPlaced !== bPlaced) return aPlaced ? -1 : 1;
       const da = a.postedDate ? Date.parse(a.postedDate) : 0;
       const db = b.postedDate ? Date.parse(b.postedDate) : 0;
       return db - da;
@@ -48,16 +56,16 @@ export function getNewlyListed(limit = 8): Property[] {
 /** Featured published listings (admin-flagged first, then fall back to recent). */
 export function getFeaturedProperties(limit = 6): Property[] {
   const published = getPublishedProperties();
-  const isFeatured = (p: Property) => p.featured || p.websiteSection === "Featured";
+  const isFeatured = (p: Property) => p.featured || isInHomepageSection(p, "Featured");
   const flagged = published.filter(isFeatured);
   const rest = published.filter((p) => !isFeatured(p));
   return [...flagged, ...rest].slice(0, limit);
 }
 
 /** Published listings tagged for a specific homepage section. */
-export function getPropertiesBySection(section: string, limit = 10): Property[] {
+export function getPropertiesBySection(section: HomepageSection, limit = 10): Property[] {
   return getPublishedProperties()
-    .filter((p) => p.websiteSection === section)
+    .filter((p) => isInHomepageSection(p, section))
     .slice(0, limit);
 }
 

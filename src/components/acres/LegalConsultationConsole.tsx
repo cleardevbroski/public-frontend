@@ -51,7 +51,7 @@ export default function LegalConsultationConsole() {
   const currentFeed = liveFeedData[feedIndex];
 
   return (
-    <section id="legal-console" className="bg-[#121B35] text-white py-16 scroll-mt-24 relative overflow-hidden">
+    <section id="legal-console" className="bg-[#121B35] text-white py-10 scroll-mt-24 relative overflow-hidden">
       {/* Decorative Orbs */}
       <div className="absolute -right-36 -top-36 w-[500px] h-[500px] bg-gradient-to-br from-[#F2C052]/10 to-transparent rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -left-20 bottom-0 w-[400px] h-[400px] bg-gradient-to-tr from-[#DDAA42]/10 to-transparent rounded-full blur-3xl pointer-events-none" />
@@ -62,13 +62,13 @@ export default function LegalConsultationConsole() {
         <div className="text-center mb-12">
           <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#DDAA42] to-[#F2C052] text-[#121B35] text-[11px] font-extrabold px-3 py-1.5 rounded-full shadow-md tracking-[0.2em] uppercase mb-4">
             <Scale className="size-3.5" />
-            CT Legal Shield • Direct Lawyer Consultations
+            CT Legal Shield â€¢ Direct Lawyer Consultations
           </span>
           <h2 className="text-[32px] md:text-[40px] font-bold tracking-tight leading-none" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
             Real lawyers. Real verification. Instant queries resolved.
           </h2>
           <p className="text-[14px] text-white/70 mt-3 max-w-2xl mx-auto font-light">
-            We don&apos;t just list properties — we verify them legally. Consult our panel of registered real estate attorneys to audit titles, review agreements, and resolve disputes.
+            We don&apos;t just list properties â€” we verify them legally. Consult our panel of registered real estate attorneys to audit titles, review agreements, and resolve disputes.
           </p>
         </div>
 

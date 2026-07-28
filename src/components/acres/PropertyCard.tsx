@@ -11,32 +11,36 @@ export default function PropertyCard({ p }: { p: Property }) {
   return (
     <Link
       href={`/property/${p.id}`}
-      className="group block w-[280px] sm:w-[340px] max-w-[86vw] shrink-0 bg-white border border-[#E4E0E7]/70 hover:border-[#DDAA42]/60 shadow-sm hover:shadow-md transition-all duration-200"
+      className="group block w-[280px] sm:w-[340px] max-w-[86vw] shrink-0 overflow-hidden rounded-2xl bg-white border border-[#E4E0E7]/70 hover:border-[#DDAA42]/60 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
     >
       {/* Image */}
       <div className="relative h-[170px] bg-[#F3F1F5] overflow-hidden">
-        {p.image && isBase64(p.image) ? (
-          <img src={p.image} alt={p.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
-        ) : p.image ? (
-          <Image src={p.image} alt={p.title} fill sizes="340px" className="object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
-        ) : null}
+        {(() => {
+          const coverImage = p.heroImages?.[0] || p.images?.[0] || p.image;
+          if (!coverImage) return null;
+          return isBase64(coverImage) ? (
+            <img src={coverImage} alt={p.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+          ) : (
+            <Image src={coverImage} alt={p.title} fill sizes="340px" className="object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+          );
+        })()}
 
         {/* Verified tag */}
-        <span className="absolute top-2.5 left-2.5 flex items-center gap-1 bg-white/95 px-2 py-1 shadow-sm">
+        <span className="absolute top-2.5 left-2.5 flex items-center gap-1 rounded-lg bg-white/95 px-2 py-1 shadow-sm">
           <ShieldCheck className="size-3.5 text-[#1E7A46]" strokeWidth={2.4} />
           <span className="text-[9.5px] font-bold tracking-wide text-[#121B35] uppercase">Clear Title Verified</span>
         </span>
 
         {/* Badge */}
         {p.badges && p.badges.length > 0 && (
-          <span className="absolute top-2.5 right-11 bg-[#121B35] text-[#F2C052] text-[9.5px] font-bold px-2 py-1 uppercase">
+          <span className="absolute top-2.5 right-11 rounded-md bg-[#121B35] text-[#F2C052] text-[9.5px] font-bold px-2 py-1 uppercase">
             {p.badges[0]}
           </span>
         )}
 
         {/* Favorite */}
         <button
-          className="absolute top-2 right-2 size-8 bg-white/90 hover:bg-white flex items-center justify-center shadow-sm transition-colors"
+          className="absolute top-2 right-2 size-8 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-sm transition-colors"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
           aria-label="Shortlist property"
         >
@@ -44,7 +48,7 @@ export default function PropertyCard({ p }: { p: Property }) {
         </button>
 
         {/* Price chip */}
-        {p.price && <span className="absolute bottom-0 left-0 bg-[#121B35]/90 text-white text-[15px] font-bold px-3 py-1.5">
+        {p.price && <span className="absolute bottom-0 left-0 rounded-tr-lg bg-[#121B35]/90 text-white text-[15px] font-bold px-3 py-1.5">
           {p.price}
         </span>}
       </div>

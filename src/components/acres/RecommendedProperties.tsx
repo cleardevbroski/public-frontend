@@ -3,7 +3,7 @@ import { useRef } from "react";
 import Link from "@/components/Link";
 import { ChevronLeft, ChevronRight, Sparkles, User, ArrowUpRight } from "lucide-react";
 import PropertyCard from "./PropertyCard";
-import { getPublishedProperties } from "@/lib/propertyStore";
+import { getPropertiesBySection, getPublishedProperties } from "@/lib/propertyStore";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 import { useAuth } from "./AuthContext";
 import type { Property } from "./mock-data";
@@ -12,7 +12,13 @@ export default function RecommendedProperties() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const { user, setIsAuthModalOpen } = useAuth();
   const properties = useLiveProperties<Property[]>(
-    () => getPublishedProperties().slice(0, 10),
+    () => {
+      const assigned = getPropertiesBySection("Recommended", 10);
+      const fallback = getPublishedProperties().filter(
+        (property) => !assigned.some((item) => item.id === property.id)
+      );
+      return [...assigned, ...fallback].slice(0, 10);
+    },
     []
   );
 
@@ -23,7 +29,7 @@ export default function RecommendedProperties() {
   if (properties.length === 0) return null;
 
   return (
-    <section className="bg-[#F8F7FA] py-16">
+    <section className="bg-[#F8F7FA] py-10">
       <div className="max-w-[1200px] mx-auto px-5">
         <div className="flex items-end justify-between mb-6 flex-wrap gap-4">
           <div>

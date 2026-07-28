@@ -32,11 +32,11 @@ const footerHref = (label: string) =>
 
 export default function Footer() {
   return (
-    <footer className="bg-[#121B35] text-white pt-16 pb-8 border-t border-[#DDAA42]/25 relative overflow-hidden">
+    <footer className="site-footer text-white border-t border-[#DDAA42]/25 relative overflow-hidden">
       {/* Decorative elements */}
       <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-gradient-to-bl from-[#DDAA42]/5 to-transparent rounded-full blur-3xl" />
       
-      <div className="max-w-[1200px] mx-auto px-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 relative z-10">
+      <div className="max-w-[1200px] mx-auto px-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-7 gap-y-8 relative z-10">
         {Object.entries(footerColumns).map(([col, links]) => (
           <div key={col}>
             <h4 className="text-[15px] font-bold text-[#DDAA42] mb-4">{col}</h4>
@@ -95,7 +95,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-white/10 mt-10 pt-6 relative z-10">
+      <div className="border-t border-white/10 mt-8 pt-5 relative z-10">
         <div className="max-w-[1200px] mx-auto px-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <p className="text-[11px] text-white/40 max-w-3xl leading-relaxed">
             Disclaimer: ClearTitle One is only an advertising platform to enable interaction between

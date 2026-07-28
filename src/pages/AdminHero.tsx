@@ -23,9 +23,7 @@ import {
   updateHeroSlide,
   type HeroLinkType,
   type HeroSlide,
-  type PromotionSlot,
 } from "@/lib/heroStore";
-import { promotionBadgeClass, promotionFrameClass, promotionRankLabel } from "@/lib/promotionPresentation";
 
 type EditorSection = "overview" | "photos" | "structure" | "amenities" | "society" | "extra" | "display";
 type FormState = Omit<HeroSlide, "id" | "source">;
@@ -41,13 +39,7 @@ const editorSections: Array<{ id: EditorSection; label: string }> = [
   { id: "display", label: "Display Settings" },
 ];
 
-const slots: Array<{ id: PromotionSlot; label: string; rank: 1 | 2 | 3 }> = [
-  { id: "diamond", label: "Diamond", rank: 1 },
-  { id: "gold", label: "Gold", rank: 2 },
-  { id: "silver", label: "Silver", rank: 3 },
-];
-
-const createBlank = (promotionSlot?: PromotionSlot): FormState => ({
+const createBlank = (): FormState => ({
   image: "",
   builderName: "",
   title: "",
@@ -60,13 +52,13 @@ const createBlank = (promotionSlot?: PromotionSlot): FormState => ({
   linkType: "property",
   linkValue: "",
   propertyId: null,
-  promotionSlot: promotionSlot || null,
+  promotionSlot: null,
   displayOnHomepage: true,
   selectedFields: ["title", "builder", "location", "price", "propertyType", "configuration"],
   fieldOverrides: {},
   extraDetails: [],
   additionalInformation: { enabled: false, values: {} },
-  order: promotionSlot ? slots.find((slot) => slot.id === promotionSlot)!.rank - 1 : 0,
+  order: 0,
   published: true,
 });
 
@@ -182,7 +174,7 @@ export default function AdminHeroPage() {
       propertySelectRef.current?.focus({ preventScroll: true });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [showForm, form.promotionSlot, editing]);
+  }, [showForm, editing]);
 
   const selectedProperty = useMemo(
     () => properties.find((property) => property.id === form.propertyId),
@@ -193,9 +185,9 @@ export default function AdminHeroPage() {
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
 
-  const startAdd = (promotionSlot: PromotionSlot) => {
+  const startAdd = () => {
     setEditing(null);
-    setForm(createBlank(promotionSlot));
+    setForm({ ...createBlank(), order: slides.length });
     setActiveSection("overview");
     setError("");
     setShowForm(true);
@@ -207,8 +199,9 @@ export default function AdminHeroPage() {
     void _source;
     setEditing(slide.id);
     setForm({
-      ...createBlank(slide.promotionSlot || undefined),
+      ...createBlank(),
       ...rest,
+      promotionSlot: null,
       propertyId: slide.propertyId || null,
       selectedFields: slide.selectedFields || [],
       fieldOverrides: slide.fieldOverrides || {},
@@ -224,15 +217,6 @@ export default function AdminHeroPage() {
     if (editing && form.propertyId && propertyId !== form.propertyId) {
       const confirmed = window.confirm("Replace the property in this promotion slot? Existing promotional overrides will be cleared.");
       if (!confirmed) return;
-    }
-    const assigned = slides.find((slide) =>
-      slide.id !== editing
-      && slide.promotionSlot
-      && slide.propertyId === propertyId
-    );
-    if (assigned) {
-      setError(`This property is already assigned to the ${assigned.promotionSlot} slot.`);
-      return;
     }
     const property = properties.find((item) => item.id === propertyId);
     if (!property) {
@@ -272,11 +256,7 @@ export default function AdminHeroPage() {
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
-    if (!form.promotionSlot && !editing) {
-      setError("Choose the Diamond, Gold or Silver slot first.");
-      return;
-    }
-    if (form.promotionSlot && !form.propertyId) {
+    if (!editing && !form.propertyId) {
       setError("Select a published property before adding it to the homepage.");
       setActiveSection("overview");
       return;
@@ -339,89 +319,58 @@ export default function AdminHeroPage() {
   const propertyImages = selectedProperty
     ? [...new Set([...(selectedProperty.heroImages || []), selectedProperty.image, ...(selectedProperty.images || [])].filter(Boolean))]
     : [];
-  const legacySlides = slides.filter((slide) => !slide.promotionSlot);
-
   return (
     <AdminLayout>
-      <div className="mb-8">
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-[28px] font-bold text-[#121B35]" style={{ fontFamily: "var(--font-outfit)" }}>Homepage Promotional Properties</h1>
-          <p className="mt-1 text-[14px] text-[#68646F]">Manage each ranked homepage slot independently. Empty slots are optional.</p>
+          <p className="mt-1 text-[14px] text-[#68646F]">Add any number of property slides to the homepage hero.</p>
         </div>
+        <button type="button" onClick={startAdd} className="btn-gold inline-flex h-11 items-center gap-2 rounded-xl px-5 text-[13px] font-bold">
+          <Plus className="size-4" /> Add property
+        </button>
       </div>
 
       {error && !showForm && <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-700">{error}</div>}
 
-      <div className="mb-8 grid gap-5 lg:grid-cols-3">
-        {slots.map((slot) => {
-          const slide = slides.find((item) => item.promotionSlot === slot.id);
-          return (
-            <div key={slot.id} className={`relative overflow-hidden rounded-2xl bg-white p-4 ${promotionFrameClass(slot.id)} ${slide && (slide.displayOnHomepage === false || slide.published === false) ? "opacity-65" : ""}`}>
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#68646F]">{slot.label} slot</p>
-                  <p className="text-[15px] font-bold text-[#121B35]">Public rank {promotionRankLabel(slot.id)}</p>
-                </div>
-                <span className={`rounded-full px-3 py-1.5 text-[11px] font-black shadow-sm ${promotionBadgeClass(slot.id)}`}>{promotionRankLabel(slot.id)}</span>
+      <div className="mb-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {slides.map((slide) => (
+          <div key={slide.id} className={`overflow-hidden rounded-2xl border border-[#E4E0E7] bg-white p-4 shadow-sm ${slide.displayOnHomepage === false || slide.published === false ? "opacity-65" : ""}`}>
+            <div className="relative h-36 overflow-hidden rounded-xl bg-[#F3F1F5]">
+              <img src={slide.image} alt={slide.title} className="h-full w-full object-cover" />
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 pb-3 pt-10">
+                <p className="truncate text-[14px] font-bold text-white">{slide.title}</p>
+                <p className="truncate text-[11px] text-white/75">{slide.location || slide.builderName}</p>
               </div>
-
-              {slide ? (
-                <>
-                  <div className="relative h-36 overflow-hidden rounded-xl bg-[#F3F1F5]">
-                    <img src={slide.image} alt={slide.title} className="h-full w-full object-cover" />
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 pb-3 pt-10">
-                      <p className="truncate text-[14px] font-bold text-white">{slide.title}</p>
-                      <p className="truncate text-[11px] text-white/75">{slide.location || slide.builderName}</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between gap-2">
-                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${slide.displayOnHomepage !== false && slide.published !== false ? "bg-emerald-50 text-emerald-700" : "bg-[#F3F1F5] text-[#68646F]"}`}>
-                      {slide.displayOnHomepage !== false && slide.published !== false ? "Active" : "Hidden"}
-                    </span>
-                    <div className="flex gap-1">
-                      <button disabled={busy} onClick={() => toggleSlide(slide, "displayOnHomepage")} className={`flex size-9 items-center justify-center rounded-lg ${slide.displayOnHomepage === false ? "bg-[#F3F1F5] text-[#68646F]" : "bg-emerald-50 text-emerald-700"}`} aria-label={`Toggle ${slot.label} homepage display`}>
-                        {slide.displayOnHomepage === false ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                      </button>
-                      <button disabled={busy} onClick={() => startEdit(slide)} className="flex size-9 items-center justify-center rounded-lg bg-[#F8F7FA] text-[#121B35]" aria-label={`Edit ${slot.label}`}><Pencil className="size-4" /></button>
-                      <button disabled={busy} onClick={() => remove(slide.id)} className="flex size-9 items-center justify-center rounded-lg bg-[#FDEEEE] text-[#C0392B]" aria-label={`Remove ${slot.label}`}><Trash2 className="size-4" /></button>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <button type="button" onClick={() => startAdd(slot.id)} className="flex h-48 w-full flex-col items-center justify-center rounded-xl border border-dashed border-[#C9C5CF] bg-[#F8F7FA]/60 text-[#68646F] transition hover:border-[#DDAA42] hover:bg-white">
-                  <Plus className="mb-2 size-6 text-[#DDAA42]" />
-                  <span className="text-[13px] font-bold text-[#121B35]">Add property</span>
-                  <span className="mt-1 text-[11px]">This slot is optional</span>
-                </button>
-              )}
             </div>
-          );
-        })}
-      </div>
-
-      {legacySlides.length > 0 && (
-        <div className="mb-8 rounded-2xl border border-[#E4E0E7] bg-white p-4">
-          <p className="text-[13px] font-bold text-[#121B35]">Legacy homepage slides</p>
-          <p className="mt-1 text-[11px] text-[#68646F]">These remain available as the fallback when no ranked slot is active.</p>
-          <div className="mt-3 space-y-2">
-            {legacySlides.map((slide) => (
-              <div key={slide.id} className="flex items-center gap-3 rounded-xl bg-[#F8F7FA] p-2.5">
-                <img src={slide.image} alt="" className="h-12 w-20 rounded-lg object-cover" />
-                <p className="min-w-0 flex-1 truncate text-[12px] font-bold text-[#121B35]">{slide.title}</p>
-                <button type="button" onClick={() => startEdit(slide)} className="flex size-8 items-center justify-center rounded-lg bg-white text-[#121B35]"><Pencil className="size-3.5" /></button>
-                <button type="button" onClick={() => remove(slide.id)} className="flex size-8 items-center justify-center rounded-lg bg-[#FDEEEE] text-[#C0392B]"><Trash2 className="size-3.5" /></button>
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${slide.displayOnHomepage !== false && slide.published !== false ? "bg-emerald-50 text-emerald-700" : "bg-[#F3F1F5] text-[#68646F]"}`}>
+                {slide.displayOnHomepage !== false && slide.published !== false ? "Active" : "Hidden"}
+              </span>
+              <div className="flex gap-1">
+                <button disabled={busy} onClick={() => toggleSlide(slide, "displayOnHomepage")} className={`flex size-9 items-center justify-center rounded-lg ${slide.displayOnHomepage === false ? "bg-[#F3F1F5] text-[#68646F]" : "bg-emerald-50 text-emerald-700"}`} aria-label={`Toggle ${slide.title} homepage display`}>
+                  {slide.displayOnHomepage === false ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+                <button disabled={busy} onClick={() => startEdit(slide)} className="flex size-9 items-center justify-center rounded-lg bg-[#F8F7FA] text-[#121B35]" aria-label={`Edit ${slide.title}`}><Pencil className="size-4" /></button>
+                <button disabled={busy} onClick={() => remove(slide.id)} className="flex size-9 items-center justify-center rounded-lg bg-[#FDEEEE] text-[#C0392B]" aria-label={`Remove ${slide.title}`}><Trash2 className="size-4" /></button>
               </div>
-            ))}
+            </div>
           </div>
-        </div>
-      )}
+        ))}
+        {slides.length === 0 && (
+          <button type="button" onClick={startAdd} className="flex h-52 flex-col items-center justify-center rounded-2xl border border-dashed border-[#C9C5CF] bg-white text-[#68646F] transition hover:border-[#DDAA42]">
+            <Plus className="mb-2 size-6 text-[#DDAA42]" />
+            <span className="text-[13px] font-bold text-[#121B35]">Add the first property</span>
+          </button>
+        )}
+      </div>
 
       {showForm && (
         <form ref={editorRef} onSubmit={save} className="scroll-mt-24 overflow-hidden rounded-2xl border border-[#DDAA42]/60 bg-white shadow-lg ring-2 ring-[#DDAA42]/10">
           <div className="flex items-center justify-between border-b border-[#E4E0E7] px-5 py-4">
             <div>
               <h2 className="text-[18px] font-bold text-[#121B35]">
-                {editing ? "Edit" : "Add"} {form.promotionSlot ? `${form.promotionSlot[0].toUpperCase()}${form.promotionSlot.slice(1)}` : "legacy"} property
+                {editing ? "Edit homepage property" : "Add homepage property"}
               </h2>
               <p className="mt-0.5 text-[12px] text-[#68646F]">Current property values stay live; only fields entered as overrides are stored here.</p>
             </div>
@@ -454,7 +403,7 @@ export default function AdminHeroPage() {
                       <option value="">Choose a property</option>
                       {properties.map((property) => <option key={property.id} value={property.id}>{property.title} — {property.subtitle}</option>)}
                     </select>
-                    {editing && !form.propertyId && <p className="mt-1.5 text-[11px] text-[#68646F]">This is a legacy manual slide. Its existing settings remain available under Display Settings.</p>}
+                    {editing && !form.propertyId && <p className="mt-1.5 text-[11px] text-[#68646F]">This is a manual slide. Its existing settings remain available under Display Settings.</p>}
                   </div>
                   {selectedProperty && (
                     <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
@@ -566,8 +515,8 @@ export default function AdminHeroPage() {
                     )}
                   </div>
                   {form.image && (
-                    <div className={`overflow-hidden rounded-xl ${promotionFrameClass(form.promotionSlot)}`}>
-                      <div className="relative h-48 bg-[#0B1328]"><img src={form.image} alt="" className="h-full w-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />{form.promotionSlot && <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-black ${promotionBadgeClass(form.promotionSlot)}`}>{promotionRankLabel(form.promotionSlot)}</span>}<div className="absolute bottom-4 left-4 text-white"><p className="text-[18px] font-bold">{form.fieldOverrides?.title || selectedProperty?.title || form.title}</p><p className="text-[12px] text-white/80">{form.fieldOverrides?.location || selectedProperty?.subtitle || form.location}</p></div></div>
+                    <div className="overflow-hidden rounded-xl">
+                      <div className="relative h-48 bg-[#0B1328]"><img src={form.image} alt="" className="h-full w-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" /><div className="absolute bottom-4 left-4 text-white"><p className="text-[18px] font-bold">{form.fieldOverrides?.title || selectedProperty?.title || form.title}</p><p className="text-[12px] text-white/80">{form.fieldOverrides?.location || selectedProperty?.subtitle || form.location}</p></div></div>
                     </div>
                   )}
                 </div>

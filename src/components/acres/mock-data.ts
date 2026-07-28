@@ -282,6 +282,8 @@ export type Property = {
   featured?: boolean;
   /** Which homepage carousel/section this belongs to (matches backend enum) */
   websiteSection?: string;
+  /** Homepage sections can be assigned independently; legacy websiteSection remains supported. */
+  homepageSections?: string[];
   /** "For Sale" | "For Rent" — routes the property to Buy vs Rent listing pages. */
   listingType?: string;
   status?: string;
