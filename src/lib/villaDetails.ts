@@ -122,8 +122,8 @@ export function validateVillaDraft(property: Partial<Property>): VillaErrors {
   if (!property.builder?.trim()) errors.builder = "Builder/developer is required.";
   if (!property.transactionType || !["New Property", "Resale"].includes(property.transactionType)) errors.transactionType = "Select a transaction type.";
   if (!property.listingType || !["For Sale", "For Rent"].includes(property.listingType)) errors.listingType = "Select a listing type.";
-  if (property.reraRegistered && !/^[A-Za-z0-9/._-]{8,50}$/.test(property.reraNumber?.trim() || "")) {
-    errors.reraNumber = "Use 8–50 letters, numbers, /, ., _, or -.";
+  if (property.reraRegistered && (!property.reraPhases?.length || property.reraPhases.some((phase) => !phase.name.trim() || !/^[A-Za-z0-9/._-]{8,50}$/.test(phase.reraNumber.trim())))) {
+    errors.reraPhases = "Every phase needs a valid name and 8–50 character RERA number.";
   }
   if (property.locality?.pinCode && !/^\d{6}$/.test(property.locality.pinCode)) errors.pinCode = "Enter a 6-digit PIN code.";
   for (const key of ["schools", "colleges", "hospitals", "shopping", "metro"] as const) {
@@ -163,7 +163,5 @@ export function prepareVillaPropertyPayload<T extends Partial<Property>>(propert
     totalFloors: undefined,
     ownershipType: undefined,
     overlooking: undefined,
-    maintenanceCharges: undefined,
-    maintenancePeriod: undefined,
   } as T;
 }

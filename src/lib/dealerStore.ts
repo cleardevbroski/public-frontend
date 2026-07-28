@@ -63,19 +63,15 @@ export function getDealerBySlug(slug: string): Dealer | undefined {
 /** Count of published properties attributable to a dealer. */
 export function getDealerMatchCount(dealer: Dealer): number {
   const published = getPublishedProperties();
-  const linked = published.filter((p) => p.dealerId === dealer.id).length;
-  if (linked) return linked;
   if (dealer.propertyIds?.length) return dealer.propertyIds.length;
   // Stable pseudo-count derived from the dealer id so curated cards feel real.
   const hash = dealer.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   return (hash % 70) + Math.min(published.length, 12) + 3;
 }
 
-/** Properties linked to a dealer (real dealerId link first, else legacy propertyIds, else a locality-matched sample). */
+/** Curated dealer-directory properties. Property listings no longer carry a dealer link. */
 export function getDealerProperties(dealer: Dealer): Property[] {
   const published = getPublishedProperties();
-  const linked = published.filter((p) => p.dealerId === dealer.id);
-  if (linked.length) return linked;
   if (dealer.propertyIds?.length) {
     return published.filter((p) => dealer.propertyIds!.includes(p.id));
   }

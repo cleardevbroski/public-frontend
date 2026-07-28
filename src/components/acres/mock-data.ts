@@ -106,7 +106,7 @@ export type PlotInventoryItem = {
 export type PlotDetails = {
   plotSizeDetails: PlotSizeDetail[];
   totalPlots: number;
-  approvalAuthority: "BMRDA" | "BDA" | "DTCP" | "Panchayat";
+  approvalAuthority: string;
   approvalNumber?: string;
   roadWidth?: string;
   civicInfrastructure: {
@@ -149,8 +149,31 @@ export type CommercialDetails = {
 };
 export type PgSharingDetail = { sharingType: "Single occupancy" | "Double sharing" | "Triple sharing" | "Four sharing"; rentPerBed: number; deposit: number; bedsAvailable: number };
 export type PgDetails = { genderPreference: "Men only" | "Women only" | "Co-ed"; sharingDetails: PgSharingDetail[]; mealsIncluded: "Breakfast + Dinner" | "All 3 meals" | "No meals"; foodType?: "" | "Veg only" | "Veg + Non-veg"; wifiIncluded: boolean; laundryIncluded: boolean; laundrySchedule?: string; housekeeping?: string; curfewEntryTiming?: string; visitorsAllowed?: string; noticePeriod?: string; lockInPeriod?: string; idProofRequired?: string; utilitiesIncluded?: string; availableFrom: string; commonAmenities: string[]; contactType: "Owner" | "PG Manager" | "Company-run" };
-export type RentDetails = { rentalPropertyType: "Apartment" | "Villa" | "Independent House"; configuration: string; monthlyRent: number; securityDeposit: number; maintenanceMode: "Included" | "Extra"; maintenanceAmount: number; availableFrom: string; lockInPeriod?: string; preferredTenantTypes: string[]; superArea?: string; carpetArea?: string; bedrooms: number; bathrooms: number; floor?: string; totalFloors?: number; facing?: string; parking?: string; furnishing: "Unfurnished" | "Semi-Furnished" | "Fully Furnished"; petFriendly: boolean; nonVegAllowed: boolean; contactType: "Owner" | "Broker" };
-export type LeaseDetails = { leasePropertyType: "Commercial" | "Residential"; carpetArea: string; superArea: string; leaseRent: number; rentPerSqft: number; leaseTenure: string; lockInPeriod: string; rentEscalation: string; securityDeposit: number; availableFrom: string; camCharges: string; furnishing: string; preferredTenantType: string; subLeasingAllowed: boolean; registrationStampDutyResponsibility: string; contactType: string };
+export type RentDetails = { rentalPropertyType: "Apartment" | "Villa" | "Independent House"; configuration: string; monthlyRent: number; securityDeposit: number; availableFrom: string; lockInPeriod?: string; preferredTenantTypes: string[]; superArea?: string; carpetArea?: string; bedrooms: number; bathrooms: number; floor?: string; totalFloors?: number; facing?: string; parking?: string; furnishing: "Unfurnished" | "Semi-Furnished" | "Fully Furnished"; petFriendly: boolean; nonVegAllowed: boolean; contactType: "Owner" | "Broker" };
+export type LeaseDetails = { leasePropertyType: "Commercial" | "Residential"; carpetArea: string; superArea: string; leaseRent: number; rentPerSqft: number; leaseTenure: string; lockInPeriod: string; rentEscalation: string; securityDeposit: number; availableFrom: string; furnishing: string; preferredTenantType: string; subLeasingAllowed: boolean; registrationStampDutyResponsibility: string; contactType: string };
+
+export type ReraDocument = {
+  _id?: string;
+  key: string;
+  label: string;
+  annexure?: string;
+  fileName: string;
+  fileUrl?: string;
+  mimeType: "application/pdf" | "image/jpeg" | "image/png";
+  fileSize: number;
+  uploadedAt?: string;
+};
+
+export type ReraPhase = {
+  _id?: string;
+  name: string;
+  reraNumber: string;
+  reraSiteUrl?: string;
+  panNumber?: string;
+  order?: number;
+  reraDocuments: ReraDocument[];
+  projectDocuments: ReraDocument[];
+};
 
 export type PossessionStatus = "Ready to Move" | "Under Construction" | "New Launch";
 
@@ -192,7 +215,6 @@ export type Property = {
   possessionDetails?: PossessionDetails;
   builder?: string;
   builderId?: string | null;
-  dealerId?: string | null;
   developerLogoUrl?: string;
   localityMapImageUrl?: string;
   image: string;
@@ -218,8 +240,6 @@ export type Property = {
   ownershipType?: string;
   overlooking?: string[];
   bookingAmount?: string;
-  maintenanceCharges?: string;
-  maintenancePeriod?: "month" | "quarter" | "year" | "";
   society?: {
     security?: string;
     waterSupply?: string;
@@ -251,6 +271,7 @@ export type Property = {
   };
   reraRegistered?: boolean;
   reraNumber?: string;
+  reraPhases?: ReraPhase[];
   verified?: boolean;
   postedDate?: string;
   // Downloadable brochure (data URL or external link) + display name

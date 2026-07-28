@@ -29,6 +29,8 @@ function parseCsvLine(line: string) {
 }
 
 export default function PlotDetailsFields(props: Props) {
+  const approvalOptions = ["BMRDA", "BDA", "BBMP", "DTCP", "Panchayat", "MPA"];
+  const approvalSelection = approvalOptions.includes(props.details.approvalAuthority) ? props.details.approvalAuthority : "Other";
   const updateDetails = (updates: Partial<PlotDetails>) => props.setDetails({ ...props.details, ...updates });
   const updateSize = (plotSize: string, updates: Partial<PlotSizeDetail>) => updateDetails({
     plotSizeDetails: props.details.plotSizeDetails.map((row) => row.plotSize === plotSize ? { ...row, ...updates, totalPrice: Math.round(row.areaSqft * Number(updates.pricePerSqft ?? row.pricePerSqft ?? 0)) } : row),
@@ -78,7 +80,14 @@ export default function PlotDetailsFields(props: Props) {
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-2xl border border-[#E4E0E7]/70 bg-[#F8F7FA]/40 p-5">
       <div><label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">No. of plots in layout <span className="text-[#F2C052]">*</span></label><input type="number" min={1} value={props.details.totalPlots || ""} onChange={(event) => updateDetails({ totalPlots: Number(event.target.value) })} className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl" />{props.errors.totalPlots && <p className="text-[12px] text-red-600 mt-1">{props.errors.totalPlots}</p>}</div>
-      <div><label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Layout approval authority <span className="text-[#F2C052]">*</span></label><select value={props.details.approvalAuthority} onChange={(event) => updateDetails({ approvalAuthority: event.target.value as PlotDetails["approvalAuthority"] })} className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl bg-white">{["BMRDA", "BDA", "DTCP", "Panchayat"].map((value) => <option key={value}>{value}</option>)}</select></div>
+      <div>
+        <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Layout approval authority <span className="text-[#F2C052]">*</span></label>
+        <select value={approvalSelection} onChange={(event) => updateDetails({ approvalAuthority: event.target.value === "Other" ? "" : event.target.value })} className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl bg-white">
+          {approvalOptions.map((value) => <option key={value}>{value}</option>)}
+          <option>Other</option>
+        </select>
+        {approvalSelection === "Other" && <input value={props.details.approvalAuthority} onChange={(event) => updateDetails({ approvalAuthority: event.target.value })} maxLength={120} placeholder="Enter approval authority" className="mt-2 w-full px-4 py-3 border border-[#E4E0E7] rounded-xl" />}
+      </div>
       <div><label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Layout approval / sanction number</label><input value={props.details.approvalNumber || ""} onChange={(event) => updateDetails({ approvalNumber: event.target.value })} className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl" /></div>
       <div><label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Road width in layout</label><input value={props.details.roadWidth || ""} onChange={(event) => updateDetails({ roadWidth: event.target.value })} placeholder="e.g. 30 ft internal roads" className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl" /></div>
     </div>

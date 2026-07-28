@@ -29,7 +29,7 @@ export function validateCommercialDraft(property: Partial<Property>): Commercial
   const possession = property.possessionDetails;
   if (!possession || !["Ready to Move", "Under Construction"].includes(possession.status)) errors.possessionDetails = "Select Ready to Move or Under Construction.";
   else if (possession.status === "Under Construction" ? !month(possession.expectedCompletionDate) : !date(possession.launchDate)) errors.possessionDate = possession.status === "Under Construction" ? "Enter the expected completion month and year." : "Enter the ready date.";
-  if (property.reraRegistered && !/^[A-Za-z0-9/._-]{8,50}$/.test(property.reraNumber?.trim() || "")) errors.reraNumber = "Use 8–50 letters, numbers, /, ., _, or -.";
+  if (property.reraRegistered && (!property.reraPhases?.length || property.reraPhases.some((phase) => !phase.name.trim() || !/^[A-Za-z0-9/._-]{8,50}$/.test(phase.reraNumber.trim())))) errors.reraPhases = "Every phase needs a valid name and 8–50 character RERA number.";
   return errors;
 }
 

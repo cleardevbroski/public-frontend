@@ -41,8 +41,9 @@ import CommercialDetailsFields from "./CommercialDetailsFields";
 import PgDetailsFields from "./PgDetailsFields";
 import RentDetailsFields from "./RentDetailsFields";
 import LeaseDetailsFields from "./LeaseDetailsFields";
+import ReraPhasesEditor from "./ReraPhasesEditor";
 import { addProperty, updateProperty } from "@/lib/propertyStore";
-import { createPropertyDraft, createPublicProperty, fetchBuilders, fetchDealers, resubmitProperty, uploadPropertyMedia } from "@/lib/api";
+import { createPropertyDraft, createPublicProperty, fetchBuilders, resubmitProperty, uploadPropertyMedia } from "@/lib/api";
 import { trackAnalytics } from "@/lib/analytics";
 import type { ConfigurationDetail, FacilityDetail, NearbyPlace, Property, VillaConfigurationDetail } from "@/components/acres/mock-data";
 import {
@@ -175,8 +176,6 @@ const initialFormData: FormData = {
   facilities: [],
   ownershipType: "",
   bookingAmount: "",
-  maintenanceCharges: "",
-  maintenancePeriod: "month",
   society: {
     security: "",
     waterSupply: "",
@@ -206,6 +205,7 @@ const initialFormData: FormData = {
   },
   reraRegistered: false,
   reraNumber: "",
+  reraPhases: [],
   verified: false,
   websiteSection: "None",
 };
@@ -240,6 +240,11 @@ function compactPropertyPayload<T>(value: T): T | undefined {
 
 function mergeInitialData(initialData?: Partial<FormData>): FormData {
   if (!initialData) return initialFormData;
+  const reraPhases = initialData.reraPhases?.length
+    ? initialData.reraPhases
+    : initialData.reraRegistered && initialData.reraNumber
+      ? [{ name: "Phase 1", reraNumber: initialData.reraNumber, reraSiteUrl: "", panNumber: "", reraDocuments: [], projectDocuments: [] }]
+      : [];
   return {
     ...initialFormData,
     ...initialData,
@@ -247,6 +252,7 @@ function mergeInitialData(initialData?: Partial<FormData>): FormData {
     locality: { ...initialFormData.locality, ...initialData.locality },
     nearbyAmenities: { ...initialFormData.nearbyAmenities, ...initialData.nearbyAmenities },
     nearbyDetails: { ...initialFormData.nearbyDetails, ...initialData.nearbyDetails },
+    reraPhases,
   };
 }
 
@@ -261,7 +267,6 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
   const [submitted, setSubmitted] = useState(false);
   const [configInput, setConfigInput] = useState("");
   const [builders, setBuilders] = useState<{ id: string; name: string }[]>([]);
-  const [dealers, setDealers] = useState<{ id: string; name: string }[]>([]);
   const [validationErrors, setValidationErrors] = useState<ApartmentErrors>({});
   const [configError, setConfigError] = useState("");
   const [submitError, setSubmitError] = useState("");
@@ -277,9 +282,6 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     if (isPublic) return;
     fetchBuilders({ limit: 200 })
       .then((data) => setBuilders(data.builders))
-      .catch(() => {});
-    fetchDealers({ limit: 200 })
-      .then((data) => setDealers(data.dealers))
       .catch(() => {});
   }, [isPublic]);
 
@@ -525,9 +527,9 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined,
                 commercialDetails: undefined, possessionDetails: undefined,
               }
-          : propertyType === "PG/Co-living" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: undefined, possessionDetails: undefined, reraRegistered: false, reraNumber: "" }
-          : propertyType === "Rent" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: undefined, rentDetails: undefined, listingType: "", possessionDetails: undefined, reraRegistered: false, reraNumber: "" }
-          : propertyType === "Lease" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: undefined, rentDetails: undefined, leaseDetails: undefined, listingType: "", possessionDetails: undefined, reraRegistered: false, reraNumber: "" }
+          : propertyType === "PG/Co-living" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: undefined, possessionDetails: undefined }
+          : propertyType === "Rent" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: undefined, rentDetails: undefined, listingType: "", possessionDetails: undefined }
+          : propertyType === "Lease" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: undefined, rentDetails: undefined, leaseDetails: undefined, listingType: "", possessionDetails: undefined }
           : {
               ...(isStructuredType(prev.propertyType) ? { configs: [] } : {}),
               configurationDetails: undefined,
@@ -543,13 +545,12 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
         ownershipType: undefined,
         overlooking: undefined,
         bookingAmount: undefined,
-        maintenanceCharges: undefined,
-        maintenancePeriod: undefined,
         reraNumber: undefined,
+        reraPhases: undefined,
         nearbyDetails: undefined,
       } : {}),
       overlooking: undefined,
-      ...(propertyType !== "Apartment" ? { ownershipType: undefined, bookingAmount: undefined, maintenanceCharges: undefined, maintenancePeriod: undefined } : {}),
+      ...(propertyType !== "Apartment" ? { ownershipType: undefined, bookingAmount: undefined } : {}),
       amenities: propertyType === "Villa"
         ? prev.amenities
         : propertyType === "Plot"
@@ -568,6 +569,11 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
+    if (formData.reraRegistered && (!formData.reraPhases?.length || formData.reraPhases.some((phase) => !phase.name.trim() || !/^[A-Za-z0-9/._-]{8,50}$/.test(phase.reraNumber.trim())))) {
+      setValidationErrors((previous) => ({ ...previous, reraPhases: "Every phase needs a name and a valid 8–50 character RERA registration number." }));
+      setCurrentStep(1);
+      return;
+    }
     setIsSubmitting(true);
     setSubmitError("");
     try {
@@ -1024,7 +1030,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
               </div>
 
               {!isPublic && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                   <div>
                     <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Linked Builder</label>
                     <select
@@ -1035,19 +1041,6 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                       <option value="">— None —</option>
                       {builders.map((b) => (
                         <option key={b.id} value={b.id}>{b.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Linked Dealer</label>
-                    <select
-                      value={formData.dealerId || ""}
-                      onChange={(e) => updateField("dealerId", e.target.value || null)}
-                      className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
-                    >
-                      <option value="">— None —</option>
-                      {dealers.map((d) => (
-                        <option key={d.id} value={d.id}>{d.name}</option>
                       ))}
                     </select>
                   </div>
@@ -1107,13 +1100,6 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                     <input value={formData.bookingAmount || ""} onChange={(e) => updateField("bookingAmount", e.target.value)} placeholder="e.g. ₹5,00,000" className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
                     {validationErrors.bookingAmount && <p className="text-[12px] text-red-600 mt-1">{validationErrors.bookingAmount}</p>}
                   </div>}
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Maintenance Charges</label>
-                    <div className="flex gap-2">
-                      <input value={formData.maintenanceCharges || ""} onChange={(e) => updateField("maintenanceCharges", e.target.value)} placeholder="e.g. ₹4/sqft" className="flex-1 min-w-0 px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
-                      <select value={formData.maintenancePeriod || "month"} onChange={(e) => updateField("maintenancePeriod", e.target.value as "month" | "quarter" | "year")} className="px-3 py-3 border border-[#E4E0E7] rounded-xl text-[13px] bg-white"><option value="month">/ month</option><option value="quarter">/ quarter</option><option value="year">/ year</option></select>
-                    </div>
-                  </div>
                 </div>
               )}
 
@@ -1177,7 +1163,12 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
               <div className="flex items-center gap-3 p-4 bg-[#F8F7FA] rounded-xl border border-[#E4E0E7]/30">
                 <button
                   type="button"
-                  onClick={() => setFormData((prev) => ({ ...prev, reraRegistered: !prev.reraRegistered, ...(!prev.reraRegistered ? {} : { reraNumber: "" }) }))}
+                  onClick={() => setFormData((prev) => ({
+                    ...prev,
+                    reraRegistered: !prev.reraRegistered,
+                    reraNumber: "",
+                    reraPhases: prev.reraRegistered ? [] : (prev.reraPhases?.length ? prev.reraPhases : [{ name: "Phase 1", reraNumber: "", reraSiteUrl: "", panNumber: "", reraDocuments: [], projectDocuments: [] }]),
+                  }))}
                   className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-200 ${
                     formData.reraRegistered
                       ? "bg-[#DDAA42] text-[#0B1328]"
@@ -1192,11 +1183,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 </div>
               </div>
               {isStructuredType(formData.propertyType) && formData.reraRegistered && (
-                <div>
-                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">RERA Number</label>
-                  <input value={formData.reraNumber || ""} onChange={(e) => updateField("reraNumber", e.target.value)} placeholder="PRM/KA/RERA/..." className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
-                  {validationErrors.reraNumber && <p className="text-[12px] text-red-600 mt-1">{validationErrors.reraNumber}</p>}
-                </div>
+                <ReraPhasesEditor phases={formData.reraPhases || []} onChange={(reraPhases) => setFormData((prev) => ({ ...prev, reraPhases, reraNumber: reraPhases[0]?.reraNumber || "" }))} error={validationErrors.reraPhases || validationErrors.reraNumber} />
               )}
 
               {/* Description */}
@@ -1763,7 +1750,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   {formData.reraRegistered && (
                     <div className="bg-white rounded-lg p-2.5 flex items-center gap-1">
                       <Verified className="w-4 h-4 text-[#DDAA42]" />
-                      <p className="font-medium text-[#121B35]">RERA {formData.reraNumber || "Registered"}</p>
+                      <p className="font-medium text-[#121B35]">RERA {formData.reraPhases?.length ? `${formData.reraPhases.length} phase${formData.reraPhases.length === 1 ? "" : "s"}` : "Registered"}</p>
                     </div>
                   )}
                 </div>

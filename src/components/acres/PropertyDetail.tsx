@@ -50,7 +50,6 @@ import {
   getPropertiesByBuilder,
   builderSlug,
 } from "@/lib/propertyStore";
-import { getPublishedDealers, type Dealer } from "@/lib/dealerStore";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 import { formatPossession } from "@/lib/propertyDetails";
 import VillaConfigurationTable from "./VillaConfigurationTable";
@@ -64,6 +63,7 @@ import LawyerConsultationModal from "./LawyerConsultationModal";
 import { getProjectHeroImages } from "@/lib/propertyPresentation";
 import { trackAnalytics } from "@/lib/analytics";
 import { useHomepagePromotion } from "@/lib/useHomepagePromotion";
+import PropertyReraSections from "./PropertyReraSections";
 
 type Pools = {
   recommended: Property[];
@@ -106,6 +106,8 @@ interface PropertyDetailProps {
 
 const sections = [
   { id: "overview", label: "Overview" },
+  { id: "rera-details", label: "RERA Details" },
+  { id: "project-details", label: "Project Details" },
   { id: "plans", label: "Plans & Pricing" },
   { id: "facilities", label: "Facilities" },
   { id: "brochure", label: "Brochure" },
@@ -198,19 +200,6 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   // Property rails (computed client-side from the live store, SSR-safe)
   const pools = useLiveProperties<Pools>(() => buildPools(property), EMPTY_POOLS);
 
-  // Show only a dealer explicitly linked to this property. Never attribute a
-  // listing to an unrelated dealer merely to fill the presentation.
-  const [listedBy, setListedBy] = useState<Dealer | null>(null);
-  const [propertyDealers, setPropertyDealers] = useState<Dealer[]>([]);
-  useEffect(() => {
-    const dealers = getPublishedDealers();
-    const linkedDealer = property.dealerId
-      ? dealers.find((dealer) => dealer.id === property.dealerId) || null
-      : null;
-    setListedBy(linkedDealer);
-    setPropertyDealers(linkedDealer ? [linkedDealer] : []);
-  }, [property.dealerId, property.id]);
-
   // Nearest matching locality insight for the price-trend strip.
   const localityKey = (property.subtitle?.split(",")[0] || "").toLowerCase();
   const insight = localityKey
@@ -257,6 +246,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     detail.floorPlan2dUrl || detail.floorPlan3dUrl || detail.rooms?.length
   ));
   const hasBrochure = Boolean(property.brochure);
+  const hasReraPhases = Boolean(property.reraRegistered && property.reraPhases?.length);
   const hasFacilities = amenities.length > 0 || Boolean(property.facilities?.length);
   const hasSociety = Boolean(
     property.society && Object.values(property.society).some(Boolean)
@@ -270,6 +260,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   );
   const visibleSections = sections.filter((section) =>
     (section.id !== "plans" || hasFloorPlans) &&
+    (!["rera-details", "project-details"].includes(section.id) || hasReraPhases) &&
     (section.id !== "facilities" || hasFacilities) &&
     (section.id !== "society" || hasSociety) &&
     (section.id !== "dealer" || Boolean(property.builder || property.developerLogoUrl)) &&
@@ -381,7 +372,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     { label: "Bathrooms / Washrooms", val: property.commercialDetails.washrooms }, { label: "Parking", val: property.commercialDetails.parking },
     { label: "Power backup", val: property.commercialDetails.powerBackup }, { label: "Sanctioned load", val: property.commercialDetails.sanctionedLoadKva ? `${property.commercialDetails.sanctionedLoadKva} KVA` : "" },
     { label: "Fire safety", val: property.commercialDetails.fireSafetyCompliance }, { label: "Furnishing", val: property.commercialDetails.furnishing },
-    { label: "Ownership", val: property.ownershipType }, { label: "Maintenance", val: property.maintenanceCharges ? `${property.maintenanceCharges} / ${property.maintenancePeriod || "month"}` : "" },
+    { label: "Ownership", val: property.ownershipType },
   ].filter((item) => item.val) : [];
   const pgOverviewFacts = property.pgDetails ? [
     { label: "Gender preference", val: property.pgDetails.genderPreference }, { label: "Meals", val: property.pgDetails.mealsIncluded }, { label: "Food type", val: property.pgDetails.foodType },
@@ -395,7 +386,6 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     { label: "Configuration", val: property.rentDetails.configuration },
     { label: "Home type", val: property.rentDetails.rentalPropertyType },
     { label: "Available from", val: formatDate(property.rentDetails.availableFrom) },
-    { label: "Maintenance", val: property.rentDetails.maintenanceMode === "Included" ? "Included in rent" : formatCurrency(property.rentDetails.maintenanceAmount) },
     { label: "Lock-in period", val: property.rentDetails.lockInPeriod },
     { label: "Preferred tenants", val: property.rentDetails.preferredTenantTypes?.join(", ") },
     { label: "Super area", val: property.rentDetails.superArea },
@@ -418,7 +408,6 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     { label: "Lock-in period", val: property.leaseDetails.lockInPeriod },
     { label: "Rent escalation", val: property.leaseDetails.rentEscalation },
     { label: "Security deposit", val: formatCurrency(property.leaseDetails.securityDeposit) },
-    { label: "CAM charges", val: property.leaseDetails.camCharges },
     { label: "Furnishing", val: property.leaseDetails.furnishing },
     { label: "Preferred tenant", val: property.leaseDetails.preferredTenantType },
     { label: "Sub-leasing", val: property.leaseDetails.subLeasingAllowed === true ? "Allowed" : property.leaseDetails.subLeasingAllowed === false ? "Not allowed" : "" },
@@ -434,7 +423,6 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     { label: "Floor", val: floorDisplay },
     { label: "Ownership", val: property.ownershipType },
     { label: "Booking amount", val: property.transactionType === "New Property" ? property.bookingAmount : "" },
-    { label: "Maintenance", val: property.maintenanceCharges ? `${property.maintenanceCharges} / ${property.maintenancePeriod || "month"}` : "" },
     { label: "RERA number", val: property.reraNumber },
   ].filter((item) => item.val);
   const typeOverviewFacts = property.villaDetails
@@ -529,7 +517,6 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
         action={verifiedAction}
         propertyId={property.id}
         propertyTitle={property.title}
-        contactNumber={listedBy?.phone}
         onClose={() => setVerifiedAction(null)}
         onComplete={completeVerifiedAction}
       />
@@ -864,6 +851,8 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
 
             </div>
 
+            {hasReraPhases && <PropertyReraSections property={property} setSectionRef={setSectionRef} />}
+
             {hasFloorPlans && property.configurationDetails && (
               <div ref={setSectionRef("plans")}>
                 <FloorPlanExplorer
@@ -940,41 +929,6 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                 )}
               </div>
             </div>}
-
-            {/* Dealers for this property */}
-            {propertyDealers.length > 0 && (
-              <div className="bg-white rounded-3xl p-6 md:p-8 shadow-md border border-[#E4E0E7]/30 space-y-5">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <h2 className="text-[20px] font-bold text-[#121B35] flex items-center gap-2">
-                    <div className="w-1.5 h-6 bg-[#DDAA42] rounded-full" /> Dealers for this property
-                  </h2>
-                  <Link href="/dealers" className="text-[13px] font-bold text-[#DDAA42] hover:underline">View all dealers</Link>
-                </div>
-                <p className="text-[13px] text-[#68646F] -mt-2">Contact a verified channel partner handling this listing.</p>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {propertyDealers.map((d) => (
-                    <div key={d.id} className="flex items-center gap-4 p-4 bg-[#F8F7FA]/60 border border-[#E4E0E7]/50 rounded-2xl">
-                      <div className="relative shrink-0">
-                        <span className="size-14 rounded-full bg-white border border-[#DDAA42]/40 flex items-center justify-center text-[#121B35] font-bold overflow-hidden">
-                          {d.logo ? <img src={d.logo} alt={d.agency} className="w-full h-full object-cover" /> : d.name.split(" ").slice(0, 2).map((w) => w[0]).join("")}
-                        </span>
-                        <span className="absolute -bottom-1 -right-1 size-6 rounded-full bg-gradient-to-br from-[#F2C052] to-[#DDAA42] flex items-center justify-center shadow">
-                          <ShieldCheck className="size-3.5 text-[#121B35]" />
-                        </span>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[15px] font-bold text-[#121B35] truncate">{d.name}</p>
-                        <p className="text-[12px] text-[#68646F] truncate">{d.agency}</p>
-                        <p className="text-[11px] text-[#68646F]">Member since {d.memberSince}</p>
-                      </div>
-                      <Link href={`/dealer/${d.slug}`} className="shrink-0 px-4 py-2.5 border border-[#DDAA42] text-[#DDAA42] hover:bg-[#DDAA42] hover:text-[#0B1328] font-bold text-[12.5px] rounded-xl transition-colors flex items-center gap-1.5">
-                        <Phone className="size-3.5" /> Contact
-                      </Link>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Locality Guide */}
             {hasLocalityContent && <div ref={setSectionRef("locality")} className="bg-white rounded-3xl p-6 md:p-8 shadow-md border border-[#E4E0E7]/30 space-y-6">
@@ -1123,35 +1077,6 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                 </div>}
               </div>}
             </div>
-
-            {/* Listed by verified dealer */}
-            {listedBy && (
-              <Link href={`/dealer/${listedBy.slug}`} className="block bg-white rounded-2xl p-5 shadow-sm border border-[#E4E0E7]/40 hover:border-[#DDAA42]/60 hover:shadow-md transition-all group">
-                <p className="text-[10px] text-[#68646F] uppercase font-bold tracking-wider mb-3">Listed by Verified Dealer</p>
-                <div className="flex items-center gap-3">
-                  <div className="relative shrink-0">
-                    <span className="size-14 rounded-full bg-[#F8F7FA] border border-[#DDAA42]/40 flex items-center justify-center text-[#121B35] overflow-hidden">
-                      {listedBy.logo ? (
-                        <img src={listedBy.logo} alt={listedBy.agency} className="w-full h-full object-cover" />
-                      ) : (
-                        <Verified className="size-6 text-[#DDAA42]" />
-                      )}
-                    </span>
-                    <span className="absolute -bottom-1 -right-1 size-6 rounded-full bg-gradient-to-br from-[#F2C052] to-[#DDAA42] flex items-center justify-center shadow">
-                      <ShieldCheck className="size-3.5 text-[#121B35]" />
-                    </span>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[15px] font-bold text-[#121B35] group-hover:text-[#DDAA42] transition-colors truncate">{listedBy.name}</p>
-                    <p className="text-[12px] text-[#68646F] truncate">{listedBy.agency}</p>
-                    <p className="text-[11px] text-[#68646F] mt-0.5">Member since {listedBy.memberSince}</p>
-                  </div>
-                </div>
-                <span className="mt-4 w-full h-10 rounded-xl border border-[#DDAA42] text-[#DDAA42] group-hover:bg-[#DDAA42] group-hover:text-[#0B1328] font-bold text-[13px] flex items-center justify-center transition-colors">
-                  View Dealer Profile
-                </span>
-              </Link>
-            )}
 
             <div className="bg-white rounded-2xl p-4.5 shadow-sm border border-[#E4E0E7]/30 text-center">
               <p className="text-[12px] text-[#68646F] font-semibold">Spotted an error in this listing?</p>

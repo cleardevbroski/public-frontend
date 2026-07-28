@@ -73,13 +73,14 @@ describe("Villa property helpers", () => {
     draft.builder = "";
     draft.reraRegistered = true;
     draft.reraNumber = "bad value";
+    draft.reraPhases = [{ name: "Phase 1", reraNumber: "bad value", reraDocuments: [], projectDocuments: [] }];
     const errors = validateVillaDraft(draft);
     expect(errors["villaConfiguration.0.bedrooms"]).toBeTruthy();
     expect(errors["villaConfiguration.0.plotArea"]).toBeTruthy();
     expect(errors.privateGardenArea).toBeTruthy();
     expect(errors.possessionDate).toBeTruthy();
     expect(errors.builder).toBeTruthy();
-    expect(errors.reraNumber).toBeTruthy();
+    expect(errors.reraPhases).toBeTruthy();
   });
 
   it("uses Villa-specific Ready Since possession wording", () => {

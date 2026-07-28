@@ -51,7 +51,7 @@ export function displayRange(
   field: "price" | "builtUpArea" | "superBuiltUpArea" | "carpetArea"
 ): string {
   const values = (rows || [])
-    .map((row) => ({ display: row[field], value: parseDisplayNumber(row[field], field) }))
+    .map((row) => ({ display: row[field] || "", value: parseDisplayNumber(row[field], field) }))
     .filter((item) => Number.isFinite(item.value))
     .sort((a, b) => a.value - b.value);
   if (!values.length) return "";
@@ -183,7 +183,9 @@ export function validateApartmentDraft(property: Partial<Property>): ApartmentEr
   if (/^[1-9]\d*$/.test(property.floorLabel || "") && property.totalFloors && Number(property.floorLabel) > property.totalFloors) {
     errors.floorLabel = "Flat floor cannot be higher than total floors.";
   }
-  if (property.reraRegistered && !property.reraNumber?.trim()) errors.reraNumber = "RERA number is required.";
+  if (property.reraRegistered && (!property.reraPhases?.length || property.reraPhases.some((phase) => !phase.name.trim() || !phase.reraNumber.trim()))) {
+    errors.reraPhases = "Every RERA phase needs a phase name and registration number.";
+  }
   if (property.transactionType === "New Property" && !property.bookingAmount?.trim()) {
     errors.bookingAmount = "Booking amount is required for a new property.";
   }

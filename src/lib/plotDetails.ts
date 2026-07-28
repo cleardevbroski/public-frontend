@@ -64,6 +64,7 @@ export function validatePlotDraft(property: Partial<Property>): PlotErrors {
   const tags = property.configs || [];
   if (tags.length !== rows.length || tags.some((tag, index) => tag !== normalizePlotSize(rows[index]?.plotSize || "")?.plotSize)) errors.configurations = "Plot-size tags and detail rows must match.";
   if (!details || !Number.isInteger(details.totalPlots) || details.totalPlots < 1) errors.totalPlots = "Enter the total number of plots.";
+  if (!details?.approvalAuthority.trim()) errors.approvalAuthority = "Select or enter a layout approval authority.";
   if (details && details.inventory.length !== details.totalPlots) errors.inventory = "Inventory rows must exactly match the declared number of plots.";
   const plotNumbers = new Set<string>();
   details?.inventory.forEach((item, index) => {
@@ -79,7 +80,7 @@ export function validatePlotDraft(property: Partial<Property>): PlotErrors {
   if (!property.builder?.trim()) errors.builder = "Builder/developer is required.";
   if (!property.transactionType || !["New Property", "Resale"].includes(property.transactionType)) errors.transactionType = "Select a transaction type.";
   if (!property.listingType || !["For Sale", "For Rent"].includes(property.listingType)) errors.listingType = "Select a listing type.";
-  if (property.reraRegistered && !/^[A-Za-z0-9/._-]{8,50}$/.test(property.reraNumber?.trim() || "")) errors.reraNumber = "Use 8–50 letters, numbers, /, ., _, or -.";
+  if (property.reraRegistered && (!property.reraPhases?.length || property.reraPhases.some((phase) => !phase.name.trim() || !/^[A-Za-z0-9/._-]{8,50}$/.test(phase.reraNumber.trim())))) errors.reraPhases = "Every phase needs a valid name and 8–50 character RERA number.";
   if (property.locality?.pinCode && !/^\d{6}$/.test(property.locality.pinCode)) errors.pinCode = "Enter a 6-digit PIN code.";
   return errors;
 }
@@ -119,7 +120,5 @@ export function preparePlotPropertyPayload<T extends Partial<Property>>(property
     ownershipType: undefined,
     overlooking: undefined,
     bookingAmount: undefined,
-    maintenanceCharges: undefined,
-    maintenancePeriod: undefined,
   } as T;
 }

@@ -303,7 +303,7 @@ export async function reviewPublicSubmission(id: string, action: "start_review" 
   return readJson(await apiFetch(`/api/properties/admin/submissions/${id}/review`, { method: "PUT", body: JSON.stringify({ action, message }) }), "Failed to update submission");
 }
 
-export async function uploadPropertyMedia(file: File, kind: "image" | "brochure" | "layout-map-image" | "layout-map-pdf" | "legal-document-image" | "legal-document-pdf"): Promise<string> {
+export async function uploadPropertyMedia(file: File, kind: "image" | "brochure" | "layout-map-image" | "layout-map-pdf" | "legal-document-image" | "legal-document-pdf" | "rera-document-image" | "rera-document-pdf"): Promise<string> {
   const res = await apiFetch(`/api/property-media?kind=${kind}`, {
     method: "POST",
     headers: { "Content-Type": file.type },
@@ -312,6 +312,28 @@ export async function uploadPropertyMedia(file: File, kind: "image" | "brochure"
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Media upload failed");
   return data.url;
+}
+
+export async function downloadPropertyDocument(propertyId: string, phaseId: string, documentId: string, fileName: string) {
+  const res = await customerApiFetch(`/api/properties/${encodeURIComponent(propertyId)}/documents/${encodeURIComponent(phaseId)}/${encodeURIComponent(documentId)}/download`, {
+    method: "GET",
+  });
+  if (!res.ok) {
+    let message = "Document download failed";
+    try {
+      const data = await res.json();
+      message = data.error || message;
+    } catch {}
+    throw new Error(message);
+  }
+  const url = URL.createObjectURL(await res.blob());
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
 }
 
 export async function updateProperty(id: string, updates: Record<string, unknown>) {

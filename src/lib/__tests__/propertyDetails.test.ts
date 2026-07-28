@@ -90,12 +90,13 @@ describe("Apartment property helpers", () => {
     draft.possessionDetails = { status: "Under Construction", expectedCompletionDate: "" };
     draft.reraRegistered = true;
     draft.reraNumber = "";
+    draft.reraPhases = [{ name: "Phase 1", reraNumber: "", reraDocuments: [], projectDocuments: [] }];
     draft.bookingAmount = "";
     draft.description = "short";
     const errors = validateApartmentDraft(draft);
     expect(errors["configuration.0.price"]).toBeTruthy();
     expect(errors.possessionDate).toBeTruthy();
-    expect(errors.reraNumber).toBeTruthy();
+    expect(errors.reraPhases).toBeTruthy();
     expect(errors.bookingAmount).toBeTruthy();
     expect(errors.description).toBeTruthy();
   });

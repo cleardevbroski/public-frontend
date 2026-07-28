@@ -13,7 +13,7 @@ describe("dealerStore (backend-backed)", () => {
     await vi.waitFor(() => expect(store.getDealers().map((d) => d.slug)).toContain("ravi"));
   });
 
-  it("getDealerProperties prefers a real dealerId link over legacy propertyIds/locality fallback", async () => {
+  it("getDealerProperties ignores removed property dealer links and uses directory locality curation", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({
@@ -37,10 +37,10 @@ describe("dealerStore (backend-backed)", () => {
       id: "d1", slug: "ravi", name: "Ravi", agency: "R", dealsIn: [], buyersThisWeek: 0, memberSince: "",
       source: "curated" as const, localities: ["Hebbal"],
     };
-    expect(dealerStore.getDealerProperties(dealer).map((p) => p.id)).toEqual(["p1"]);
+    expect(dealerStore.getDealerProperties(dealer).map((p) => p.id)).toEqual(["p2"]);
   });
 
-  it("getDealerMatchCount counts real dealerId links first", async () => {
+  it("getDealerMatchCount uses dealer-directory property metadata", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({
@@ -60,7 +60,7 @@ describe("dealerStore (backend-backed)", () => {
     await vi.waitFor(() => expect(propertyStore.getPublishedProperties().length).toBe(2));
 
     const dealerStore = await import("@/lib/dealerStore");
-    const dealer = { id: "d1", slug: "ravi", name: "Ravi", agency: "R", dealsIn: [], buyersThisWeek: 0, memberSince: "", source: "curated" as const };
+    const dealer = { id: "d1", slug: "ravi", name: "Ravi", agency: "R", dealsIn: [], buyersThisWeek: 0, memberSince: "", source: "curated" as const, propertyIds: ["p2"] };
     expect(dealerStore.getDealerMatchCount(dealer)).toBe(1);
   });
 
