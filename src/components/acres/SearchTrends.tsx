@@ -6,6 +6,7 @@ import { getPropertiesBySection } from "@/lib/propertyStore";
 import { formatPossession } from "@/lib/propertyDetails";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 import { searchTrendProjects, type Property } from "./mock-data";
+import { priceWithCharges } from "@/lib/propertyPresentation";
 
 function statusOf(p: Property): string {
   if (p.possession || p.possessionDetails) return formatPossession(p);
@@ -89,7 +90,7 @@ export default function SearchTrends() {
               </div>
               <h3 className="text-[17px] font-bold text-[#121B35] mt-3 group-hover:text-[#DDAA42] transition-colors truncate">{p.name}</h3>
               <p className="text-[13px] text-[#68646F] truncate">{p.locality}</p>
-              <p className="text-[16px] font-extrabold text-[#121B35] mt-1">{p.price}</p>
+              <p className="text-[16px] font-extrabold text-[#121B35] mt-1">{priceWithCharges(p.price)}</p>
             </Link>
           ))}
         </div>

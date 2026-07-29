@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Download, ExternalLink, FileText, Loader2, QrCode } from "lucide-react";
+import { Download, ExternalLink, FileText, Loader2 } from "lucide-react";
 import type { Property, ReraDocument } from "./mock-data";
 import { downloadPropertyDocument } from "@/lib/api";
 import { useAuth } from "./AuthContext";
 import DocumentAccessModal from "./DocumentAccessModal";
 
 type PendingDocument = { phaseId: string; document: ReraDocument } | null;
+const KARNATAKA_RERA_URL = "https://rera.karnataka.gov.in/viewAllProjects";
 
 export default function PropertyReraSections({ property, setSectionRef }: { property: Property; setSectionRef: (id: string) => (element: HTMLDivElement | null) => void }) {
   const phases = property.reraPhases || [];
@@ -66,8 +67,8 @@ export default function PropertyReraSections({ property, setSectionRef }: { prop
         <h2 className="flex items-center gap-2 text-[20px] font-bold text-[#121B35]"><span className="h-6 w-1.5 rounded-full bg-[#DDAA42]" />RERA Details</h2>
         {tabs(reraPhase, setReraPhase)}
         <div className="grid gap-4 rounded-2xl bg-[#121B35] p-5 text-white md:grid-cols-[1fr_auto]">
-          <div><p className="text-[10px] font-bold uppercase tracking-widest text-white/55">Registration number</p><p className="mt-1 break-all text-[16px] font-bold text-[#F2C052]">{selectedRera.reraNumber}</p>{selectedRera.panNumber && <p className="mt-3 text-[12px] text-white/75">PAN: {selectedRera.panNumber}</p>}{selectedRera.reraSiteUrl && <a href={selectedRera.reraSiteUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-[12px] font-bold text-[#F2C052]">Open official RERA site <ExternalLink className="size-3.5" /></a>}</div>
-          {selectedRera.reraSiteUrl ? <img src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(selectedRera.reraSiteUrl)}`} alt={`QR code for ${selectedRera.name} RERA page`} className="size-28 rounded-xl bg-white p-2" /> : <div className="flex size-28 items-center justify-center rounded-xl border border-white/15"><QrCode className="size-9 text-white/30" /></div>}
+          <div><p className="text-[10px] font-bold uppercase tracking-widest text-white/55">Karnataka RERA registration number</p><p className="mt-1 break-all text-[16px] font-bold text-[#F2C052]">{selectedRera.reraNumber}</p><a href={KARNATAKA_RERA_URL} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-[12px] font-bold text-[#F2C052]">Open Karnataka RERA <ExternalLink className="size-3.5" /></a></div>
+          <img src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(KARNATAKA_RERA_URL)}`} alt="QR code for Karnataka RERA" className="size-28 rounded-xl bg-white p-2" />
         </div>
         {documents(selectedRera._id, selectedRera.reraDocuments || [])}
       </div>

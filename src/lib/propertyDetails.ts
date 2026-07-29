@@ -186,8 +186,17 @@ export function validateApartmentDraft(property: Partial<Property>): ApartmentEr
   if (property.reraRegistered && (!property.reraPhases?.length || property.reraPhases.some((phase) => !phase.name.trim() || !phase.reraNumber.trim()))) {
     errors.reraPhases = "Every RERA phase needs a phase name and registration number.";
   }
-  if (property.transactionType === "New Property" && !property.bookingAmount?.trim()) {
-    errors.bookingAmount = "Booking amount is required for a new property.";
+  const projectArea = property.projectArea;
+  if (projectArea && Object.values(projectArea).some((value) => value !== undefined)) {
+    const values = [projectArea.totalAcres, projectArea.openSpaceAcres, projectArea.builtUpAcres];
+    if (values.some((value) => value === undefined || !Number.isFinite(value) || Number(value) < 0)) {
+      errors.projectArea = "Enter all three project-area values using zero or positive numbers.";
+    } else if (Math.abs(Number(projectArea.totalAcres) - Number(projectArea.openSpaceAcres) - Number(projectArea.builtUpAcres)) > 0.001) {
+      errors.projectArea = "Open space and apartment built-up area must equal the total project area.";
+    }
+  }
+  if (property.totalUnits !== undefined && (!Number.isInteger(property.totalUnits) || property.totalUnits < 1)) {
+    errors.totalUnits = "Total units must be a whole number of at least 1.";
   }
   if ((property.description || "").trim().length < 50) errors.description = "Enter at least 50 characters.";
   if (property.locality?.pinCode && !/^\d{6}$/.test(property.locality.pinCode)) errors.pinCode = "Enter a 6-digit PIN code.";

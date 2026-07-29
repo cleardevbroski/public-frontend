@@ -22,7 +22,7 @@ function apartment(): Partial<Property> {
     possessionDetails: { status: "Under Construction", expectedCompletionDate: "2028-06" },
     floorLabel: "3",
     transactionType: "New Property",
-    bookingAmount: "₹5,00,000",
+    projectArea: { totalAcres: 5, openSpaceAcres: 2, builtUpAcres: 3 },
     description: "A well-connected apartment project with spacious homes and modern shared amenities.",
   };
 }
@@ -84,20 +84,20 @@ describe("Apartment property helpers", () => {
     expect(formatPossession({ possession: "Within 6 Months" })).toBe("Within 6 Months");
   });
 
-  it("reports conditional row, possession, RERA, booking, and description errors", () => {
+  it("reports conditional row, possession, RERA, project-area, and description errors", () => {
     const draft = apartment();
     draft.configurationDetails![0].price = "";
     draft.possessionDetails = { status: "Under Construction", expectedCompletionDate: "" };
     draft.reraRegistered = true;
     draft.reraNumber = "";
     draft.reraPhases = [{ name: "Phase 1", reraNumber: "", reraDocuments: [], projectDocuments: [] }];
-    draft.bookingAmount = "";
+    draft.projectArea = { totalAcres: 5, openSpaceAcres: 3, builtUpAcres: 3 };
     draft.description = "short";
     const errors = validateApartmentDraft(draft);
     expect(errors["configuration.0.price"]).toBeTruthy();
     expect(errors.possessionDate).toBeTruthy();
     expect(errors.reraPhases).toBeTruthy();
-    expect(errors.bookingAmount).toBeTruthy();
+    expect(errors.projectArea).toBeTruthy();
     expect(errors.description).toBeTruthy();
   });
 

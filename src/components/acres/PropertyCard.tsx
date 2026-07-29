@@ -4,6 +4,7 @@ import Link from "@/components/Link";
 import { Heart, BedDouble, Maximize2, Calendar, MapPin, ShieldCheck } from "lucide-react";
 import type { Property } from "./mock-data";
 import { formatPossession } from "@/lib/propertyDetails";
+import { priceWithCharges } from "@/lib/propertyPresentation";
 
 const isBase64 = (src: string) => src.startsWith("data:");
 
@@ -49,7 +50,7 @@ export default function PropertyCard({ p }: { p: Property }) {
 
         {/* Price chip */}
         {p.price && <span className="absolute bottom-0 left-0 rounded-tr-lg bg-[#121B35]/90 text-white text-[15px] font-bold px-3 py-1.5">
-          {p.price}
+          {priceWithCharges(p.price)}
         </span>}
       </div>
 

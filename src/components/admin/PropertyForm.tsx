@@ -41,7 +41,7 @@ import CommercialDetailsFields from "./CommercialDetailsFields";
 import PgDetailsFields from "./PgDetailsFields";
 import RentDetailsFields from "./RentDetailsFields";
 import LeaseDetailsFields from "./LeaseDetailsFields";
-import ReraPhasesEditor from "./ReraPhasesEditor";
+import ReraPhasesEditor, { KARNATAKA_RERA_URL } from "./ReraPhasesEditor";
 import { addProperty, updateProperty } from "@/lib/propertyStore";
 import { createPropertyDraft, createPublicProperty, fetchBuilders, resubmitProperty, uploadPropertyMedia } from "@/lib/api";
 import { trackAnalytics } from "@/lib/analytics";
@@ -106,6 +106,21 @@ const allAmenities = [
   { name: "Gymnasium", icon: Dumbbell, color: "#DDAA42" },
   { name: "Park", icon: TreePine, color: "#DDAA42" },
   { name: "Water Storage", icon: Droplets, color: "#DDAA42" },
+  { name: "Badminton Court(s)", icon: Sparkles, color: "#DDAA42" },
+  { name: "Kids' Play Areas / Sand Pits", icon: Home, color: "#DDAA42" },
+  { name: "Yoga Areas", icon: Sparkles, color: "#DDAA42" },
+  { name: "Jogging / Cycle Track", icon: Zap, color: "#F2C052" },
+  { name: "Table Tennis", icon: Sparkles, color: "#DDAA42" },
+  { name: "Snooker/Pool/Billiards", icon: Sparkles, color: "#DDAA42" },
+  { name: "AC Waiting Lobby", icon: Building2, color: "#DDAA42" },
+  { name: "24x7 Water Supply", icon: Droplets, color: "#DDAA42" },
+  { name: "CCTV / Video Surveillance", icon: Shield, color: "#DDAA42" },
+  { name: "Intercom Facility", icon: Shield, color: "#DDAA42" },
+  { name: "Party Hall", icon: Building2, color: "#F2C052" },
+  { name: "Indoor Games", icon: Sparkles, color: "#DDAA42" },
+  { name: "Luxurious Clubhouse", icon: Building2, color: "#F2C052" },
+  { name: "Senior Citizen Area", icon: Home, color: "#DDAA42" },
+  { name: "Large Green Area", icon: TreePine, color: "#DDAA42" },
 ];
 
 const villaOnlyAmenities = [
@@ -151,6 +166,8 @@ const initialFormData: FormData = {
   rentDetails: undefined,
   leaseDetails: undefined,
   area: "",
+  projectArea: undefined,
+  totalUnits: undefined,
   possession: "",
   possessionDetails: undefined,
   builder: "",
@@ -174,8 +191,6 @@ const initialFormData: FormData = {
   images: [],
   amenities: [],
   facilities: [],
-  ownershipType: "",
-  bookingAmount: "",
   society: {
     security: "",
     waterSupply: "",
@@ -241,9 +256,9 @@ function compactPropertyPayload<T>(value: T): T | undefined {
 function mergeInitialData(initialData?: Partial<FormData>): FormData {
   if (!initialData) return initialFormData;
   const reraPhases = initialData.reraPhases?.length
-    ? initialData.reraPhases
+    ? initialData.reraPhases.map((phase) => ({ ...phase, reraSiteUrl: KARNATAKA_RERA_URL }))
     : initialData.reraRegistered && initialData.reraNumber
-      ? [{ name: "Phase 1", reraNumber: initialData.reraNumber, reraSiteUrl: "", panNumber: "", reraDocuments: [], projectDocuments: [] }]
+      ? [{ name: "Phase 1", reraNumber: initialData.reraNumber, reraSiteUrl: KARNATAKA_RERA_URL, reraDocuments: [], projectDocuments: [] }]
       : [];
   return {
     ...initialFormData,
@@ -542,15 +557,13 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
       ...(!isStructuredType(propertyType) ? {
         floorLabel: undefined,
         totalFloors: undefined,
-        ownershipType: undefined,
         overlooking: undefined,
-        bookingAmount: undefined,
         reraNumber: undefined,
         reraPhases: undefined,
         nearbyDetails: undefined,
       } : {}),
       overlooking: undefined,
-      ...(propertyType !== "Apartment" ? { ownershipType: undefined, bookingAmount: undefined } : {}),
+      ...(propertyType !== "Apartment" ? { projectArea: undefined, totalUnits: undefined } : {}),
       amenities: propertyType === "Villa"
         ? prev.amenities
         : propertyType === "Plot"
@@ -562,6 +575,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
   };
 
   const nextStep = () => {
+    if (currentStep === 1 && !formData.propertyType) return;
     setValidationErrors({});
     setCurrentStep((s) => Math.min(s + 1, 5));
   };
@@ -775,6 +789,14 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 </div>
               </div>
 
+              {!formData.propertyType ? (
+                <div className="rounded-2xl border border-dashed border-[#DDAA42]/50 bg-[#FFFBF1] px-5 py-6 text-center">
+                  <Building2 className="mx-auto size-7 text-[#B98428]" />
+                  <p className="mt-3 text-[14px] font-semibold text-[#121B35]">Select a property type to continue</p>
+                  <p className="mt-1 text-[13px] text-[#68646F]">The relevant property details will open after you choose an option above.</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
               {/* Title & Location */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -818,6 +840,10 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   setFloorLabel={(value) => updateField("floorLabel", value)}
                   totalFloors={formData.totalFloors}
                   setTotalFloors={(value) => updateField("totalFloors", value)}
+                  projectArea={formData.projectArea}
+                  setProjectArea={(value) => updateField("projectArea", value)}
+                  totalUnits={formData.totalUnits}
+                  setTotalUnits={(value) => updateField("totalUnits", value)}
                   errors={validationErrors}
                   configError={configError}
                 />
@@ -994,7 +1020,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                       <button
                         key={type}
                         type="button"
-                        onClick={() => setFormData((prev) => ({ ...prev, transactionType: type, ...(type === "Resale" ? { bookingAmount: "" } : {}) }))}
+                        onClick={() => setFormData((prev) => ({ ...prev, transactionType: type }))}
                         className={`flex-1 px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200 border ${
                           formData.transactionType === type
                             ? "bg-[#DDAA42] text-[#0B1328] border-[#DDAA42] shadow-md"
@@ -1028,24 +1054,6 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   {validationErrors.listingType && <p className="text-[12px] text-red-600 mt-1">{validationErrors.listingType}</p>}
                 </div>}
               </div>
-
-              {!isPublic && (
-                <div>
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Linked Builder</label>
-                    <select
-                      value={formData.builderId || ""}
-                      onChange={(e) => updateField("builderId", e.target.value || null)}
-                      className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
-                    >
-                      <option value="">— None —</option>
-                      {builders.map((b) => (
-                        <option key={b.id} value={b.id}>{b.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              )}
 
               {/* Furnishing, Facing, Parking */}
               {!['Plot', 'Commercial'].includes(formData.propertyType || "") && <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1086,22 +1094,6 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   </select>
                 </div>
               </div>}
-
-              {formData.propertyType === "Apartment" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-2xl border border-[#E4E0E7]/50 bg-[#F8F7FA]/50 p-5">
-                  <div>
-                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Ownership Type</label>
-                    <select value={formData.ownershipType || ""} onChange={(e) => updateField("ownershipType", e.target.value)} className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] bg-white">
-                      {["Freehold", "Leasehold", "Co-operative Society", "Power of Attorney"].map((value) => <option key={value}>{value}</option>)}
-                    </select>
-                  </div>
-                  {formData.transactionType === "New Property" && <div>
-                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Booking Amount</label>
-                    <input value={formData.bookingAmount || ""} onChange={(e) => updateField("bookingAmount", e.target.value)} placeholder="e.g. ₹5,00,000" className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
-                    {validationErrors.bookingAmount && <p className="text-[12px] text-red-600 mt-1">{validationErrors.bookingAmount}</p>}
-                  </div>}
-                </div>
-              )}
 
               {/* Age & Badges */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1167,7 +1159,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                     ...prev,
                     reraRegistered: !prev.reraRegistered,
                     reraNumber: "",
-                    reraPhases: prev.reraRegistered ? [] : (prev.reraPhases?.length ? prev.reraPhases : [{ name: "Phase 1", reraNumber: "", reraSiteUrl: "", panNumber: "", reraDocuments: [], projectDocuments: [] }]),
+                    reraPhases: prev.reraRegistered ? [] : (prev.reraPhases?.length ? prev.reraPhases.map((phase) => ({ ...phase, reraSiteUrl: KARNATAKA_RERA_URL })) : [{ name: "Phase 1", reraNumber: "", reraSiteUrl: KARNATAKA_RERA_URL, reraDocuments: [], projectDocuments: [] }]),
                   }))}
                   className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-200 ${
                     formData.reraRegistered
@@ -1183,7 +1175,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 </div>
               </div>
               {isStructuredType(formData.propertyType) && formData.reraRegistered && (
-                <ReraPhasesEditor phases={formData.reraPhases || []} onChange={(reraPhases) => setFormData((prev) => ({ ...prev, reraPhases, reraNumber: reraPhases[0]?.reraNumber || "" }))} error={validationErrors.reraPhases || validationErrors.reraNumber} />
+                <ReraPhasesEditor phases={formData.reraPhases || []} onChange={(reraPhases) => setFormData((prev) => ({ ...prev, reraPhases: reraPhases.map((phase) => ({ ...phase, reraSiteUrl: KARNATAKA_RERA_URL })), reraNumber: reraPhases[0]?.reraNumber || "" }))} error={validationErrors.reraPhases || validationErrors.reraNumber} />
               )}
 
               {/* Description */}
@@ -1198,6 +1190,8 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 />
                 {formData.propertyType === "Apartment" && <p className={`text-[12px] mt-1 ${validationErrors.description ? "text-red-600" : "text-[#68646F]"}`}>{validationErrors.description || `${(formData.description || "").trim().length}/50 minimum characters`}</p>}
               </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1370,19 +1364,14 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
 
               {(formData.amenities?.length || 0) > 0 && (
                 <div className="mt-6 space-y-4 border-t border-[#F3F1F5] pt-5">
-                  <div><p className="text-[13px] font-bold text-[#121B35]">Facility presentation details</p><p className="mt-1 text-[12px] text-[#68646F]">Optional details appear when a visitor selects a facility on the property page.</p></div>
+                  <div><p className="text-[13px] font-bold text-[#121B35]">About selected amenities</p><p className="mt-1 text-[12px] text-[#68646F]">Optional. If left empty, the property page will provide a helpful description automatically.</p></div>
                   {formData.amenities?.map((name) => {
                     const facility = formData.facilities?.find((item) => item.name === name);
                     return (
                       <div key={name} className="rounded-xl border border-[#E4E0E7] bg-[#F8F7FA] p-4">
-                        <p className="mb-3 text-[13px] font-bold text-[#3F3D46]">{name}</p>
-                        <div className="grid gap-3 md:grid-cols-3">
-                          <div><label className="mb-1 block text-[11px] font-semibold text-[#5A5762]">Category</label><input value={facility?.category || ""} onChange={(event) => updateFacility(name, { category: event.target.value })} placeholder="Wellness, sports..." className="w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[12px]" /></div>
-                          <div><label className="mb-1 block text-[11px] font-semibold text-[#5A5762]">Status</label><select value={facility?.status || "Available"} onChange={(event) => updateFacility(name, { status: event.target.value as FacilityDetail["status"] })} className="w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[12px]"><option>Available</option><option>Planned</option><option>Under Construction</option></select></div>
-                          <div><label className="mb-1 block text-[11px] font-semibold text-[#5A5762]">Hours</label><input value={facility?.hours || ""} onChange={(event) => updateFacility(name, { hours: event.target.value })} placeholder="e.g. 6 AM – 10 PM" className="w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[12px]" /></div>
-                          <div className="md:col-span-2"><label className="mb-1 block text-[11px] font-semibold text-[#5A5762]">Description</label><textarea rows={2} value={facility?.description || ""} onChange={(event) => updateFacility(name, { description: event.target.value })} placeholder="Access, size and notable features" className="w-full resize-none rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[12px]" /></div>
-                          <OptionalMediaField label={`${name} image`} value={facility?.imageUrl} onChange={(imageUrl) => updateFacility(name, { imageUrl })} description="Upload a facility photo or paste its URL." />
-                        </div>
+                        <label className="text-[12px] font-bold text-[#3F3D46]">{name}
+                          <textarea rows={3} value={facility?.description || ""} onChange={(event) => updateFacility(name, { description: event.target.value })} placeholder={`Add details about ${name} (optional)`} className="mt-2 w-full resize-y rounded-lg border border-[#E4E0E7] bg-white px-3 py-2.5 text-[12px]" />
+                        </label>
                       </div>
                     );
                   })}
@@ -1787,7 +1776,8 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
             {currentStep < 5 ? (
               <button
                 onClick={nextStep}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-[14px] font-semibold transition-all duration-200 bg-gradient-to-r from-[#DDAA42] to-[#273559] text-white shadow-md hover:shadow-lg"
+                disabled={currentStep === 1 && !formData.propertyType}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-[14px] font-semibold transition-all duration-200 bg-gradient-to-r from-[#DDAA42] to-[#273559] text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Next Step
                 <ChevronRight className="w-4 h-4" />

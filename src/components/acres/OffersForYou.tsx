@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Gift } from "lucide-react";
 import { getPropertiesBySection } from "@/lib/propertyStore";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 import { offerProjects, type Property } from "./mock-data";
+import { priceWithCharges } from "@/lib/propertyPresentation";
 
 type DisplayProject = {
   id: string;
@@ -72,7 +73,7 @@ export default function OffersForYou() {
                   <h3 className="text-[18px] font-bold text-[#121B35] truncate">{p.name}</h3>
                   <p className="text-[13px] text-[#68646F]">{p.locality}</p>
                   <p className="text-[13px] text-[#68646F]">{p.config}</p>
-                  <p className="text-[16px] font-extrabold text-[#121B35] mt-1">{p.price}</p>
+                  <p className="text-[16px] font-extrabold text-[#121B35] mt-1">{priceWithCharges(p.price)}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 border-t border-dashed border-[#E4E0E7] px-5 py-3 bg-[#EEF4FB]">

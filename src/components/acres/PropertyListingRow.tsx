@@ -4,6 +4,7 @@ import Link from "@/components/Link";
 import { Heart, MapPin, ShieldCheck, Star } from "lucide-react";
 import type { Property } from "./mock-data";
 import { formatPossession } from "@/lib/propertyDetails";
+import { priceWithCharges } from "@/lib/propertyPresentation";
 
 const isBase64 = (src?: string) => !!src && src.startsWith("data:");
 
@@ -74,7 +75,7 @@ export default function PropertyListingRow({ p }: { p: Property }) {
             {(p.price || p.area || p.configs?.length || p.possession || p.possessionDetails) && <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5 border-y border-[#F3F1F5]/55 py-3.5 text-left">
               {p.price && <div>
                 <span className="text-[9px] text-[#68646F] font-bold uppercase tracking-wider block">Estimated Price</span>
-                <span className="text-[16px] font-extrabold text-[#DDAA42] block mt-0.5">{p.price}</span>
+                <span className="text-[16px] font-extrabold text-[#DDAA42] block mt-0.5">{priceWithCharges(p.price)}</span>
                 {p.pricePerSqft && <span className="text-[11px] text-[#68646F] block mt-0.5">{p.pricePerSqft}</span>}
               </div>}
               {p.area && <div>

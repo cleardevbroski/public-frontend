@@ -15,6 +15,10 @@ type Props = {
   setFloorLabel: (value: string) => void;
   totalFloors?: number;
   setTotalFloors: (value?: number) => void;
+  projectArea?: { totalAcres?: number; openSpaceAcres?: number; builtUpAcres?: number };
+  setProjectArea?: (value: { totalAcres?: number; openSpaceAcres?: number; builtUpAcres?: number }) => void;
+  totalUnits?: number;
+  setTotalUnits?: (value?: number) => void;
   errors: ApartmentErrors;
   configError?: string;
 };
@@ -173,6 +177,31 @@ export default function ApartmentDetailsFields(props: Props) {
           <input type="number" min={1} step={1} value={props.totalFloors ?? ""} onChange={(e) => props.setTotalFloors(e.target.value ? Number(e.target.value) : undefined)} placeholder="e.g. 12" className={inputClass} />
           {props.errors.totalFloors && <p className="text-[12px] text-red-600 mt-1">{props.errors.totalFloors}</p>}
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-[#E4E0E7] bg-[#F8F7FA]/60 p-5">
+        <div className="mb-4">
+          <h3 className="text-[14px] font-bold text-[#121B35]">Project area and inventory</h3>
+          <p className="mt-1 text-[12px] text-[#68646F]">Enter all project-area values in acres. Open space plus apartment built-up area must equal the total.</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-4">
+          {([
+            ["totalAcres", "Total Project Area"],
+            ["openSpaceAcres", "Open Space Area"],
+            ["builtUpAcres", "Apartment Built-up Area"],
+          ] as const).map(([key, label]) => (
+            <label key={key} className="text-[12px] font-semibold text-[#3F3D46]">{label}
+              <div className="relative mt-1.5">
+                <input type="number" min={0} step="0.01" value={props.projectArea?.[key] ?? ""} onChange={(event) => props.setProjectArea?.({ ...props.projectArea, [key]: event.target.value === "" ? undefined : Number(event.target.value) })} className={`${inputClass} pr-14`} />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#8A858F]">acres</span>
+              </div>
+            </label>
+          ))}
+          <label className="text-[12px] font-semibold text-[#3F3D46]">Number of Units
+            <input type="number" min={1} step={1} value={props.totalUnits ?? ""} onChange={(event) => props.setTotalUnits?.(event.target.value === "" ? undefined : Number(event.target.value))} className={`${inputClass} mt-1.5`} />
+          </label>
+        </div>
+        {(props.errors.projectArea || props.errors.totalUnits) && <p className="mt-2 text-[11px] text-red-600">{props.errors.projectArea || props.errors.totalUnits}</p>}
       </div>
     </div>
   );

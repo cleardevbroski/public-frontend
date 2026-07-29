@@ -161,7 +161,6 @@ export function prepareVillaPropertyPayload<T extends Partial<Property>>(propert
     configurationDetails: undefined,
     floorLabel: undefined,
     totalFloors: undefined,
-    ownershipType: undefined,
     overlooking: undefined,
   } as T;
 }

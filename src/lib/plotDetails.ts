@@ -117,8 +117,6 @@ export function preparePlotPropertyPayload<T extends Partial<Property>>(property
     parking: undefined,
     floorLabel: undefined,
     totalFloors: undefined,
-    ownershipType: undefined,
     overlooking: undefined,
-    bookingAmount: undefined,
   } as T;
 }

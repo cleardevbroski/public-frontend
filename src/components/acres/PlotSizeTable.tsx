@@ -1,5 +1,6 @@
 import type { PlotSizeDetail } from "./mock-data";
 import { formatPlotPrice } from "@/lib/plotDetails";
+import { priceWithCharges } from "@/lib/propertyPresentation";
 import { Compass, Maximize2, Ruler } from "lucide-react";
 
 export default function PlotSizeTable({ details }: { details: PlotSizeDetail[] }) {
@@ -12,7 +13,7 @@ export default function PlotSizeTable({ details }: { details: PlotSizeDetail[] }
               {row.plotSize && <h3 className="text-[18px] font-extrabold">{row.plotSize}</h3>}
             </div>
             {row.totalPrice || row.pricePerSqft ? <div className="text-right">
-              {row.totalPrice && <p className="text-[19px] font-extrabold text-[#F2C052]">{formatPlotPrice(row.totalPrice)}</p>}
+              {row.totalPrice && <p className="text-[19px] font-extrabold text-[#F2C052]">{priceWithCharges(formatPlotPrice(row.totalPrice))}</p>}
               {row.pricePerSqft && <p className="mt-1 text-[10px] font-semibold text-white/55">₹{row.pricePerSqft.toLocaleString("en-IN")} / sq ft</p>}
             </div> : null}
           </div>

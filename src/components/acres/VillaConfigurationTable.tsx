@@ -1,5 +1,6 @@
 import type { VillaConfigurationDetail } from "./mock-data";
 import { Bath, Bed, Home, Maximize2 } from "lucide-react";
+import { priceWithCharges } from "@/lib/propertyPresentation";
 
 export default function VillaConfigurationTable({ details }: { details: VillaConfigurationDetail[] }) {
   return (
@@ -13,7 +14,7 @@ export default function VillaConfigurationTable({ details }: { details: VillaCon
             <div>
               {row.configuration && <h3 className="text-[18px] font-extrabold">{row.configuration}</h3>}
             </div>
-            {row.price && <p className="text-right text-[19px] font-extrabold text-[#F2C052]">{row.price}</p>}
+            {row.price && <p className="text-right text-[19px] font-extrabold text-[#F2C052]">{priceWithCharges(row.price)}</p>}
           </div>
           {[
             { icon: Home, label: "Plot area", value: row.plotArea },

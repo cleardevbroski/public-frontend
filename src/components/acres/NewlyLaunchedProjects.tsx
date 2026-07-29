@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, ShieldCheck, Tag, Building2 } from "lucide-r
 import { getPropertiesBySection } from "@/lib/propertyStore";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 import { newlyLaunchedProjects, type Property } from "./mock-data";
+import { priceWithCharges } from "@/lib/propertyPresentation";
 
 type DisplayProject = {
   id: string;
@@ -93,7 +94,7 @@ export default function NewlyLaunchedProjects() {
                     <h3 className="text-[18px] font-bold text-[#121B35] truncate">{p.name}</h3>
                     <p className="text-[13px] text-[#68646F] truncate">{p.locality}</p>
                     <p className="text-[14px] font-bold text-[#121B35] mt-1">
-                      {p.price} <span className="text-[12px] font-medium text-[#68646F]">| {p.config}</span>
+                      {priceWithCharges(p.price)} <span className="text-[12px] font-medium text-[#68646F]">| {p.config}</span>
                     </p>
                     <p className="text-[12px] font-semibold text-[#1E7A46] mt-1 truncate">{p.priceTrend}</p>
                   </div>

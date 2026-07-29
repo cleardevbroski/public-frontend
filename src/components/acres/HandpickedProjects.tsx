@@ -6,6 +6,7 @@ import { getPropertiesBySection } from "@/lib/propertyStore";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 import { handpickedProjects, type Property } from "./mock-data";
 import { formatPossession } from "@/lib/propertyDetails";
+import { priceWithCharges } from "@/lib/propertyPresentation";
 
 function statusOf(p: Property): string {
   if (p.possession || p.possessionDetails) return formatPossession(p);
@@ -90,7 +91,7 @@ export default function HandpickedProjects() {
                     <h3 className="text-[18px] font-bold text-[#121B35] truncate">{p.name}</h3>
                     <p className="text-[13px] text-[#68646F] mt-0.5 truncate">{p.locality}</p>
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-[18px] font-extrabold text-[#121B35]">{p.price}</span>
+                      <span className="text-[18px] font-extrabold text-[#121B35]">{priceWithCharges(p.price)}</span>
                       {p.rera && (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#1E7A46] bg-[#E6F2EA] px-1.5 py-0.5 rounded">
                           <ShieldCheck className="size-3" /> RERA

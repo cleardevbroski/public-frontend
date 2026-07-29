@@ -21,7 +21,6 @@ describe("phase-wise RERA presentation", () => {
         name: "Phase 1",
         reraNumber: "PRM/KA/RERA/1234",
         reraSiteUrl: "https://rera.karnataka.gov.in/project",
-        panNumber: "AAAAA9999A",
         reraDocuments: [{
           _id: "rera-document-1",
           key: "registration-certificate",
@@ -49,6 +48,8 @@ describe("phase-wise RERA presentation", () => {
     expect(html).toContain("Registration Certificate");
     expect(html).toContain("Approved Building Plan");
     expect(html).toContain("PRM/KA/RERA/1234");
+    expect(html).toContain("https://rera.karnataka.gov.in");
+    expect(html).not.toContain("https://rera.karnataka.gov.in/project");
     expect(html).not.toContain("Linked Dealer");
     expect(html).not.toContain("Listed by Verified Dealer");
   });

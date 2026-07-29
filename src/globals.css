@@ -718,8 +718,18 @@ h1, h2, h3 {
 .property-media-side {
   display: grid;
   min-height: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-rows: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.property-media-side > :only-child {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+}
+
+.property-reference-summary {
+  box-shadow: 0 8px 25px rgba(16, 24, 40, 0.06);
 }
 
 .property-gallery-action,

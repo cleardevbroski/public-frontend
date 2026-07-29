@@ -6,6 +6,7 @@ import { uploadPropertyMedia } from "@/lib/api";
 import type { ReraDocument, ReraPhase } from "@/components/acres/mock-data";
 
 type DocumentDefinition = { key: string; label: string; annexure?: string };
+export const KARNATAKA_RERA_URL = "https://rera.karnataka.gov.in/viewAllProjects";
 
 export const RERA_DOCUMENT_DEFINITIONS: DocumentDefinition[] = [
   { key: "registration-certificate", label: "Registration Certificate", annexure: "Annexure 1" },
@@ -30,8 +31,7 @@ export const PROJECT_DOCUMENT_DEFINITIONS: DocumentDefinition[] = [
 const emptyPhase = (number: number): ReraPhase => ({
   name: `Phase ${number}`,
   reraNumber: "",
-  reraSiteUrl: "",
-  panNumber: "",
+  reraSiteUrl: KARNATAKA_RERA_URL,
   reraDocuments: [],
   projectDocuments: [],
 });
@@ -132,18 +132,18 @@ function DocumentRows({
 
 export default function ReraPhasesEditor({ phases, onChange, error }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const safePhases = phases.length ? phases : [emptyPhase(1)];
+  const safePhases = (phases.length ? phases : [emptyPhase(1)]).map((phase) => ({ ...phase, reraSiteUrl: KARNATAKA_RERA_URL }));
   const active = safePhases[Math.min(activeIndex, safePhases.length - 1)];
 
   const updateActive = (updates: Partial<ReraPhase>) => {
     const next = [...safePhases];
     next[Math.min(activeIndex, next.length - 1)] = { ...active, ...updates };
-    onChange(next.map((phase, order) => ({ ...phase, order })));
+    onChange(next.map((phase, order) => ({ ...phase, reraSiteUrl: KARNATAKA_RERA_URL, order })));
   };
 
   const addPhase = () => {
     const next = [...safePhases, emptyPhase(safePhases.length + 1)];
-    onChange(next);
+    onChange(next.map((phase, order) => ({ ...phase, reraSiteUrl: KARNATAKA_RERA_URL, order })));
     setActiveIndex(next.length - 1);
   };
 
@@ -153,7 +153,7 @@ export default function ReraPhasesEditor({ phases, onChange, error }: Props) {
       return;
     }
     const next = safePhases.filter((_, index) => index !== activeIndex);
-    onChange(next.map((phase, order) => ({ ...phase, order })));
+    onChange(next.map((phase, order) => ({ ...phase, reraSiteUrl: KARNATAKA_RERA_URL, order })));
     setActiveIndex(Math.max(0, activeIndex - 1));
   };
 
@@ -174,12 +174,6 @@ export default function ReraPhasesEditor({ phases, onChange, error }: Props) {
         </label>
         <label className="text-[12px] font-bold text-[#3F3D46]">RERA registration number *
           <input value={active.reraNumber} onChange={(event) => updateActive({ reraNumber: event.target.value })} maxLength={100} placeholder="PRM/KA/RERA/..." className="mt-1 w-full rounded-xl border border-[#E4E0E7] bg-white px-4 py-3 font-normal" />
-        </label>
-        <label className="text-[12px] font-bold text-[#3F3D46]">Official RERA website URL
-          <input type="url" value={active.reraSiteUrl || ""} onChange={(event) => updateActive({ reraSiteUrl: event.target.value })} placeholder="https://rera.karnataka.gov.in/..." className="mt-1 w-full rounded-xl border border-[#E4E0E7] bg-white px-4 py-3 font-normal" />
-        </label>
-        <label className="text-[12px] font-bold text-[#3F3D46]">PAN number
-          <input value={active.panNumber || ""} onChange={(event) => updateActive({ panNumber: event.target.value.toUpperCase() })} maxLength={10} placeholder="AAAAA9999A" className="mt-1 w-full rounded-xl border border-[#E4E0E7] bg-white px-4 py-3 font-normal uppercase" />
         </label>
       </div>
 

@@ -37,6 +37,9 @@ import {
   Heart as HeartIcon,
   Star,
   TrendingUp,
+  BarChart3,
+  Play,
+  Tag,
 } from "lucide-react";
 import Header from "./Header";
 import Footer from "./Footer";
@@ -56,11 +59,12 @@ import VillaConfigurationTable from "./VillaConfigurationTable";
 import PlotSizeTable from "./PlotSizeTable";
 import PlotInventoryTable from "./PlotInventoryTable";
 import FloorPlanExplorer from "./FloorPlanExplorer";
+import ApartmentPriceList from "./ApartmentPriceList";
 import FacilityExplorer from "./FacilityExplorer";
 import AdRail from "./AdRail";
 import VerifiedPropertyActionModal, { type PropertyAction } from "./VerifiedPropertyActionModal";
 import LawyerConsultationModal from "./LawyerConsultationModal";
-import { getProjectHeroImages } from "@/lib/propertyPresentation";
+import { configurationPriceRange, getProjectHeroImages, priceWithCharges } from "@/lib/propertyPresentation";
 import { trackAnalytics } from "@/lib/analytics";
 import { useHomepagePromotion } from "@/lib/useHomepagePromotion";
 import PropertyReraSections from "./PropertyReraSections";
@@ -105,16 +109,17 @@ interface PropertyDetailProps {
 }
 
 const sections = [
-  { id: "overview", label: "Overview" },
+  { id: "overview", label: "About" },
+  { id: "price-list", label: "Price List" },
+  { id: "floor-plans", label: "Floor Plans" },
+  { id: "photos-videos", label: "Photos & Videos" },
+  { id: "facilities", label: "Amenities" },
+  { id: "society", label: "Specifications" },
+  { id: "brochure", label: "Download Hub" },
+  { id: "locality", label: "Map & Landmarks" },
   { id: "rera-details", label: "RERA Details" },
-  { id: "project-details", label: "Project Details" },
-  { id: "plans", label: "Plans & Pricing" },
-  { id: "facilities", label: "Facilities" },
-  { id: "brochure", label: "Brochure" },
-  { id: "society", label: "Amenities & Society" },
-  { id: "dealer", label: "Developer" },
-  { id: "locality", label: "Locality" },
-  { id: "explore", label: "Explore More" },
+  { id: "dealer", label: "About Builder" },
+  { id: "explore", label: "Similar Projects" },
 ];
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Horizontal property rail Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
@@ -214,6 +219,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   };
 
   const tabBarRef = useRef<HTMLDivElement>(null);
+  const tabBarMarkerRef = useRef<HTMLDivElement>(null);
 
   const images = [...new Set([...(property.heroImages || []), ...(property.images || []), property.image].filter(Boolean))];
   const heroImages = getProjectHeroImages(property);
@@ -221,7 +227,14 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const galleryPreviewImages = images
     .map((image, index) => ({ image, index }))
     .filter((item) => item.index !== currentImageIndex)
-    .slice(0, 2);
+    .slice(0, 4);
+  const floorPlanPreview = property.configurationDetails?.find((detail) => detail.floorPlan3dUrl || detail.floorPlan2dUrl);
+  const propertyVideo = property.videos?.[0] || property.heroVideo;
+  const mediaTiles = [
+    ...galleryPreviewImages.slice(0, floorPlanPreview || propertyVideo ? 2 : 4).map((item) => ({ key: `photo-${item.index}`, type: "photo" as const, src: item.image, index: item.index, label: "" })),
+    ...(floorPlanPreview ? [{ key: "floor-plan", type: "floor-plan" as const, src: floorPlanPreview.floorPlan3dUrl || floorPlanPreview.floorPlan2dUrl || "", label: "3D Floor Plans" }] : []),
+    ...(propertyVideo ? [{ key: "video", type: "video" as const, src: propertyVideo, label: "Video" }] : []),
+  ].slice(0, 4);
 
   useEffect(() => {
     if (heroImages.length < 2) return;
@@ -232,6 +245,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   }, [property.id, heroImages.length]);
 
   const possessionLabel = formatPossession(property);
+  const displayPrice = configurationPriceRange(property.configurationDetails, property.price);
   const flatFloor = property.floorLabel?.trim();
   const floorDisplay = flatFloor
     ? `${flatFloor}${property.totalFloors ? ` of ${property.totalFloors}` : ""}`
@@ -252,6 +266,8 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const hasFloorPlans = Boolean(property.configurationDetails?.some((detail) =>
     detail.floorPlan2dUrl || detail.floorPlan3dUrl || detail.rooms?.length
   ));
+  const hasPriceList = Boolean(property.configurationDetails?.length || property.villaDetails?.configurationDetails?.length || property.plotDetails?.plotSizeDetails?.length);
+  const hasPhotosOrVideos = Boolean(images.length || property.videos?.length || property.heroVideo);
   const hasBrochure = Boolean(property.brochure);
   const hasReraPhases = Boolean(property.reraRegistered && property.reraPhases?.length);
   const hasFacilities = amenities.length > 0 || Boolean(property.facilities?.length);
@@ -266,7 +282,9 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     (property.nearbyDetails && Object.values(property.nearbyDetails).some((item) => item && (item.places?.length || item.count !== undefined || item.distance)))
   );
   const visibleSections = sections.filter((section) =>
-    (section.id !== "plans" || hasFloorPlans) &&
+    (section.id !== "price-list" || hasPriceList) &&
+    (section.id !== "floor-plans" || hasFloorPlans) &&
+    (section.id !== "photos-videos" || hasPhotosOrVideos) &&
     (!["rera-details", "project-details"].includes(section.id) || hasReraPhases) &&
     (section.id !== "facilities" || hasFacilities) &&
     (section.id !== "society" || hasSociety) &&
@@ -277,9 +295,8 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (tabBarRef.current) {
-        const tabBarRect = tabBarRef.current.getBoundingClientRect();
-        setIsTabBarSticky(tabBarRect.top <= 72);
+      if (tabBarMarkerRef.current) {
+        setIsTabBarSticky(tabBarMarkerRef.current.getBoundingClientRect().top <= 64);
       }
       const scrollPosition = window.scrollY + 220;
       for (const section of visibleSections) {
@@ -295,7 +312,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [hasFacilities, hasFloorPlans, hasSociety]);
+  }, [hasFacilities, hasFloorPlans, hasPriceList, hasPhotosOrVideos, hasSociety]);
 
   const scrollToSection = (sectionId: string) => {
     const element = sectionRefs.current[sectionId];
@@ -379,7 +396,6 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     { label: "Bathrooms / Washrooms", val: property.commercialDetails.washrooms }, { label: "Parking", val: property.commercialDetails.parking },
     { label: "Power backup", val: property.commercialDetails.powerBackup }, { label: "Sanctioned load", val: property.commercialDetails.sanctionedLoadKva ? `${property.commercialDetails.sanctionedLoadKva} KVA` : "" },
     { label: "Fire safety", val: property.commercialDetails.fireSafetyCompliance }, { label: "Furnishing", val: property.commercialDetails.furnishing },
-    { label: "Ownership", val: property.ownershipType },
   ].filter((item) => item.val) : [];
   const pgOverviewFacts = property.pgDetails ? [
     { label: "Gender preference", val: property.pgDetails.genderPreference }, { label: "Meals", val: property.pgDetails.mealsIncluded }, { label: "Food type", val: property.pgDetails.foodType },
@@ -428,9 +444,11 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     { label: "Furnishing", val: property.furnishing },
     { label: "Parking", val: property.parking },
     { label: "Floor", val: floorDisplay },
-    { label: "Ownership", val: property.ownershipType },
-    { label: "Booking amount", val: property.transactionType === "New Property" ? property.bookingAmount : "" },
     { label: "RERA number", val: property.reraNumber },
+    { label: "Total project area", val: property.projectArea?.totalAcres !== undefined ? `${property.projectArea.totalAcres} acres` : "" },
+    { label: "Open space area", val: property.projectArea?.openSpaceAcres !== undefined ? `${property.projectArea.openSpaceAcres} acres` : "" },
+    { label: "Apartment built-up area", val: property.projectArea?.builtUpAcres !== undefined ? `${property.projectArea.builtUpAcres} acres` : "" },
+    { label: "Number of units", val: property.totalUnits ? property.totalUnits.toLocaleString("en-IN") : "" },
   ].filter((item) => item.val);
   const typeOverviewFacts = property.villaDetails
     ? villaOverviewFacts
@@ -504,10 +522,10 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                   { icon: Compass, label: "Facing", val: property.villaDetails.plotFacing },
                 ]
               : [
-                  { icon: Bed, label: "Unit config", val: property.configs?.join(", ") || bedrooms },
-                  { icon: Bath, label: "Bathrooms", val: property.bathrooms },
-                  { icon: Maximize, label: "Area", val: property.area },
-                  { icon: Compass, label: "Facing", val: property.facing },
+                  { icon: Bed, label: "Unit config", val: property.configs?.length ? `${property.configs.map((item) => item.replace(/\s*BHK/i, "")).join(", ")} BHK Flats` : bedrooms },
+                  { icon: Maximize, label: "Size", val: property.area },
+                  { icon: Building2, label: "Number of units", val: property.totalUnits?.toLocaleString("en-IN") },
+                  { icon: Layers, label: "Total area", val: property.projectArea?.totalAcres !== undefined ? `${property.projectArea.totalAcres} acres` : "" },
                 ];
   const societyFacts = [
     { label: "Security Desk", val: property.society?.security },
@@ -517,6 +535,17 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     { label: "Visitor Parking", val: property.society?.visitorParking },
     { label: "Maintenance", val: property.society?.maintenanceStaff },
   ].filter((item) => item.val);
+  const whyHighlights = (property.description || "")
+    .split(/(?<=[.!?])\s+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 2);
+  if (!whyHighlights.length && property.projectArea?.totalAcres) {
+    whyHighlights.push(`${property.projectArea.totalAcres}-acre project with dedicated residential and open-space areas.`);
+  }
+  if (whyHighlights.length < 2 && property.configs?.length) {
+    whyHighlights.push(`${property.configs.join(", ")} configurations are available in this project.`);
+  }
 
   return (
     <div className="property-detail-page min-h-screen">
@@ -537,7 +566,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
       />
       <Header />
 
-      <section className="property-detail-intro mx-auto max-w-[1440px] px-4 pb-4 pt-3 md:px-5 md:pb-5">
+      <section ref={setSectionRef("photos-videos")} className="property-detail-intro mx-auto max-w-[1440px] px-4 pb-4 pt-3 md:px-5 md:pb-5">
         <nav className="mb-3 hidden items-center gap-2 overflow-hidden text-[12px] font-medium text-[#77717E] md:flex">
           <Link href="/" className="shrink-0 hover:text-[#B98428]">Home</Link>
           <ChevronRight className="size-3.5 shrink-0 text-[#B9B5BE]" />
@@ -607,7 +636,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
         <div className="property-media-grid">
           <div className="property-media-main relative overflow-hidden bg-[#0B1328]">
             {primaryImage ? (
-              <img src={primaryImage} alt={`${property.title} photo ${currentImageIndex + 1}`} className="size-full object-contain" />
+              <img src={primaryImage} alt={`${property.title} photo ${currentImageIndex + 1}`} className="size-full object-cover" />
             ) : (
               <div className="flex size-full items-center justify-center text-white/50">
                 <Images className="size-10" />
@@ -640,7 +669,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                 Link copied
               </div>
             )}
-            {galleryPreviewImages.map((item, previewIndex) => (
+            {galleryPreviewImages.slice(0, 2).map((item, previewIndex) => (
               <button
                 key={`mobile-${item.index}`}
                 type="button"
@@ -655,28 +684,62 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
           </div>
 
           <div className="property-media-side">
-            {galleryPreviewImages.map((item, previewIndex) => (
+            {mediaTiles.map((item, previewIndex) => (
               <button
-                key={item.index}
+                key={item.key}
                 type="button"
-                onClick={() => setCurrentImageIndex(item.index)}
+                onClick={() => {
+                  if (item.type === "photo") setCurrentImageIndex(item.index);
+                  if (item.type === "floor-plan") scrollToSection("floor-plans");
+                  if (item.type === "video") window.open(item.src, "_blank", "noopener,noreferrer");
+                }}
                 className="relative min-h-0 overflow-hidden bg-[#E9E8EB]"
-                aria-label={`Show photo ${item.index + 1}`}
+                aria-label={item.type === "photo" ? `Show photo ${item.index + 1}` : `Open ${item.label}`}
               >
-                <img src={item.image} alt="" className="size-full object-cover transition-transform duration-500 hover:scale-105" />
-                {previewIndex === galleryPreviewImages.length - 1 && images.length > 3 && (
+                {item.type === "video" ? (
+                  <span className="flex size-full items-center justify-center bg-[#121B35] text-white"><Play className="size-8 fill-white" /></span>
+                ) : (
+                  <img src={item.src} alt="" className="size-full object-cover transition-transform duration-500 hover:scale-105" />
+                )}
+                {item.type !== "photo" && <span className="absolute bottom-2 left-2 rounded bg-white/95 px-2 py-1 text-[10px] font-bold text-[#121B35] shadow">{item.label}</span>}
+                {item.type === "photo" && previewIndex === mediaTiles.length - 1 && images.length > mediaTiles.length + 1 && (
                   <span className="absolute bottom-3 left-3 rounded-lg bg-white/95 px-3 py-1.5 text-[11px] font-bold text-[#121B35] shadow">
-                    +{images.length - 3} more photos
+                    +{images.length - mediaTiles.length - 1} more photos
                   </span>
                 )}
               </button>
             ))}
-            {galleryPreviewImages.length < 2 && (
+            {mediaTiles.length === 0 && (
               <div className="flex min-h-0 items-center justify-center bg-[#EEEDEF] text-[#8A858F]">
                 <Images className="size-7" />
               </div>
             )}
           </div>
+        </div>
+
+        <div className="property-reference-summary mt-3 grid overflow-hidden rounded-xl border border-[#DDE2EA] bg-white lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.9fr)]">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E8EE] px-4 py-4 md:px-5">
+              <button type="button" onClick={() => scrollToSection("price-list")} className="flex items-center gap-3 text-left">
+                <Tag className="size-7 text-[#303A50]" strokeWidth={1.7} />
+                <span className="text-[21px] font-extrabold text-[#172039] md:text-[24px]">{priceWithCharges(displayPrice)}</span>
+              </button>
+              {hasPriceList && <button type="button" onClick={() => scrollToSection("price-list")} className="inline-flex items-center gap-2 rounded-lg border border-[#E7D4A7] bg-[#FFF7E6] px-3 py-2 text-[12px] font-bold text-[#303A50]"><BarChart3 className="size-4" /> Price Insights <ChevronRight className="size-4" /></button>}
+            </div>
+            <div className="grid border-b border-[#E5E8EE] sm:grid-cols-2">
+              <div className="flex items-center gap-3 px-4 py-4 md:px-5"><Building2 className="size-7 shrink-0 text-[#56627A]" strokeWidth={1.6} /><div><p className="text-[11px] text-[#667085]">Project Status</p><p className="text-[14px] font-extrabold text-[#172039]">{property.possessionDetails?.status || property.possession || "Available"}</p></div></div>
+              <div className="flex items-center gap-3 border-t border-[#E5E8EE] px-4 py-4 sm:border-l sm:border-t-0 md:px-5"><Clock className="size-7 shrink-0 text-[#56627A]" strokeWidth={1.6} /><div><p className="text-[11px] text-[#667085]">Possession Starting From</p><p className="text-[14px] font-extrabold text-[#172039]">{possessionLabel}</p></div>{hasReraPhases && <button type="button" onClick={() => scrollToSection("rera-details")} className="ml-auto rounded-lg border border-[#E7D4A7] bg-[#FFF7E6] px-2.5 py-1.5 text-[10px] font-bold text-[#4C566A]">RERA Updates</button>}</div>
+            </div>
+            <div className="grid grid-cols-2 divide-x divide-y divide-[#E5E8EE] sm:grid-cols-4 sm:divide-y-0">
+              {keySpecFacts.filter((item) => item.val !== undefined && item.val !== "").map(({ icon: Icon, label, val }) => (
+                <button key={label} type="button" onClick={() => ["Unit config", "Size"].includes(label) && scrollToSection("price-list")} className="flex min-h-[92px] items-center gap-3 px-4 py-3 text-left hover:bg-[#FFF9E9]"><Icon className="size-7 shrink-0 text-[#56627A]" strokeWidth={1.6} /><span><span className="block text-[11px] text-[#667085]">{label}</span><span className="mt-0.5 block text-[13px] font-extrabold leading-4 text-[#172039]">{val}</span></span></button>
+              ))}
+            </div>
+          </div>
+          <aside className="flex flex-col border-t border-[#DDE2EA] bg-[#FCFCFD] lg:border-l lg:border-t-0">
+            <div className="flex-1 px-5 py-4"><h2 className="text-[17px] font-extrabold text-[#172039]">Why you should consider {property.title}?</h2>{whyHighlights.length ? <ul className="mt-3 space-y-2.5">{whyHighlights.map((highlight) => <li key={highlight} className="flex gap-2 text-[12px] leading-5 text-[#4C566A]"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#172039]" />{highlight}</li>)}</ul> : <p className="mt-3 text-[12px] leading-5 text-[#4C566A]">Explore the project details, configurations and location information available for this property.</p>}<button type="button" onClick={() => scrollToSection("overview")} className="mt-3 text-[12px] font-bold text-[#172039] underline underline-offset-4">View More</button></div>
+            <button type="button" onClick={() => setVerifiedAction("enquiry")} className="m-3 inline-flex items-center justify-center gap-2 rounded-lg bg-[#E3A815] px-4 py-3 text-[13px] font-extrabold text-[#241B09]"><Phone className="size-4" /> Request More Information or a Callback</button>
+          </aside>
         </div>
       </section>
 
@@ -739,7 +802,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
           {(property.price || possessionLabel !== "Ã¢â‚¬â€") && <div className="mt-4 flex flex-wrap items-end gap-5">
             {property.price && <div>
               <span className="text-[11px] text-white/50 uppercase font-bold tracking-wider block">Starting Price</span>
-              <span className="text-[30px] font-extrabold leading-none text-gold-gradient md:text-[36px]">{property.price}</span>
+              <span className="text-[30px] font-extrabold leading-none text-gold-gradient md:text-[36px]">{priceWithCharges(property.price)}</span>
             </div>}
             {possessionLabel !== "Ã¢â‚¬â€" && <div className="flex flex-wrap gap-3 text-white">
               <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-xl px-4 py-2.5 flex items-center gap-2">
@@ -781,17 +844,18 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
       </div>}
 
       {/* Sticky TabBar */}
+      <div ref={tabBarMarkerRef} className="h-px" aria-hidden="true" />
       <div
         ref={tabBarRef}
         className={`${isTabBarSticky ? "fixed top-[60px] md:top-[64px] left-0 right-0 z-40 shadow-md border-b border-[#E4E0E7]/20" : ""} bg-white transition-all duration-300`}
       >
-        <div className="max-w-[1200px] mx-auto px-4">
+        <div className="mx-auto max-w-[1440px] px-4 md:px-5">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
             {visibleSections.map((section) => (
               <button
                 key={section.id}
                 onClick={() => scrollToSection(section.id)}
-                className={`px-4 py-3 text-[13px] font-bold tracking-wide uppercase transition-all duration-200 border-b-2 whitespace-nowrap ${
+                className={`px-4 py-3 text-[13px] font-bold transition-all duration-200 border-b-2 whitespace-nowrap ${
                   activeSection === section.id
                     ? "text-[#DDAA42] border-[#DDAA42]"
                     : "text-[#68646F] border-transparent hover:text-[#121B35]"
@@ -803,6 +867,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
           </div>
         </div>
       </div>
+      {isTabBarSticky && <div className="h-[53px]" aria-hidden="true" />}
 
       {/* Main Container with desktop advertising rails */}
       <div className={isPromotedProperty
@@ -870,7 +935,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
             </div>}
 
             {/* POLISHED PROPERTY DETAILS */}
-            <div className="property-summary-card bg-white rounded-2xl shadow-sm border border-[#E4E0E7] overflow-hidden">
+            <div className="hidden property-summary-card bg-white rounded-2xl shadow-sm border border-[#E4E0E7] overflow-hidden">
               {/* gold accent bar */}
               <div className="h-1 bg-gradient-to-r from-[#DDAA42] via-[#F2C052] to-[#DDAA42]" />
               <div className="p-4 md:p-5">
@@ -904,19 +969,19 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                     </div>
   
                     {/* price card */}
-                    {property.price && <div className="shrink-0 rounded-xl border border-[#E4E0E7] bg-[#FFFDF7] p-4 text-left min-w-[180px]">
+                    {property.price && <button type="button" onClick={() => scrollToSection("price-list")} className="shrink-0 rounded-xl border border-[#E4E0E7] bg-[#FFFDF7] p-4 text-left min-w-[180px] transition hover:border-[#DDAA42] hover:shadow-sm">
                       <span className="text-[10px] text-[#68646F] uppercase font-bold tracking-wider block">Price</span>
-                      <p className="text-[25px] font-extrabold text-[#121B35] leading-none mt-1">{property.price}</p>
+                      <p className="text-[25px] font-extrabold text-[#121B35] leading-none mt-1">{priceWithCharges(property.price)}</p>
                       {property.pricePerSqft && (
                         <p className="text-[11.5px] text-[#68646F] font-semibold mt-2">{property.pricePerSqft}</p>
                       )}
-                    </div>}
+                    </button>}
                   </div>
   
                   {/* Key spec strip */}
                   <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-px overflow-hidden rounded-xl bg-[#E4E0E7] mt-4">
                     {keySpecFacts.filter((item) => item.val !== undefined && item.val !== "").map(({ icon: Icon, label, val }) => (
-                      <div key={label} className="flex min-h-20 items-center gap-2.5 bg-white p-3">
+                      <button key={label} type="button" onClick={() => ["Unit config", "Size"].includes(label) && scrollToSection("price-list")} className={`flex min-h-20 items-center gap-2.5 bg-white p-3 text-left ${["Unit config", "Size"].includes(label) ? "hover:bg-[#FFF9E9]" : "cursor-default"}`}>
                         <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#FFF8E8]">
                           <Icon className="w-5 h-5 text-[#DDAA42]" />
                         </div>
@@ -924,14 +989,14 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                           <p className="text-[10px] text-[#68646F] uppercase font-bold tracking-wider">{label}</p>
                           <p className="line-clamp-2 text-[13px] font-bold leading-4 text-[#121B35]">{val}</p>
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
               </div>
             </div>
 
             {property.villaDetails?.configurationDetails?.length ? (
-              <div ref={setSectionRef("plans")} className="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-[#E4E0E7]/30">
+              <div ref={setSectionRef("price-list")} className="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-[#E4E0E7]/30">
                 <h2 className="text-[20px] font-bold text-[#121B35] flex items-center gap-2 mb-5">
                   <div className="w-1.5 h-6 bg-[#DDAA42] rounded-full" /> Villa Configuration & Pricing
                 </h2>
@@ -940,7 +1005,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
             ) : null}
 
             {property.plotDetails?.plotSizeDetails?.length ? (
-              <div ref={setSectionRef("plans")} className="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-[#E4E0E7]/30 space-y-5">
+              <div ref={setSectionRef("price-list")} className="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-[#E4E0E7]/30 space-y-5">
                 <div><h2 className="text-[20px] font-bold text-[#121B35] flex items-center gap-2 mb-5"><div className="w-1.5 h-6 bg-[#DDAA42] rounded-full" /> Plot Sizes & Pricing</h2><PlotSizeTable details={property.plotDetails.plotSizeDetails} /></div>
                 {property.plotDetails.inventory?.length ? <div><h3 className="text-[17px] font-bold text-[#121B35] mb-4">Plot availability</h3><PlotInventoryTable inventory={property.plotDetails.inventory} /></div> : null}
                 {property.plotDetails.layoutMapUrl ? <div className="pt-2"><h3 className="text-[17px] font-bold text-[#121B35] mb-4">Master Plan / Layout Map</h3>{property.plotDetails.layoutMapType === "image" ? <img src={property.plotDetails.layoutMapUrl} alt={`${property.title} layout map`} className="w-full max-h-[540px] object-contain bg-[#F8F7FA] rounded-2xl border border-[#E4E0E7]" /> : <a href={property.plotDetails.layoutMapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-4 py-3 bg-[#121B35] text-white rounded-xl text-[13px] font-bold"><FileText className="w-4 h-4" /> View layout-map PDF</a>}</div> : null}
@@ -1001,10 +1066,14 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
 
             </div>
 
-            {hasReraPhases && <PropertyReraSections property={property} setSectionRef={setSectionRef} />}
+            {property.configurationDetails?.length ? (
+              <div ref={setSectionRef("price-list")}>
+                <ApartmentPriceList title={property.title} details={property.configurationDetails} />
+              </div>
+            ) : null}
 
             {hasFloorPlans && property.configurationDetails && (
-              <div ref={setSectionRef("plans")}>
+              <div ref={setSectionRef("floor-plans")}>
                 <FloorPlanExplorer
                   details={property.configurationDetails}
                   status={property.possessionDetails?.status || property.possession}
@@ -1016,7 +1085,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
 
             {(amenities.length > 0 || property.facilities?.length) && (
               <div ref={setSectionRef("facilities")}>
-                <FacilityExplorer amenities={amenities} facilities={property.facilities} />
+                <FacilityExplorer title={property.title} amenities={amenities} facilities={property.facilities} />
               </div>
             )}
 
@@ -1169,6 +1238,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                 </div>
               </div>}
             </div>}
+            {hasReraPhases && <PropertyReraSections property={property} setSectionRef={setSectionRef} />}
           </div>
 
           {/* Right Sticky Contact Card */}
@@ -1258,7 +1328,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
         <div className="max-w-[1200px] mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider truncate">{property.title}</p>
-            <p className="text-[20px] font-extrabold text-gold-gradient leading-none">{property.price}</p>
+            <p className="text-[20px] font-extrabold text-gold-gradient leading-none">{priceWithCharges(property.price)}</p>
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
             {hasBrochure && <button onClick={() => setVerifiedAction("brochure")} className="hidden sm:flex items-center gap-2 border border-[#F2C052]/40 text-[#F2C052] font-bold text-[13px] px-5 py-2.5 rounded-xl hover:bg-white/5 transition-all">

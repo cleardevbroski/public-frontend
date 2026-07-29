@@ -6,9 +6,36 @@ import PropertyDetail from "@/components/acres/PropertyDetail";
 import { cityListings } from "@/components/acres/mock-data";
 import { AuthProvider } from "@/components/acres/AuthContext";
 import { MemoryRouter } from "react-router-dom";
-import { getProjectHeroImages } from "@/lib/propertyPresentation";
+import { configurationPriceRange, getProjectHeroImages, priceWithCharges } from "@/lib/propertyPresentation";
 
 describe("interactive property presentation", () => {
+  it("adds the public charges suffix once", () => {
+    expect(priceWithCharges("₹1.49 Cr - ₹3.14 Cr")).toBe("₹1.49 Cr - ₹3.14 Cr + Charges");
+    expect(priceWithCharges("₹6 Cr + Charges")).toBe("₹6 Cr + Charges");
+  });
+
+  it("builds the public price range from apartment configurations", () => {
+    expect(configurationPriceRange([
+      { price: "₹ 1.79 Cr" },
+      { price: "₹ 1.49 Cr" },
+      { price: "₹ 3.14 Cr" },
+    ], "₹ 9 Cr")).toBe("₹ 1.49 Cr - 3.14 Cr");
+  });
+
+  it("uses both endpoints from each submitted configuration price range", () => {
+    expect(configurationPriceRange([
+      { price: "1.89 - 2.46 Cr" },
+      { price: "2.35 - 3.62 Cr" },
+    ])).toBe("₹ 1.89 Cr - 3.62 Cr");
+  });
+
+  it("does not render a duplicate price range after public-price rounding", () => {
+    expect(configurationPriceRange([
+      { price: "₹ 2 Cr" },
+      { price: "₹ 2.004 Cr" },
+    ])).toBe("₹ 2 Cr");
+  });
+
   it("renders card-based plan pricing and a 3D choice without a table", () => {
     const html = renderToStaticMarkup(<FloorPlanExplorer details={[{
       configuration: "2 BHK", price: "₹1.70 Cr", superBuiltUpArea: "1280 sqft", carpetArea: "915 sqft",
@@ -24,10 +51,10 @@ describe("interactive property presentation", () => {
     expect(html).not.toContain("<table");
   });
 
-  it("keeps legacy amenities and enriches selected facility details", () => {
+  it("renders the compact amenity preview", () => {
     const html = renderToStaticMarkup(<FacilityExplorer amenities={["Swimming Pool", "Security"]} facilities={[{ name: "Swimming Pool", category: "Wellness", description: "Temperature-controlled pool", status: "Available" }]} />);
-    expect(html).toContain("Top facilities");
-    expect(html).toContain("Temperature-controlled pool");
+    expect(html).toContain("Amenities");
+    expect(html).toContain("Swimming Pool");
     expect(html).toContain("Security");
   });
 
@@ -46,7 +73,7 @@ describe("interactive property presentation", () => {
     })).toEqual(["cover.jpg", "gallery-a.jpg", "gallery-b.jpg"]);
   });
 
-  it("keeps main photos fully visible and never renders legacy video media", () => {
+  it("uses the gallery layout and exposes available video media", () => {
     const property = {
       ...cityListings.Bangalore[0],
       heroImages: ["https://example.com/tall-home.jpg"],
@@ -56,11 +83,10 @@ describe("interactive property presentation", () => {
     } as any;
     const html = renderToStaticMarkup(<MemoryRouter><AuthProvider><PropertyDetail property={property} /></AuthProvider></MemoryRouter>);
 
-    expect(html).toContain("object-contain");
+    expect(html).toContain("object-cover");
     expect(html).not.toContain("animate-project-hero");
-    expect(html).not.toContain("legacy.mp4");
     expect(html).not.toContain("legacy-tour");
-    expect(html).not.toContain("Videos (");
+    expect(html).toContain("Open Video");
   });
 
   it("gives Rent and Lease listings their own compact public narratives", () => {

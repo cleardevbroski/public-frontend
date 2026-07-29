@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Box, ChevronRight, Maximize2, Minus, Plus, RotateCcw, Ruler, Sparkles } from "lucide-react";
 import type { ApartmentRoom, ConfigurationDetail } from "./mock-data";
+import { priceWithCharges } from "@/lib/propertyPresentation";
 
 type Props = {
   details: ConfigurationDetail[];
@@ -153,7 +154,7 @@ export default function FloorPlanExplorer({
                     <p className="text-[22px] font-extrabold leading-none text-[#12172B]">{displayArea}</p>
                     {metric && <p className="mt-1 text-[12px] font-semibold text-[#68646F]">({metric})</p>}
                     <p className="mt-2 text-[11px] text-[#68646F]">Built-up Area <span className="text-[#B0B8C6]">|</span> {detail.configuration}</p>
-                    <p className="mt-4 text-[20px] font-extrabold text-[#12172B]">{detail.price}</p>
+                    <p className="mt-4 text-[20px] font-extrabold text-[#12172B]">{priceWithCharges(detail.price)}</p>
                   </div>
                 </div>
 

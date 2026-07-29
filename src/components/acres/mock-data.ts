@@ -169,7 +169,6 @@ export type ReraPhase = {
   name: string;
   reraNumber: string;
   reraSiteUrl?: string;
-  panNumber?: string;
   order?: number;
   reraDocuments: ReraDocument[];
   projectDocuments: ReraDocument[];
@@ -211,6 +210,12 @@ export type Property = {
   rentDetails?: RentDetails;
   leaseDetails?: LeaseDetails;
   area: string;
+  projectArea?: {
+    totalAcres?: number;
+    openSpaceAcres?: number;
+    builtUpAcres?: number;
+  };
+  totalUnits?: number;
   possession?: string;
   possessionDetails?: PossessionDetails;
   builder?: string;
@@ -234,12 +239,12 @@ export type Property = {
   ageOfProperty?: string;
   /** Ordered project-overview images. The public hero rotates through at most three. */
   heroImages?: string[];
+  heroVideo?: string;
   images?: string[];
+  videos?: string[];
   amenities?: string[];
   facilities?: FacilityDetail[];
-  ownershipType?: string;
   overlooking?: string[];
-  bookingAmount?: string;
   society?: {
     security?: string;
     waterSupply?: string;
