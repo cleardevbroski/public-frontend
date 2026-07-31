@@ -33,6 +33,8 @@ import {
   getLocalitiesByZone,
   getLocalityByName,
   bangaloreRoutes,
+  getBrowsePropertyType,
+  getSimilarBrowsePropertyTypes,
 } from "./bangalore-data";
 import { getPublishedProperties } from "@/lib/propertyStore";
 import { useLiveProperties } from "@/lib/useLiveProperties";
@@ -103,11 +105,16 @@ function ListingPage({ route, query = "" }: { route: BangaloreRoute; query?: str
   const listings = filterListingProperties({
     properties: allProperties,
     kind: route.kind as ListingKind,
+    propertyTypes: getBrowsePropertyType(route)?.propertyTypes,
     zone,
     locality: localityInfo?.name ?? null,
     filters: activeFilters,
     query,
   });
+  const browseType = getBrowsePropertyType(route);
+  const similarTypes = getSimilarBrowsePropertyTypes(route);
+  const resultLabel = browseType?.label.toLowerCase() ?? "properties";
+  const hasContext = Boolean(localityInfo || zone || query.trim() || activeFilters.length);
 
   return (
     <>
@@ -361,14 +368,38 @@ function ListingPage({ route, query = "" }: { route: BangaloreRoute; query?: str
                 listings.map((p) => <PropertyListingRow key={p.id} p={p} />)
               ) : (
                 <div className="bg-white border border-[#E4E0E7]/30 rounded-2xl p-12 text-center shadow-sm">
-                  <p className="text-[15px] font-bold text-[#121B35]">No Properties Found</p>
-                  <p className="text-[13px] text-[#68646F] mt-1">There are no matched properties listed in this locality.</p>
+                  <p className="text-[17px] font-bold text-[#121B35]">
+                    No {resultLabel} properties listed under this type
+                  </p>
+                  <p className="text-[13px] text-[#68646F] mt-2 max-w-xl mx-auto">
+                    {hasContext
+                      ? `We could not find ${resultLabel} properties matching your current search or filters.`
+                      : `There are currently no published ${resultLabel} properties in Bangalore.`}
+                  </p>
                   <Link
                     href="/property-in-bangalore-ffid"
-                    className="mt-4 inline-block bg-[#121B35] text-[#F2C052] px-6 py-2.5 rounded-xl text-[13px] font-bold hover:bg-[#DDAA42] hover:text-[#0B1328] transition-all shadow"
+                    className="mt-5 inline-block bg-[#121B35] text-[#F2C052] px-6 py-2.5 rounded-xl text-[13px] font-bold hover:bg-[#DDAA42] hover:text-[#0B1328] transition-all shadow"
                   >
-                    Browse All Bangalore Portfolios
+                    Browse All Bangalore Properties
                   </Link>
+
+                  {similarTypes.length > 0 && (
+                    <div className="mt-10 pt-7 border-t border-[#E4E0E7]/50 text-left">
+                      <h3 className="text-[16px] font-bold text-[#121B35]">Explore similar property types</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                        {similarTypes.map((type) => (
+                          <Link
+                            key={type.key}
+                            href={`/${type.canonicalSlug}`}
+                            className="group flex items-center justify-between rounded-xl border border-[#E4E0E7] bg-[#F8F7FA] px-4 py-3 text-[13px] font-bold text-[#121B35] hover:border-[#DDAA42] hover:bg-white transition-colors"
+                          >
+                            <span>{type.label}</span>
+                            <ArrowRight className="size-4 text-[#DDAA42] transition-transform group-hover:translate-x-1" />
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

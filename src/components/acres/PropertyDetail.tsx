@@ -14,6 +14,7 @@ import {
   MessageCircle,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Check,
   Shield,
   Verified,
@@ -68,6 +69,13 @@ import { configurationPriceRange, getProjectHeroImages, priceWithCharges } from 
 import { trackAnalytics } from "@/lib/analytics";
 import { useHomepagePromotion } from "@/lib/useHomepagePromotion";
 import PropertyReraSections from "./PropertyReraSections";
+import ProjectAbout from "./ProjectAbout";
+import ProjectMasterPlan from "./ProjectMasterPlan";
+import ProjectDownloadHub from "./ProjectDownloadHub";
+import ProjectComparison from "./ProjectComparison";
+import ProjectFaqs from "./ProjectFaqs";
+import ProjectBuilderProfile from "./ProjectBuilderProfile";
+import { formatAreaRange, formatPossessionDateOnly, propertyAreaRange, rankComparableProperties, type AreaUnit } from "@/lib/projectEnhancements";
 
 type Pools = {
   recommended: Property[];
@@ -94,7 +102,7 @@ function buildPools(property: Property): Pools {
     : [];
   return {
     recommended: [...featured, ...all].slice(0, 8),
-    similar: (sameType.length ? sameType : all).slice(0, 8),
+    similar: rankComparableProperties(property, sameType.length ? sameType : all, 8).map((match) => match.property),
     featured: featured.slice(0, 8),
     interests: (sameZone.length ? sameZone : all).slice(0, 8),
     builderMore: builderMore.slice(0, 8),
@@ -102,6 +110,18 @@ function buildPools(property: Property): Pools {
 }
 
 const isBase64 = (src: string) => src.startsWith("data:");
+
+type NearbyCategory = "schools" | "colleges" | "hospitals" | "shopping" | "metro";
+function NearbyPlaceSummary({ property, category, label, Icon, legacy }: { property: Property; category: NearbyCategory; label: string; Icon: typeof School; legacy?: string }) {
+  const places = property.nearbyDetails?.[category]?.places || [];
+  const detail = property.nearbyDetails?.[category];
+  const summary = places.length ? `${places.length} nearby` : detail && (detail.count !== undefined || detail.distance) ? [detail.count !== undefined ? `${detail.count}` : "", detail.distance].filter(Boolean).join(" · ") : legacy || "";
+  if (!summary && !places.length) return null;
+  return <details className="rounded-xl border border-[#E4E0E7] bg-white p-3">
+    <summary className="flex cursor-pointer list-none items-start gap-2"><Icon className="mt-0.5 size-5 shrink-0 text-[#DDAA42]" /><span className="min-w-0 flex-1"><span className="block text-[12px] font-bold text-[#121B35]">{summary || `${places.length} nearby`}</span><span className="block text-[10px] text-[#68646F]">{label}</span><span className="mt-2 block text-[11px] font-bold text-[#795A18]">View {label.toLowerCase()} details</span></span></summary>
+    {places.length > 0 && <div className="mt-3 space-y-2 border-t border-[#F0EDF2] pt-3">{places.map((place, index) => <div key={`${place.name}-${index}`} className="rounded-lg bg-[#F8F7FA] p-2.5"><p className="text-[12px] font-bold text-[#121B35]">{place.name}</p>{place.address && <p className="mt-1 text-[11px] text-[#68646F]">{place.address}</p>}{(place.distance || place.landmark) && <p className="mt-1 text-[11px] font-semibold text-[#5A5762]">{[place.distance, place.landmark].filter(Boolean).join(" · ")}</p>}</div>)}</div>}
+  </details>;
+}
 
 interface PropertyDetailProps {
   property: Property;
@@ -112,14 +132,16 @@ const sections = [
   { id: "overview", label: "About" },
   { id: "price-list", label: "Price List" },
   { id: "floor-plans", label: "Floor Plans" },
+  { id: "master-plan", label: "Master Plan" },
   { id: "photos-videos", label: "Photos & Videos" },
   { id: "facilities", label: "Amenities" },
-  { id: "society", label: "Specifications" },
   { id: "brochure", label: "Download Hub" },
   { id: "locality", label: "Map & Landmarks" },
   { id: "rera-details", label: "RERA Details" },
   { id: "dealer", label: "About Builder" },
+  { id: "comparison", label: "Market Comparison" },
   { id: "explore", label: "Similar Projects" },
+  { id: "faq", label: "FAQ" },
 ];
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Horizontal property rail Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
@@ -185,6 +207,8 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const [copiedLink, setCopiedLink] = useState(false);
   const [showAllOverviewFacts, setShowAllOverviewFacts] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [areaUnit, setAreaUnit] = useState<AreaUnit>("sqft");
+  const [overviewPopover, setOverviewPopover] = useState<"size" | "area" | null>(null);
   const [verifiedAction, setVerifiedAction] = useState<PropertyAction | null>(null);
   const [showLawyerConsultation, setShowLawyerConsultation] = useState(false);
 
@@ -194,6 +218,8 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     setHeroImageIndex(0);
     setShowAllOverviewFacts(false);
     setDescriptionExpanded(false);
+    setAreaUnit("sqft");
+    setOverviewPopover(null);
   }, [property.id]);
 
   useEffect(() => {
@@ -206,6 +232,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   }, [property.id, property.propertyType, property.subtitle, property.title]);
   // Property rails (computed client-side from the live store, SSR-safe)
   const pools = useLiveProperties<Pools>(() => buildPools(property), EMPTY_POOLS);
+  const comparisonMatches = rankComparableProperties(property, getPublishedProperties(), 2);
 
   // Nearest matching locality insight for the price-trend strip.
   const localityKey = (property.subtitle?.split(",")[0] || "").toLowerCase();
@@ -245,11 +272,10 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   }, [property.id, heroImages.length]);
 
   const possessionLabel = formatPossession(property);
+  const possessionDate = formatPossessionDateOnly(property);
+  const unitAreaRange = propertyAreaRange(property);
   const displayPrice = configurationPriceRange(property.configurationDetails, property.price);
-  const flatFloor = property.floorLabel?.trim();
-  const floorDisplay = flatFloor
-    ? `${flatFloor}${property.totalFloors ? ` of ${property.totalFloors}` : ""}`
-    : property.propertyType === "Apartment" ? "" : property.floor || "";
+  const floorDisplay = property.totalFloors ? `${property.totalFloors} floors in building` : property.propertyType === "Apartment" ? "" : property.floor || "";
   const nearbyValue = (key: "schools" | "colleges" | "hospitals" | "shopping" | "metro", legacy?: string) => {
     const detail = property.nearbyDetails?.[key];
     if (detail?.places?.length) return `${detail.places.length} nearby`;
@@ -268,12 +294,10 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   ));
   const hasPriceList = Boolean(property.configurationDetails?.length || property.villaDetails?.configurationDetails?.length || property.plotDetails?.plotSizeDetails?.length);
   const hasPhotosOrVideos = Boolean(images.length || property.videos?.length || property.heroVideo);
-  const hasBrochure = Boolean(property.brochure);
+  const hasBrochure = Boolean(property.brochure || property.projectDownloads?.length);
+  const hasMasterPlan = Boolean(property.masterPlan?.imageUrl || property.masterPlan?.summary || property.masterPlan?.sections?.length || property.plotDetails?.layoutMapUrl);
   const hasReraPhases = Boolean(property.reraRegistered && property.reraPhases?.length);
   const hasFacilities = amenities.length > 0 || Boolean(property.facilities?.length);
-  const hasSociety = Boolean(
-    property.society && Object.values(property.society).some(Boolean)
-  );
   const hasLocalityContent = Boolean(
     property.localityMapImageUrl ||
     property.locality?.address ||
@@ -284,11 +308,12 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const visibleSections = sections.filter((section) =>
     (section.id !== "price-list" || hasPriceList) &&
     (section.id !== "floor-plans" || hasFloorPlans) &&
+    (section.id !== "master-plan" || hasMasterPlan) &&
     (section.id !== "photos-videos" || hasPhotosOrVideos) &&
     (!["rera-details", "project-details"].includes(section.id) || hasReraPhases) &&
     (section.id !== "facilities" || hasFacilities) &&
-    (section.id !== "society" || hasSociety) &&
     (section.id !== "dealer" || Boolean(property.builder || property.developerLogoUrl)) &&
+    (section.id !== "comparison" || comparisonMatches.length > 0) &&
     (section.id !== "brochure" || hasBrochure) &&
     (section.id !== "locality" || hasLocalityContent)
   );
@@ -312,7 +337,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [hasFacilities, hasFloorPlans, hasPriceList, hasPhotosOrVideos, hasSociety]);
+  }, [hasBrochure, hasFacilities, hasFloorPlans, hasLocalityContent, hasMasterPlan, hasPhotosOrVideos, hasPriceList, hasReraPhases]);
 
   const scrollToSection = (sectionId: string) => {
     const element = sectionRefs.current[sectionId];
@@ -443,12 +468,18 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     { label: "Facing", val: property.facing },
     { label: "Furnishing", val: property.furnishing },
     { label: "Parking", val: property.parking },
-    { label: "Floor", val: floorDisplay },
+    { label: "Total Floors", val: floorDisplay },
     { label: "RERA number", val: property.reraNumber },
     { label: "Total project area", val: property.projectArea?.totalAcres !== undefined ? `${property.projectArea.totalAcres} acres` : "" },
     { label: "Open space area", val: property.projectArea?.openSpaceAcres !== undefined ? `${property.projectArea.openSpaceAcres} acres` : "" },
     { label: "Apartment built-up area", val: property.projectArea?.builtUpAcres !== undefined ? `${property.projectArea.builtUpAcres} acres` : "" },
     { label: "Number of units", val: property.totalUnits ? property.totalUnits.toLocaleString("en-IN") : "" },
+    { label: "Security", val: property.society?.security },
+    { label: "Water supply", val: property.society?.waterSupply },
+    { label: "Power backup", val: property.society?.powerBackup },
+    { label: "Elevators", val: property.society?.lift },
+    { label: "Visitor parking", val: property.society?.visitorParking },
+    { label: "Maintenance staff", val: property.society?.maintenanceStaff },
   ].filter((item) => item.val);
   const typeOverviewFacts = property.villaDetails
     ? villaOverviewFacts
@@ -523,18 +554,10 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                 ]
               : [
                   { icon: Bed, label: "Unit config", val: property.configs?.length ? `${property.configs.map((item) => item.replace(/\s*BHK/i, "")).join(", ")} BHK Flats` : bedrooms },
-                  { icon: Maximize, label: "Size", val: property.area },
+                  { icon: Maximize, label: "Size", val: formatAreaRange(unitAreaRange, areaUnit) },
                   { icon: Building2, label: "Number of units", val: property.totalUnits?.toLocaleString("en-IN") },
                   { icon: Layers, label: "Total area", val: property.projectArea?.totalAcres !== undefined ? `${property.projectArea.totalAcres} acres` : "" },
                 ];
-  const societyFacts = [
-    { label: "Security Desk", val: property.society?.security },
-    { label: "Water Supply", val: property.society?.waterSupply },
-    { label: "Power Backup", val: property.society?.powerBackup },
-    { label: "Elevators", val: property.society?.lift },
-    { label: "Visitor Parking", val: property.society?.visitorParking },
-    { label: "Maintenance", val: property.society?.maintenanceStaff },
-  ].filter((item) => item.val);
   const whyHighlights = (property.description || "")
     .split(/(?<=[.!?])\s+/)
     .map((line) => line.trim())
@@ -728,13 +751,15 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
             </div>
             <div className="grid border-b border-[#E5E8EE] sm:grid-cols-2">
               <div className="flex items-center gap-3 px-4 py-4 md:px-5"><Building2 className="size-7 shrink-0 text-[#56627A]" strokeWidth={1.6} /><div><p className="text-[11px] text-[#667085]">Project Status</p><p className="text-[14px] font-extrabold text-[#172039]">{property.possessionDetails?.status || property.possession || "Available"}</p></div></div>
-              <div className="flex items-center gap-3 border-t border-[#E5E8EE] px-4 py-4 sm:border-l sm:border-t-0 md:px-5"><Clock className="size-7 shrink-0 text-[#56627A]" strokeWidth={1.6} /><div><p className="text-[11px] text-[#667085]">Possession Starting From</p><p className="text-[14px] font-extrabold text-[#172039]">{possessionLabel}</p></div>{hasReraPhases && <button type="button" onClick={() => scrollToSection("rera-details")} className="ml-auto rounded-lg border border-[#E7D4A7] bg-[#FFF7E6] px-2.5 py-1.5 text-[10px] font-bold text-[#4C566A]">RERA Updates</button>}</div>
+              <div className="flex items-center gap-3 border-t border-[#E5E8EE] px-4 py-4 sm:border-l sm:border-t-0 md:px-5"><Clock className="size-7 shrink-0 text-[#56627A]" strokeWidth={1.6} /><div><p className="text-[11px] text-[#667085]">Possession Starting From</p><p className="text-[14px] font-extrabold text-[#172039]">{possessionDate}</p></div>{hasReraPhases && <button type="button" onClick={() => scrollToSection("rera-details")} className="ml-auto rounded-lg border border-[#E7D4A7] bg-[#FFF7E6] px-2.5 py-1.5 text-[10px] font-bold text-[#4C566A]">RERA Updates</button>}</div>
             </div>
             <div className="grid grid-cols-2 divide-x divide-y divide-[#E5E8EE] sm:grid-cols-4 sm:divide-y-0">
               {keySpecFacts.filter((item) => item.val !== undefined && item.val !== "").map(({ icon: Icon, label, val }) => (
-                <button key={label} type="button" onClick={() => ["Unit config", "Size"].includes(label) && scrollToSection("price-list")} className="flex min-h-[92px] items-center gap-3 px-4 py-3 text-left hover:bg-[#FFF9E9]"><Icon className="size-7 shrink-0 text-[#56627A]" strokeWidth={1.6} /><span><span className="block text-[11px] text-[#667085]">{label}</span><span className="mt-0.5 block text-[13px] font-extrabold leading-4 text-[#172039]">{val}</span></span></button>
+                <button key={label} type="button" aria-expanded={(label === "Size" && overviewPopover === "size") || (label === "Total area" && overviewPopover === "area")} onClick={() => label === "Size" ? setOverviewPopover((value) => value === "size" ? null : "size") : label === "Total area" ? setOverviewPopover((value) => value === "area" ? null : "area") : label === "Unit config" ? scrollToSection("price-list") : undefined} className="flex min-h-[92px] items-center gap-3 px-4 py-3 text-left hover:bg-[#FFF9E9]"><Icon className="size-7 shrink-0 text-[#56627A]" strokeWidth={1.6} /><span><span className="flex items-center gap-1 text-[11px] text-[#667085]">{label}{["Size", "Total area"].includes(label) && <ChevronDown className="size-3" />}</span><span className="mt-0.5 block text-[13px] font-extrabold leading-4 text-[#172039]">{val}</span></span></button>
               ))}
             </div>
+            {overviewPopover === "size" && <div className="flex flex-wrap items-center gap-2 border-t border-[#E5E8EE] bg-[#FCFCFD] px-4 py-3"><span className="mr-1 text-[11px] font-bold text-[#667085]">Display size in</span>{([["sqft", "Sq. Ft."], ["sqm", "Sq. Metre"], ["sqyd", "Sq. Yard"]] as const).map(([unit, label]) => <button key={unit} type="button" onClick={() => setAreaUnit(unit)} className={`rounded-lg px-3 py-1.5 text-[11px] font-bold ${areaUnit === unit ? "bg-[#172039] text-white" : "border border-[#DDE2EA] text-[#596277]"}`}>{label}</button>)}</div>}
+            {overviewPopover === "area" && <div className="grid grid-cols-2 gap-3 border-t border-[#E5E8EE] bg-[#FCFCFD] px-4 py-3"><div><p className="text-[10px] font-bold uppercase text-[#667085]">Open Space Area</p><p className="mt-1 text-[13px] font-extrabold text-[#172039]">{property.projectArea?.openSpaceAcres !== undefined ? `${property.projectArea.openSpaceAcres} acres` : "Not provided"}</p></div><div><p className="text-[10px] font-bold uppercase text-[#667085]">Built-up Footprint Area</p><p className="mt-1 text-[13px] font-extrabold text-[#172039]">{property.projectArea?.builtUpAcres !== undefined ? `${property.projectArea.builtUpAcres} acres` : "Not provided"}</p></div></div>}
           </div>
           <aside className="flex flex-col border-t border-[#DDE2EA] bg-[#FCFCFD] lg:border-l lg:border-t-0">
             <div className="flex-1 px-5 py-4"><h2 className="text-[17px] font-extrabold text-[#172039]">Why you should consider {property.title}?</h2>{whyHighlights.length ? <ul className="mt-3 space-y-2.5">{whyHighlights.map((highlight) => <li key={highlight} className="flex gap-2 text-[12px] leading-5 text-[#4C566A]"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#172039]" />{highlight}</li>)}</ul> : <p className="mt-3 text-[12px] leading-5 text-[#4C566A]">Explore the project details, configurations and location information available for this property.</p>}<button type="button" onClick={() => scrollToSection("overview")} className="mt-3 text-[12px] font-bold text-[#172039] underline underline-offset-4">View More</button></div>
@@ -1008,21 +1033,13 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
               <div ref={setSectionRef("price-list")} className="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-[#E4E0E7]/30 space-y-5">
                 <div><h2 className="text-[20px] font-bold text-[#121B35] flex items-center gap-2 mb-5"><div className="w-1.5 h-6 bg-[#DDAA42] rounded-full" /> Plot Sizes & Pricing</h2><PlotSizeTable details={property.plotDetails.plotSizeDetails} /></div>
                 {property.plotDetails.inventory?.length ? <div><h3 className="text-[17px] font-bold text-[#121B35] mb-4">Plot availability</h3><PlotInventoryTable inventory={property.plotDetails.inventory} /></div> : null}
-                {property.plotDetails.layoutMapUrl ? <div className="pt-2"><h3 className="text-[17px] font-bold text-[#121B35] mb-4">Master Plan / Layout Map</h3>{property.plotDetails.layoutMapType === "image" ? <img src={property.plotDetails.layoutMapUrl} alt={`${property.title} layout map`} className="w-full max-h-[540px] object-contain bg-[#F8F7FA] rounded-2xl border border-[#E4E0E7]" /> : <a href={property.plotDetails.layoutMapUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-4 py-3 bg-[#121B35] text-white rounded-xl text-[13px] font-bold"><FileText className="w-4 h-4" /> View layout-map PDF</a>}</div> : null}
               </div>
             ) : null}
 
-            {/* Overview Section */}
-            <div ref={setSectionRef("overview")} className="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-[#E4E0E7]/30 space-y-4">
-              <div>
-                <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#B98428]">{property.propertyType ? `${property.propertyType} details` : "Details"}</p>
-                <h2 className="mt-1.5 text-[22px] font-extrabold leading-tight text-[#121B35] md:text-[26px]">{overviewTitle}</h2>
-                {property.description?.trim() && (
-                  <p className="mt-3 max-w-3xl whitespace-pre-line text-[14.5px] leading-7 text-[#514C57]">{property.description}</p>
-                )}
-              </div>
+            <div ref={setSectionRef("overview")}><ProjectAbout property={property} title={overviewTitle} facts={overviewFacts} /></div>
 
-              {property.pgDetails?.sharingDetails?.length ? (
+            {property.pgDetails?.sharingDetails?.length ? (
+              <div className="rounded-2xl border border-[#DDE2EA] bg-white p-5 shadow-sm md:p-7">
                 <div>
                   <div className="mb-3 flex items-end justify-between gap-3">
                     <h3 className="text-[17px] font-bold text-[#121B35]">Choose a sharing option</h3>
@@ -1046,25 +1063,8 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                     ))}
                   </div>
                 </div>
-              ) : null}
-
-              {overviewFacts.length > 0 && (
-                <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-[#E4E0E7] bg-[#EAE7ED] gap-px md:grid-cols-3">
-                  {overviewFacts.slice(0, showAllOverviewFacts ? overviewFacts.length : 9).map(({ label, val }, index) => (
-                    <div key={`${label}-${index}`} className="min-h-[82px] bg-white px-4 py-3.5">
-                      <span className="text-[9.5px] font-bold uppercase tracking-[0.12em] text-[#77717E]">{label}</span>
-                      <p className="mt-1 text-[13.5px] font-extrabold leading-snug text-[#121B35]">{val}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {overviewFacts.length > 9 && (
-                <button type="button" onClick={() => setShowAllOverviewFacts((value) => !value)} className="inline-flex items-center gap-2 rounded-full border border-[#DDAA42]/45 px-4 py-2 text-[12px] font-extrabold text-[#9A741E] transition-colors hover:bg-[#FFF8E8]">
-                  {showAllOverviewFacts ? "Show fewer details" : `View all ${overviewFacts.length} details`}
-                </button>
-              )}
-
-            </div>
+              </div>
+            ) : null}
 
             {property.configurationDetails?.length ? (
               <div ref={setSectionRef("price-list")}>
@@ -1083,77 +1083,23 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
               </div>
             )}
 
+            {hasMasterPlan && <div ref={setSectionRef("master-plan")}><ProjectMasterPlan property={property} /></div>}
+
+            {images.length > 0 && <section className="rounded-2xl border border-[#DDE2EA] bg-white p-5 shadow-sm md:p-7" aria-labelledby="property-gallery-heading"><h2 id="property-gallery-heading" className="text-[22px] font-extrabold text-[#172039]">{property.title} Photos &amp; Videos</h2><div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">{images.slice(0, 9).map((image, index) => <button key={`${image}-${index}`} type="button" onClick={() => setCurrentImageIndex(index)} className="aspect-[4/3] overflow-hidden rounded-xl border border-[#E5E8EE] bg-[#F4F5F7]"><img src={image} alt={`${property.title} photo ${index + 1}`} loading="lazy" className="size-full object-cover" /></button>)}</div></section>}
+
             {(amenities.length > 0 || property.facilities?.length) && (
               <div ref={setSectionRef("facilities")}>
                 <FacilityExplorer title={property.title} amenities={amenities} facilities={property.facilities} />
               </div>
             )}
 
-            {/* Brochure Section */}
-            {hasBrochure && <div ref={setSectionRef("brochure")} className="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-[#E4E0E7]/30 space-y-5">
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <h2 className="text-[20px] font-bold text-[#121B35] flex items-center gap-2">
-                  <div className="w-1.5 h-6 bg-[#DDAA42] rounded-full" /> Property Brochure
-                </h2>
-                <button onClick={() => setVerifiedAction("brochure")} className="btn-gold flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px]">
-                  <Download className="size-4" /> Download Brochure
-                </button>
-              </div>
-
-              {isPdfBrochure ? (
-                <div className="rounded-2xl overflow-hidden border border-[#E4E0E7]/50 bg-[#F8F7FA]">
-                  <iframe src={property.brochure} title="Brochure preview" className="w-full h-[560px]" />
-                </div>
-              ) : null}
-            </div>}
-
-            {/* Society & Maintenance */}
-            {societyFacts.length > 0 && <div ref={setSectionRef("society")} className="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-[#E4E0E7]/30 space-y-4">
-              <h2 className="text-[20px] font-bold text-[#121B35] flex items-center gap-2">
-                <div className="w-1.5 h-6 bg-[#DDAA42] rounded-full" /> Society & Maintenance
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {societyFacts.map(({ label, val }) => (
-                  <div key={label} className="p-4 bg-[#F8F7FA]/60 border border-[#E4E0E7]/40 rounded-2xl">
-                    <span className="text-[10px] text-[#68646F] uppercase font-bold tracking-wider">{label}</span>
-                    <p className="text-[14px] font-bold text-[#121B35] mt-1">{val}</p>
-                  </div>
-                ))}
-              </div>
-            </div>}
-
-            {/* Developer Profile */}
-            {(property.builder || property.developerLogoUrl) && <div ref={setSectionRef("dealer")} className="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-[#E4E0E7]/30 space-y-4">
-              <h2 className="text-[20px] font-bold text-[#121B35] flex items-center gap-2">
-                <div className="w-1.5 h-6 bg-[#DDAA42] rounded-full" /> Developer Profile
-              </h2>
-              <div className="flex items-center gap-4.5 bg-[#F8F7FA]/60 border border-[#E4E0E7]/40 p-5 rounded-2xl flex-wrap">
-                <div className="w-16 h-16 bg-gradient-to-br from-[#121B35] to-[#273559] rounded-2xl flex items-center justify-center text-[#F2C052] font-extrabold text-[20px] shadow overflow-hidden">
-                  {property.developerLogoUrl ? <img src={property.developerLogoUrl} alt={property.builder ? `${property.builder} logo` : "Developer logo"} className="h-full w-full object-contain bg-white" /> : property.builder ? property.builder.split(" ").map((w) => w[0]).join("") : null}
-                </div>
-                <div className="flex-1 min-w-[200px]">
-                  <div className="flex items-center gap-2">
-                    {property.builder && <><h3 className="text-[17px] font-bold text-[#121B35]">{property.builder}</h3><Verified className="w-5 h-5 text-[#DDAA42]" /></>}
-                  </div>
-                  <p className="text-[12px] text-[#68646F] font-semibold tracking-wide uppercase mt-0.5">Corporate Developer Partner</p>
-                  <div className="flex items-center gap-4 mt-3 text-[12px] text-[#3F3D46]/85">
-                    {property.verified && <span className="flex items-center gap-1"><Check className="size-4 text-[#DDAA42]" /> Clear-title verified</span>}
-                    {property.reraRegistered && <span className="flex items-center gap-1"><Check className="size-4 text-[#DDAA42]" /> RERA Registered</span>}
-                  </div>
-                </div>
-                {property.builder && (
-                  <Link href={`/builder/${builderSlug(property.builder)}`} className="px-5 py-3 border border-[#DDAA42] text-[#DDAA42] font-bold text-[13px] rounded-xl hover:bg-[#DDAA42] hover:text-[#0B1328] transition-all shadow-sm">
-                    View All Projects
-                  </Link>
-                )}
-              </div>
-            </div>}
+            {hasBrochure && <div ref={setSectionRef("brochure")}><ProjectDownloadHub property={property} onLegacyDownload={() => setVerifiedAction("brochure")} /></div>}
 
             {/* Locality Guide */}
             {hasLocalityContent && <div ref={setSectionRef("locality")} className="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-[#E4E0E7]/30 space-y-4">
-              <h2 className="text-[20px] font-bold text-[#121B35] flex items-center gap-2">
-                <div className="w-1.5 h-6 bg-[#DDAA42] rounded-full" /> Locality & Neighbourhood
-              </h2>
+              <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-[20px] font-bold text-[#121B35] flex items-center gap-2"><div className="w-1.5 h-6 bg-[#DDAA42] rounded-full" /> Map &amp; Nearby Landmarks</h2><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.locality?.address || property.subtitle)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#172039] px-4 py-2.5 text-[12px] font-bold text-white"><MapPin className="size-4" /> View on Map</a></div>
+              <div className="grid gap-5 md:grid-cols-[1.2fr_0.8fr]">
+              <div>
               <div className="relative aspect-[16/9] w-full bg-gradient-to-br from-[#F8F7FA] to-[#F3F1F5]/40 rounded-2xl overflow-hidden border border-[#E4E0E7]/50 flex items-center justify-center">
                 {property.localityMapImageUrl ? (
                   <img src={property.localityMapImageUrl} alt={`${property.subtitle} locality map`} className="h-full w-full object-contain bg-white" />
@@ -1174,45 +1120,18 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                   <div><p className="text-[10px] font-bold uppercase tracking-wider text-[#68646F]">Locality address</p><p className="mt-1 text-[13px] font-semibold text-[#121B35]">{property.locality.address}</p></div>
                 </div>
               )}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { icon: School, label: "Schools", val: nearbyValue("schools", property.nearbyAmenities?.schools) },
-                  { icon: School, label: "Colleges", val: nearbyValue("colleges", property.nearbyAmenities?.colleges) },
-                  { icon: Hospital, label: "Hospitals", val: nearbyValue("hospitals", property.nearbyAmenities?.hospitals) },
-                  { icon: ShoppingBag, label: "Shopping", val: nearbyValue("shopping", property.nearbyAmenities?.shopping) },
-                  { icon: Train, label: "Metro", val: nearbyValue("metro", property.nearbyAmenities?.metro) },
-                ].filter((item) => item.val).map(({ icon: Icon, label, val }) => (
-                  <div key={label} className="flex gap-2.5 p-3.5 bg-[#F8F7FA]/60 border border-[#E4E0E7]/40 rounded-2xl">
-                    <Icon className="w-5 h-5 text-[#DDAA42] shrink-0" />
-                    <div>
-                      <span className="text-[10px] text-[#68646F] uppercase font-bold tracking-wider block">{label}</span>
-                      <span className="text-[13px] font-bold text-[#121B35] mt-0.5 block">{val}</span>
-                    </div>
-                  </div>
-                ))}
               </div>
-              {property.nearbyDetails && Object.entries(property.nearbyDetails).some(([, detail]) => detail?.places?.length) && (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {([
-                    ["schools", "Schools", School],
-                    ["colleges", "Colleges", School],
-                    ["hospitals", "Hospitals", Hospital],
-                    ["shopping", "Shopping", ShoppingBag],
-                    ["metro", "Metro / Train", Train],
-                  ] as const).map(([key, label, Icon]) => {
-                    const places = property.nearbyDetails?.[key]?.places || [];
-                    if (!places.length) return null;
-                    return <div key={key} className="rounded-2xl border border-[#E4E0E7]/60 p-4">
-                      <div className="mb-3 flex items-center gap-2"><Icon className="size-4 text-[#DDAA42]" /><h3 className="text-[13px] font-bold text-[#121B35]">{label}</h3></div>
-                      <div className="space-y-3">{places.map((place, index) => <div key={`${place.name}-${index}`} className="rounded-xl bg-[#F8F7FA] p-3">
-                        <p className="text-[13px] font-bold text-[#121B35]">{place.name}</p>
-                        {place.address && <p className="mt-1 text-[11px] text-[#68646F]">{place.address}</p>}
-                        {(place.distance || place.landmark) && <p className="mt-1 text-[11px] font-semibold text-[#5A5762]">{[place.distance, place.landmark].filter(Boolean).join(" Ã‚Â· ")}</p>}
-                      </div>)}</div>
-                    </div>;
-                  })}
+              <aside className="rounded-2xl border border-[#E4E0E7]/60 bg-[#F8F7FA]/60 p-4">
+                <h3 className="mb-3 text-[13px] font-extrabold uppercase tracking-wider text-[#30394E]">Nearby Places</h3>
+                <div className="space-y-2">
+                  <NearbyPlaceSummary property={property} category="schools" label="Schools" Icon={School} legacy={property.nearbyAmenities?.schools} />
+                  <NearbyPlaceSummary property={property} category="colleges" label="Colleges" Icon={School} legacy={property.nearbyAmenities?.colleges} />
+                  <NearbyPlaceSummary property={property} category="hospitals" label="Hospitals" Icon={Hospital} legacy={property.nearbyAmenities?.hospitals} />
+                  <NearbyPlaceSummary property={property} category="shopping" label="Shopping" Icon={ShoppingBag} legacy={property.nearbyAmenities?.shopping} />
+                  <NearbyPlaceSummary property={property} category="metro" label="Metro / Train" Icon={Train} legacy={property.nearbyAmenities?.metro} />
                 </div>
-              )}
+              </aside>
+              </div>
 
               {/* Price-trend insight strip */}
               {insight && <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-gradient-to-r from-[#F8F7FA] to-[#FFF8E8] border border-[#E4E0E7]/60 rounded-2xl">
@@ -1239,6 +1158,8 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
               </div>}
             </div>}
             {hasReraPhases && <PropertyReraSections property={property} setSectionRef={setSectionRef} />}
+            {(property.builder || property.developerLogoUrl) && <div ref={setSectionRef("dealer")}><ProjectBuilderProfile property={property} projects={pools.builderMore} /></div>}
+            {comparisonMatches.length > 0 && <div ref={setSectionRef("comparison")}><ProjectComparison current={property} matches={comparisonMatches} /></div>}
           </div>
 
           {/* Right Sticky Contact Card */}
@@ -1310,15 +1231,10 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
       {/* Ã¢â€â‚¬Ã¢â€â‚¬ EXPLORE MORE: multiple property rails Ã¢â€â‚¬Ã¢â€â‚¬ */}
       <div ref={setSectionRef("explore")} className="bg-[#F3F1F5] border-t border-[#E4E0E7]/50">
         <div className="max-w-[1200px] mx-auto px-4 py-6 space-y-8">
-          <PropertyRail title="Recommended for You" subtitle="Curated Picks" Icon={Sparkles} items={pools.recommended} />
-          <PropertyRail title="Similar Properties" subtitle="Comparable Homes" Icon={Layers} items={pools.similar} />
-          <PropertyRail title="Featured Properties" subtitle="Editor's Choice" Icon={Star} items={pools.featured} />
-          <PropertyRail title="Based on Your Interests" subtitle={property.subtitle ? `More in ${property.subtitle.split(",")[0]}` : ""} Icon={HeartIcon} items={pools.interests} />
-          {pools.builderMore.length > 0 && (
-            <PropertyRail title={`More from ${property.builder}`} subtitle="Same Developer" Icon={TrendingUp} items={pools.builderMore} />
-          )}
+          <PropertyRail title={`Similar Alternate Projects you can consider in ${property.locality?.city || property.subtitle?.split(",").slice(-1)[0]?.trim() || "this area"}`} subtitle="Comparable Homes" Icon={Layers} items={pools.similar} />
         </div>
       </div>
+      <div ref={setSectionRef("faq")} className="bg-[#F3F1F5] px-4 pb-8"><div className="mx-auto max-w-[1200px]"><ProjectFaqs property={property} /></div></div>
 
       {/* Popular builders */}
       <PopularBuilders />

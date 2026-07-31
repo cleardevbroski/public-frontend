@@ -2,15 +2,24 @@
 import { useRef } from "react";
 import Link from "@/components/Link";
 import { Building2, Home, Key, Map, Store, FileText, Users, ArrowRight, Sparkles } from "lucide-react";
+import { browsePropertyTypes } from "./bangalore-data";
 
-const propertyTypes = [
-  { label: "Apartment", icon: Building2, href: "/apartments-in-bangalore", image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80", color: "from-[#121B35]/90 to-[#1d2b52]/95", accent: "#DDAA42" },
-  { label: "Villa", icon: Home, href: "/villas-in-bangalore", image: "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=600&q=80", color: "from-[#2A3B5C]/90 to-[#1A2642]/95", accent: "#E4E0E7" },
-  { label: "Rent", icon: Key, href: "/properties-for-rent-in-bangalore", image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&q=80", color: "from-[#DDAA42]/90 to-[#B8860B]/95", accent: "#121B35", textDark: true },
-  { label: "Plot", icon: Map, href: "/plots-in-bangalore", image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80", color: "from-[#F3F1F5]/90 to-[#E4E0E7]/95", accent: "#121B35", textDark: true },
-  { label: "Commercial", icon: Store, href: "/commercial-properties-in-bangalore", image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80", color: "from-[#1a1a24]/90 to-[#0d0d12]/95", accent: "#DDAA42" },
-  { label: "Lease", icon: FileText, href: "/properties-for-lease-in-bangalore", image: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=600&q=80", color: "from-[#1E7A46]/90 to-[#125A31]/95", accent: "#FFFFFF" },
-  { label: "PG/Co-living", icon: Users, href: "/pg-in-bangalore", image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=80", color: "from-[#68646F]/90 to-[#454249]/95", accent: "#F2C052" },
+const propertyTypes: Array<{
+  label: string;
+  canonicalSlug: string;
+  icon: typeof Building2;
+  image: string;
+  color: string;
+  accent: string;
+  textDark?: boolean;
+}> = [
+  { ...browsePropertyTypes[0], icon: Building2, image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80", color: "from-[#121B35]/90 to-[#1d2b52]/95", accent: "#DDAA42" },
+  { ...browsePropertyTypes[1], icon: Home, image: "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=600&q=80", color: "from-[#2A3B5C]/90 to-[#1A2642]/95", accent: "#E4E0E7" },
+  { ...browsePropertyTypes[2], icon: Key, image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&q=80", color: "from-[#DDAA42]/90 to-[#B8860B]/95", accent: "#121B35", textDark: true },
+  { ...browsePropertyTypes[3], icon: Map, image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80", color: "from-[#F3F1F5]/90 to-[#E4E0E7]/95", accent: "#121B35", textDark: true },
+  { ...browsePropertyTypes[4], icon: Store, image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80", color: "from-[#1a1a24]/90 to-[#0d0d12]/95", accent: "#DDAA42" },
+  { ...browsePropertyTypes[5], icon: FileText, image: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=600&q=80", color: "from-[#1E7A46]/90 to-[#125A31]/95", accent: "#FFFFFF" },
+  { ...browsePropertyTypes[6], icon: Users, image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=80", color: "from-[#68646F]/90 to-[#454249]/95", accent: "#F2C052" },
 ];
 
 export default function PropertyTypeTiles() {
@@ -39,7 +48,7 @@ export default function PropertyTypeTiles() {
             return (
               <Link
                 key={tile.label}
-                href={tile.href}
+                href={`/${tile.canonicalSlug}`}
                 className={`group relative overflow-hidden rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col items-start justify-between min-h-[160px] border border-[#E4E0E7]/20`}
               >
                 {/* Background Image */}

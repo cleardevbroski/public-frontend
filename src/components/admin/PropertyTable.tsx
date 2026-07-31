@@ -159,9 +159,10 @@ export default function PropertyTable({
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-[#E4E0E7]/30 overflow-hidden">
+      <div className="overflow-x-auto rounded-2xl border border-[#E4E0E7]/30 bg-white shadow-sm">
+        <div className="min-w-0 lg:min-w-[1020px]">
         {/* Header */}
-        <div className="hidden md:grid grid-cols-[1fr_1fr_130px_110px_110px_150px] gap-4 px-6 py-3 bg-[#F8F7FA] border-b border-[#F3F1F5] text-[11px] font-bold text-[#68646F] uppercase tracking-wider">
+        <div className="hidden lg:grid lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1.1fr)_minmax(110px,0.8fr)_100px_110px_minmax(172px,auto)] gap-4 px-6 py-3 bg-[#F8F7FA] border-b border-[#F3F1F5] text-[11px] font-bold text-[#68646F] uppercase tracking-wider">
           <span>Property</span>
           <span>Location</span>
           <span>Price</span>
@@ -185,10 +186,10 @@ export default function PropertyTable({
             return (
               <div
                 key={property.id}
-                className="grid grid-cols-1 md:grid-cols-[1fr_1fr_130px_110px_110px_150px] gap-3 md:gap-4 px-4 md:px-6 py-4 border-b border-[#F3F1F5]/50 hover:bg-[#F8F7FA]/50 transition-colors items-center"
+                className="grid min-w-0 grid-cols-1 gap-3 border-b border-[#F3F1F5]/50 px-4 py-4 transition-colors hover:bg-[#F8F7FA]/50 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1.1fr)_minmax(110px,0.8fr)_100px_110px_minmax(172px,auto)] lg:items-center lg:gap-4 lg:px-6"
               >
                 {/* Property Name + Thumbnail */}
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-[#F3F1F5] border border-[#E4E0E7]/30">
                     {property.images?.[0] || property.image ? (
                       <img
@@ -202,30 +203,30 @@ export default function PropertyTable({
                       </div>
                     )}
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-[14px] font-semibold text-[#121B35] truncate">{property.title}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-[14px] font-semibold text-[#121B35] lg:truncate" title={property.title}>{property.title}</p>
                     {property.configs.length > 0 && (
-                      <p className="text-[11px] text-[#68646F] truncate">{property.configs.join(", ")}</p>
+                      <p className="truncate text-[11px] text-[#68646F]" title={property.configs.join(", ")}>{property.configs.join(", ")}</p>
                     )}
                   </div>
                 </div>
 
                 {/* Location */}
-                <div className="flex items-center gap-1 text-[13px] text-[#3F3D46]">
+                <div className="flex min-w-0 items-center gap-1 text-[13px] text-[#3F3D46]">
                   <MapPin className="w-3.5 h-3.5 text-[#DDAA42] flex-shrink-0" />
-                  <span className="truncate">{property.subtitle}</span>
+                  <span className="truncate" title={property.subtitle}>{property.subtitle}</span>
                 </div>
 
                 {/* Price */}
-                <div>
-                  <p className="text-[14px] font-bold text-[#DDAA42]">{property.price}</p>
+                <div className="min-w-0">
+                  <p className="break-words text-[14px] font-bold text-[#DDAA42]">{property.price}</p>
                   {property.pricePerSqft && (
                     <p className="text-[11px] text-[#68646F]">{property.pricePerSqft}</p>
                   )}
                 </div>
 
                 {/* Source Badge */}
-                <div>
+                <div className="min-w-0">
                   <span
                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold ${
                       property.submittedBy === "user"
@@ -251,7 +252,7 @@ export default function PropertyTable({
                 </div>
 
                 {/* Status */}
-                <div>
+                <div className="min-w-0">
                   <StatusControls
                     status={property.status || (property.published !== false ? "approved" : "pending")}
                     onChange={(s) => setPropertyStatus(property.id, s).then(onPropertyDeleted)}
@@ -264,40 +265,44 @@ export default function PropertyTable({
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-center gap-1.5">
+                <div className="flex w-full flex-wrap items-center justify-start gap-2 border-t border-[#F3F1F5] pt-3 lg:w-auto lg:flex-nowrap lg:justify-center lg:border-t-0 lg:pt-0 lg:whitespace-nowrap">
                   <Link
                     href={`/property/${property.id}`}
-                    className="w-8 h-8 rounded-lg bg-[#F8F7FA] flex items-center justify-center hover:bg-[#F3F1F5] transition-colors border border-[#E4E0E7]/30"
+                    aria-label={`View ${property.title}`}
+                    className="inline-flex h-9 min-w-[76px] flex-1 items-center justify-center gap-1 rounded-lg border border-[#E4E0E7]/30 bg-[#F8F7FA] px-2 text-[11px] font-bold text-[#DDAA42] transition-colors hover:bg-[#F3F1F5] lg:h-8 lg:min-w-8 lg:flex-none lg:px-0"
                     title="View on site"
                   >
-                    <Eye className="w-4 h-4 text-[#DDAA42]" />
+                    <Eye className="h-4 w-4" /><span className="lg:hidden">View</span>
                   </Link>
                   <Link
                     href={`/admin/post?edit=${encodeURIComponent(property.id)}`}
-                    className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center hover:bg-blue-100 transition-colors border border-blue-100"
+                    aria-label={`Edit ${property.title}`}
+                    className="inline-flex h-9 min-w-[76px] flex-1 items-center justify-center gap-1 rounded-lg border border-blue-100 bg-blue-50 px-2 text-[11px] font-bold text-blue-600 transition-colors hover:bg-blue-100 lg:h-8 lg:min-w-8 lg:flex-none lg:px-0"
                     title="Edit property"
                   >
-                    <Pencil className="w-4 h-4 text-blue-600" />
+                    <Pencil className="h-4 w-4" /><span className="lg:hidden">Edit</span>
                   </Link>
                   {isAdmin && (
                     <button
                       onClick={() => handleFeature(property.id, !!property.featured)}
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border ${
+                      aria-label={property.featured ? `Unfeature ${property.title}` : `Feature ${property.title}`}
+                      className={`inline-flex h-9 min-w-[92px] flex-1 items-center justify-center gap-1 rounded-lg border px-2 text-[11px] font-bold transition-colors lg:h-8 lg:min-w-8 lg:flex-none lg:px-0 ${
                         property.featured
                           ? "bg-[#FFF8E8] hover:bg-[#FAEBC8] border-[#F2C052]/40"
                           : "bg-[#F8F7FA] hover:bg-[#F3F1F5] border-[#E4E0E7]/30"
                       }`}
                       title={property.featured ? "Remove from featured" : "Mark as featured"}
                     >
-                      <Star className={`w-4 h-4 ${property.featured ? "fill-[#DDAA42] text-[#DDAA42]" : "text-[#68646F]"}`} />
+                      <Star className={`h-4 w-4 ${property.featured ? "fill-[#DDAA42] text-[#DDAA42]" : "text-[#68646F]"}`} /><span className="lg:hidden">{property.featured ? "Unfeature" : "Feature"}</span>
                     </button>
                   )}
                   <button
                     onClick={() => { setDeleteError(""); setDeleteModal(property.id); }}
-                    className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center hover:bg-red-100 transition-colors border border-red-100"
+                    aria-label={`Delete ${property.title}`}
+                    className="inline-flex h-9 min-w-[82px] flex-1 items-center justify-center gap-1 rounded-lg border border-red-100 bg-red-50 px-2 text-[11px] font-bold text-red-500 transition-colors hover:bg-red-100 lg:h-8 lg:min-w-8 lg:flex-none lg:px-0"
                     title="Delete"
                   >
-                    <Trash2 className="w-4 h-4 text-red-500" />
+                    <Trash2 className="h-4 w-4" /><span className="lg:hidden">Delete</span>
                   </button>
                 </div>
               </div>
@@ -344,6 +349,7 @@ export default function PropertyTable({
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* Delete Confirmation Modal */}

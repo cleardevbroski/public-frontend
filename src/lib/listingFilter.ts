@@ -144,15 +144,17 @@ export function matchesQuery(p: Property, q: string): boolean {
 export function filterListingProperties(opts: {
   properties: Property[];
   kind: ListingKind;
+  propertyTypes?: string[];
   zone?: string | null;
   locality?: string | null;
   filters?: string[];
   query?: string;
 }): Property[] {
-  const { properties, kind, zone, locality, filters = [], query = "" } = opts;
+  const { properties, kind, propertyTypes, zone, locality, filters = [], query = "" } = opts;
   return properties.filter(
     (p) =>
       matchesKind(p, kind) &&
+      (!propertyTypes || propertyTypes.includes((p.propertyType || "").trim())) &&
       (!zone || matchesZone(p, zone)) &&
       (!locality || matchesLocality(p, locality)) &&
       matchesFilters(p, filters) &&

@@ -13,6 +13,11 @@ type Builder = {
   logo: string;
   established: string;
   description: string;
+  longDescription: string;
+  headquarters: string;
+  experienceYears?: number;
+  totalProjects?: number;
+  deliveredProjects?: number;
   city: string;
   projectCount: number;
   verified: boolean;
@@ -27,6 +32,11 @@ const blank: FormState = {
   logo: "",
   established: "",
   description: "",
+  longDescription: "",
+  headquarters: "",
+  experienceYears: undefined,
+  totalProjects: undefined,
+  deliveredProjects: undefined,
   city: "",
   projectCount: 0,
   verified: false,
@@ -234,6 +244,22 @@ export default function AdminBuilders() {
                   <input type="number" value={form.projectCount} onChange={(e) => set("projectCount", parseInt(e.target.value) || 0)} className={input} />
                 </div>
                 <div>
+                  <label className={label}>Headquarters</label>
+                  <input value={form.headquarters || ""} onChange={(e) => set("headquarters", e.target.value)} className={input} placeholder="e.g. Bangalore" />
+                </div>
+                <div>
+                  <label className={label}>Experience (years)</label>
+                  <input type="number" min={0} value={form.experienceYears ?? ""} onChange={(e) => set("experienceYears", e.target.value === "" ? undefined : Number(e.target.value))} className={input} />
+                </div>
+                <div>
+                  <label className={label}>Total Projects</label>
+                  <input type="number" min={0} value={form.totalProjects ?? ""} onChange={(e) => set("totalProjects", e.target.value === "" ? undefined : Number(e.target.value))} className={input} />
+                </div>
+                <div>
+                  <label className={label}>Delivered Projects</label>
+                  <input type="number" min={0} value={form.deliveredProjects ?? ""} onChange={(e) => set("deliveredProjects", e.target.value === "" ? undefined : Number(e.target.value))} className={input} />
+                </div>
+                <div>
                   <label className={label}>Logo URL</label>
                   <input value={form.logo || ""} onChange={(e) => set("logo", e.target.value)} className={input} placeholder="https://..." />
                 </div>
@@ -255,6 +281,10 @@ export default function AdminBuilders() {
                     className={`${input} h-24 py-3 resize-none`}
                     placeholder="Short description about the developer..."
                   />
+                </div>
+                <div className="col-span-2">
+                  <label className={label}>Long Description</label>
+                  <textarea value={form.longDescription || ""} onChange={(e) => set("longDescription", e.target.value)} className={`${input} h-32 py-3 resize-y`} placeholder="Detailed developer profile for property pages..." />
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t border-[#E4E0E7]">

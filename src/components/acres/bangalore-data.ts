@@ -28,6 +28,26 @@ export type BangaloreRoute = {
   heroStat?: string;
 };
 
+export type BrowsePropertyType = {
+  key: string;
+  label: string;
+  canonicalSlug: string;
+  aliases: string[];
+  related: string[];
+  propertyTypes?: string[];
+};
+
+/** Canonical destinations for the public Browse by Type cards. */
+export const browsePropertyTypes: BrowsePropertyType[] = [
+  { key: "apartment", label: "Apartment", canonicalSlug: "flats-in-bangalore-ffid", aliases: ["apartments-in-bangalore"], related: ["villa", "rent", "plot"], propertyTypes: ["Apartment", "Penthouse"] },
+  { key: "villa", label: "Villa", canonicalSlug: "independent-house-in-bangalore-ffid", aliases: ["villas-in-bangalore"], related: ["apartment", "plot", "rent"], propertyTypes: ["Villa", "Independent House"] },
+  { key: "rent", label: "Rent", canonicalSlug: "property-for-rent-in-bangalore-ffid", aliases: ["properties-for-rent-in-bangalore"], related: ["apartment", "pg", "lease"] },
+  { key: "plot", label: "Plot", canonicalSlug: "residential-land-in-bangalore-ffid", aliases: ["plots-in-bangalore"], related: ["villa", "apartment", "commercial"] },
+  { key: "commercial", label: "Commercial", canonicalSlug: "commercial-property-in-bangalore-ffid", aliases: ["commercial-properties-in-bangalore"], related: ["lease", "plot", "rent"] },
+  { key: "lease", label: "Lease", canonicalSlug: "commercial-property-for-rent-in-bangalore-ffid", aliases: ["properties-for-lease-in-bangalore"], related: ["commercial", "rent", "plot"] },
+  { key: "pg", label: "PG/Co-living", canonicalSlug: "pg-in-bangalore-ffid", aliases: ["pg-in-bangalore"], related: ["rent", "apartment", "commercial"] },
+];
+
 export type BangaloreZone = "East" | "West" | "North" | "South" | "Central";
 
 export const bangaloreZones: Record<BangaloreZone, { name: string; description: string; localities: string[] }> = {
@@ -226,7 +246,26 @@ export const bangaloreListings: BangaloreListing[] = (Object.keys(kindConfig) as
   })
 );
 
-export const getRouteBySlug = (slug: string) => bangaloreRoutes.find((route) => route.slug === slug);
+const browseTypeAliases = Object.fromEntries(
+  browsePropertyTypes.flatMap((type) => type.aliases.map((alias) => [alias, type.canonicalSlug]))
+);
+
+export const getBrowsePropertyType = (route: BangaloreRoute) =>
+  browsePropertyTypes.find((type) => type.canonicalSlug === route.slug);
+
+export const getSimilarBrowsePropertyTypes = (route: BangaloreRoute) => {
+  const current = getBrowsePropertyType(route);
+  if (!current) return browsePropertyTypes.slice(0, 3);
+  return current.related
+    .map((key) => browsePropertyTypes.find((type) => type.key === key))
+    .filter((type): type is BrowsePropertyType => Boolean(type));
+};
+
+export const getRouteBySlug = (slug: string) => {
+  const normalizedSlug = slug.trim().replace(/^\/+|\/+$/g, "");
+  const canonicalSlug = browseTypeAliases[normalizedSlug] ?? normalizedSlug;
+  return bangaloreRoutes.find((route) => route.slug === canonicalSlug);
+};
 
 export const getListingsByKind = (kind: BangaloreRoute["kind"]) =>
   kind === "city" || kind === "price-trends" || kind === "insights" || kind === "home-loan" || kind === "area-converter" || kind === "rent-receipt" || kind === "post-property"

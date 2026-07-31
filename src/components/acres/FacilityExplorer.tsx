@@ -6,7 +6,6 @@ import {
   Building2,
   Car,
   Check,
-  ChevronDown,
   CircleDot,
   Dumbbell,
   Gamepad2,
@@ -110,24 +109,18 @@ export default function FacilityExplorer({ title, amenities = [], facilities = [
         <h2 id="facilities-heading" className="text-[22px] font-extrabold text-[#172039]">{title ? `${title} Amenities` : "Amenities"}</h2>
         <div className="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-5">
           {preview.map((name) => (
-            <button key={name} type="button" onClick={() => setOpen(true)} className="min-h-[108px] rounded-xl border border-[#E5E8EE] bg-white px-2 py-3 text-center transition hover:border-[#C8A258] hover:bg-[#FFFDF8]" aria-label={`View ${name} amenities`}>
+            <div key={name} className="min-h-[108px] rounded-xl border border-[#E5E8EE] bg-white px-2 py-3 text-center">
               <span className="mx-auto flex h-9 items-center justify-center"><AmenityIcon name={name} compact /></span>
               <span className="mt-2 block line-clamp-2 text-[11px] font-semibold leading-4 text-[#596277]">{name}</span>
-            </button>
+            </div>
           ))}
-          {remaining > 0 && (
-            <button type="button" onClick={() => setOpen(true)} className="min-h-[108px] rounded-xl border border-[#E5E8EE] bg-[#FCFCFD] px-2 py-3 text-center transition hover:border-[#C8A258] hover:bg-[#FFFDF8]" aria-label={`View ${remaining} more amenities`}>
-              <span className="block text-[20px] font-extrabold text-[#30394E]">+{remaining}</span>
-              <span className="mt-1 block text-[11px] font-semibold text-[#596277]">More</span>
-              <ChevronDown className="mx-auto mt-1 size-4 text-[#596277]" />
-            </button>
-          )}
         </div>
+        <div className="mt-4 flex justify-end"><button type="button" onClick={() => setOpen(true)} className="rounded-lg border border-[#C8A258] bg-[#FFFDF8] px-4 py-2 text-[12px] font-bold text-[#795A18] transition hover:bg-[#FFF6DD]" aria-expanded={open} aria-controls="amenities-modal">{remaining > 0 ? `View More (+${remaining})` : "View More Details"}</button></div>
       </section>
 
       {open && (
         <div className="fixed inset-0 z-[70] flex items-end justify-center bg-[#0B1328]/55 p-0 backdrop-blur-[2px] md:items-center md:p-5" role="dialog" aria-modal="true" aria-labelledby="amenities-modal-title">
-          <div className="max-h-[92vh] w-full max-w-[1060px] overflow-y-auto rounded-t-2xl bg-white shadow-2xl md:rounded-2xl">
+          <div id="amenities-modal" className="max-h-[92vh] w-full max-w-[1060px] overflow-y-auto rounded-t-2xl bg-white shadow-2xl md:rounded-2xl">
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#DDE2EA] bg-white px-5 py-4 md:px-6">
               <h2 id="amenities-modal-title" className="text-[18px] font-extrabold text-[#172039]">Amenities{title ? ` - ${title}` : ""}</h2>
               <button type="button" onClick={() => setOpen(false)} className="rounded-lg p-2 text-[#30394E] transition hover:bg-[#F2F4F7]" aria-label="Close amenities"><X className="size-5" /></button>

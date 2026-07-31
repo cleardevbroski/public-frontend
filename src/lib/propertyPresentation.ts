@@ -16,7 +16,7 @@ export function priceWithCharges(price?: string): string {
 
 function parsePricePoints(value: string): number[] {
   const matches = [...value.replace(/,/g, "").matchAll(/(\d+(?:\.\d+)?)\s*(cr|crore|l|lac|lakh)?/gi)];
-  const impliedUnit = matches.findLast((match) => match[2])?.[2]?.toLowerCase();
+  const impliedUnit = [...matches].reverse().find((match: RegExpExecArray) => Boolean(match[2]))?.[2]?.toLowerCase();
 
   return matches.flatMap((match) => {
     const amount = Number(match[1]);

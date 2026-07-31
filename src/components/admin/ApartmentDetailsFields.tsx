@@ -11,8 +11,9 @@ type Props = {
   updateDetail: (index: number, updates: Partial<ConfigurationDetail>) => void;
   possession: PossessionDetails;
   setPossession: (value: PossessionDetails) => void;
-  floorLabel: string;
-  setFloorLabel: (value: string) => void;
+  /** @deprecated retained for callers of the old form contract; no Flat Floor UI is rendered. */
+  floorLabel?: string;
+  setFloorLabel?: (value: string) => void;
   totalFloors?: number;
   setTotalFloors: (value?: number) => void;
   projectArea?: { totalAcres?: number; openSpaceAcres?: number; builtUpAcres?: number };
@@ -168,14 +169,10 @@ export default function ApartmentDetailsFields(props: Props) {
           {props.errors.possessionDate && <p className="text-[12px] text-red-600 mt-1">{props.errors.possessionDate}</p>}
         </div>
         <div>
-          <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Flat Floor</label>
-          <input value={props.floorLabel} onChange={(e) => props.setFloorLabel(e.target.value)} placeholder="e.g. 3, Ground or Basement" className={inputClass} />
-          {props.errors.floorLabel && <p className="text-[12px] text-red-600 mt-1">{props.errors.floorLabel}</p>}
-        </div>
-        <div>
-          <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Total Floors</label>
+          <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Total Floors in Building</label>
           <input type="number" min={1} step={1} value={props.totalFloors ?? ""} onChange={(e) => props.setTotalFloors(e.target.value ? Number(e.target.value) : undefined)} placeholder="e.g. 12" className={inputClass} />
           {props.errors.totalFloors && <p className="text-[12px] text-red-600 mt-1">{props.errors.totalFloors}</p>}
+          <p className="mt-1 text-[11px] text-[#68646F]">Enter the complete building floor count, not the floor of this flat.</p>
         </div>
       </div>
 

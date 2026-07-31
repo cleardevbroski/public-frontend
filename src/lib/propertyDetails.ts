@@ -180,9 +180,6 @@ export function validateApartmentDraft(property: Partial<Property>): ApartmentEr
   if (property.totalFloors !== undefined && (!Number.isInteger(property.totalFloors) || property.totalFloors < 1)) {
     errors.totalFloors = "Total floors must be at least 1.";
   }
-  if (/^[1-9]\d*$/.test(property.floorLabel || "") && property.totalFloors && Number(property.floorLabel) > property.totalFloors) {
-    errors.floorLabel = "Flat floor cannot be higher than total floors.";
-  }
   if (property.reraRegistered && (!property.reraPhases?.length || property.reraPhases.some((phase) => !phase.name.trim() || !phase.reraNumber.trim()))) {
     errors.reraPhases = "Every RERA phase needs a phase name and registration number.";
   }

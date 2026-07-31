@@ -195,6 +195,38 @@ export type NearbyDetail = {
   places?: NearbyPlace[];
 };
 
+export type ProjectNarrative = {
+  introduction?: string[];
+  usps?: string[];
+  keyDetails?: Array<{ label: string; value: string }>;
+  featureGroups?: Array<{ title: string; items: string[] }>;
+  locationAdvantage?: string[];
+  investmentReasons?: string[];
+};
+
+export type MasterPlan = {
+  imageUrl?: string;
+  title?: string;
+  summary?: string;
+  sections?: Array<{ heading: string; body: string }>;
+};
+
+export type ProjectDownload = {
+  _id?: string;
+  kind: "brochure" | "master-plan" | "walkthrough";
+  label: string;
+  fileName: string;
+  fileUrl?: string;
+  mimeType: "application/pdf" | "video/mp4";
+  fileSize?: number;
+};
+
+export type ProjectFaq = {
+  question: string;
+  answer: string;
+  order?: number;
+};
+
 export type Property = {
   id: string;
   title: string;
@@ -216,6 +248,10 @@ export type Property = {
     builtUpAcres?: number;
   };
   totalUnits?: number;
+  projectNarrative?: ProjectNarrative;
+  masterPlan?: MasterPlan;
+  projectDownloads?: ProjectDownload[];
+  faqs?: ProjectFaq[];
   possession?: string;
   possessionDetails?: PossessionDetails;
   builder?: string;

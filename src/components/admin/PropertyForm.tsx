@@ -34,6 +34,7 @@ import {
 import MediaUploader from "./MediaUploader";
 import HeroImageUploader from "./HeroImageUploader";
 import OptionalMediaField from "./OptionalMediaField";
+import ProjectContentEditor from "./ProjectContentEditor";
 import ApartmentDetailsFields from "./ApartmentDetailsFields";
 import VillaDetailsFields from "./VillaDetailsFields";
 import PlotDetailsFields from "./PlotDetailsFields";
@@ -168,6 +169,10 @@ const initialFormData: FormData = {
   area: "",
   projectArea: undefined,
   totalUnits: undefined,
+  projectNarrative: undefined,
+  masterPlan: undefined,
+  projectDownloads: [],
+  faqs: [],
   possession: "",
   possessionDetails: undefined,
   builder: "",
@@ -288,6 +293,12 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
 
   const buildPropertyPayload = () => compactPropertyPayload({
     ...formData,
+    // Normalize legacy floor and brochure fields at submit time. Existing records
+    // remain readable, while new saves use the current workflow fields only.
+    floorLabel: undefined,
+    projectDownloads: formData.projectDownloads?.length || !formData.brochure
+      ? formData.projectDownloads
+      : [{ kind: "brochure", label: "Project Brochure", fileName: formData.brochureName || "Brochure.pdf", fileUrl: formData.brochure, mimeType: "application/pdf" }],
     heroImages: (formData.heroImages || []).slice(0, 3),
     // Retain the original submitter when an admin edits a customer listing.
     submittedBy: formData.submittedBy || (isPublic ? "user" : "admin"),
@@ -836,8 +847,6 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   updateDetail={updateConfigurationDetail}
                   possession={formData.possessionDetails || { status: "Ready to Move", launchDate: "" }}
                   setPossession={(value) => updateField("possessionDetails", value)}
-                  floorLabel={formData.floorLabel || ""}
-                  setFloorLabel={(value) => updateField("floorLabel", value)}
                   totalFloors={formData.totalFloors}
                   setTotalFloors={(value) => updateField("totalFloors", value)}
                   projectArea={formData.projectArea}
@@ -1190,6 +1199,19 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 />
                 {formData.propertyType === "Apartment" && <p className={`text-[12px] mt-1 ${validationErrors.description ? "text-red-600" : "text-[#68646F]"}`}>{validationErrors.description || `${(formData.description || "").trim().length}/50 minimum characters`}</p>}
               </div>
+              {formData.propertyType === "Apartment" && (
+                <ProjectContentEditor
+                  section="narrative"
+                  narrative={formData.projectNarrative}
+                  masterPlan={formData.masterPlan}
+                  downloads={formData.projectDownloads}
+                  faqs={formData.faqs}
+                  onNarrativeChange={(value) => updateField("projectNarrative", value)}
+                  onMasterPlanChange={(value) => updateField("masterPlan", value)}
+                  onDownloadsChange={(value) => updateField("projectDownloads", value)}
+                  onFaqsChange={(value) => updateField("faqs", value)}
+                />
+              )}
                 </div>
               )}
             </div>
@@ -1215,6 +1237,19 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   <h3 className="text-[15px] font-bold text-[#121B35]">Optional Project Presentation</h3>
                   <p className="mt-1 text-[12px] text-[#68646F]">Add project overview photos, a gallery, and a brochure when available.</p>
                 </div>
+                {formData.propertyType === "Apartment" && (
+                  <ProjectContentEditor
+                    section="media"
+                    narrative={formData.projectNarrative}
+                    masterPlan={formData.masterPlan}
+                    downloads={formData.projectDownloads}
+                    faqs={formData.faqs}
+                    onNarrativeChange={(value) => updateField("projectNarrative", value)}
+                    onMasterPlanChange={(value) => updateField("masterPlan", value)}
+                    onDownloadsChange={(value) => updateField("projectDownloads", value)}
+                    onFaqsChange={(value) => updateField("faqs", value)}
+                  />
+                )}
                 <div className="grid gap-4 md:grid-cols-2">
                   <OptionalMediaField
                     label="Developer logo"
@@ -1228,6 +1263,14 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                     onChange={(value) => updateField("localityMapImageUrl", value)}
                     description="Displayed in Locality & Neighbourhood instead of the default placeholder."
                   />
+                  {formData.propertyType === "Apartment" && (
+                    <OptionalMediaField
+                      label="Master plan image"
+                      value={formData.masterPlan?.imageUrl}
+                      onChange={(imageUrl) => updateField("masterPlan", { ...(formData.masterPlan || {}), imageUrl })}
+                      description="Displayed in the project-level Master Plan section."
+                    />
+                  )}
                 </div>
               </div>
 
@@ -1240,64 +1283,6 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 </div>
               )}
 
-              {/* Brochure Upload */}
-              <div className="mt-8 pt-6 border-t border-[#F3F1F5]">
-                <h3 className="text-[15px] font-bold text-[#121B35] mb-1">Property Brochure</h3>
-                <p className="text-[13px] text-[#68646F] mb-4">
-                  Upload a PDF brochure buyers can download from the property page (optional).
-                </p>
-
-                {formData.brochure ? (
-                  <div className="flex items-center gap-3 p-4 bg-[#F8F7FA] border border-[#E4E0E7]/40 rounded-2xl">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#F2C052] to-[#DDAA42] flex items-center justify-center shrink-0">
-                      <FileText className="w-5 h-5 text-[#121B35]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[14px] font-semibold text-[#121B35] truncate">
-                        {formData.brochureName || "Brochure attached"}
-                      </p>
-                      <p className="text-[12px] text-[#68646F]">Ready to publish</p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        updateField("brochure", "");
-                        updateField("brochureName", "");
-                      }}
-                      className="text-[12px] font-bold text-red-500 hover:underline"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center gap-2 p-8 border-2 border-dashed border-[#E4E0E7] rounded-2xl cursor-pointer hover:border-[#DDAA42]/60 hover:bg-[#F8F7FA]/50 transition-all">
-                    <FileText className="w-8 h-8 text-[#DDAA42]" />
-                    <span className="text-[14px] font-semibold text-[#121B35]">Click to upload brochure</span>
-                    <span className="text-[12px] text-[#68646F]">PDF, max ~5 MB</span>
-                    <input
-                      type="file"
-                      accept="application/pdf,.pdf"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        if (file.type !== "application/pdf" || file.size > 5 * 1024 * 1024) {
-                          setSubmitError("Brochure must be a PDF no larger than 5 MB.");
-                          e.target.value = "";
-                          return;
-                        }
-                        setSubmitError("");
-                        try {
-                          const url = await uploadPropertyMedia(file, "brochure");
-                          updateField("brochure", url);
-                          updateField("brochureName", file.name);
-                        } catch (error) {
-                          setSubmitError(error instanceof Error ? error.message : "Brochure upload failed.");
-                        }
-                      }}
-                    />
-                  </label>
-                )}
-              </div>
             </div>
           )}
 
@@ -1526,6 +1511,22 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   <p className="text-[13px] text-[#68646F]">Verify all details before publishing</p>
                 </div>
               </div>
+
+              {formData.propertyType === "Apartment" && (
+                <div className="mt-6">
+                  <ProjectContentEditor
+                    section="faqs"
+                    narrative={formData.projectNarrative}
+                    masterPlan={formData.masterPlan}
+                    downloads={formData.projectDownloads}
+                    faqs={formData.faqs}
+                    onNarrativeChange={(value) => updateField("projectNarrative", value)}
+                    onMasterPlanChange={(value) => updateField("masterPlan", value)}
+                    onDownloadsChange={(value) => updateField("projectDownloads", value)}
+                    onFaqsChange={(value) => updateField("faqs", value)}
+                  />
+                </div>
+              )}
 
               {/* Preview Card */}
               <div className="bg-[#F8F7FA] rounded-2xl p-6 border border-[#E4E0E7]/30 space-y-6">

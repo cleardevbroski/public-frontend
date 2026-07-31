@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import FloorPlanExplorer from "@/components/acres/FloorPlanExplorer";
 import FacilityExplorer from "@/components/acres/FacilityExplorer";
+import ApartmentPriceList from "@/components/acres/ApartmentPriceList";
 import PropertyDetail from "@/components/acres/PropertyDetail";
 import { cityListings } from "@/components/acres/mock-data";
 import { AuthProvider } from "@/components/acres/AuthContext";
@@ -56,6 +57,30 @@ describe("interactive property presentation", () => {
     expect(html).toContain("Amenities");
     expect(html).toContain("Swimming Pool");
     expect(html).toContain("Security");
+    expect(html).toContain("View More Details");
+  });
+
+  it("shows Amenities View More even without extra rows or descriptions", () => {
+    const html = renderToStaticMarkup(<FacilityExplorer amenities={["Power Backup", "Security"]} />);
+    expect(html).toContain("View More Details");
+  });
+
+  it("renders explicit apartment area units and a calculated base rate", () => {
+    const html = renderToStaticMarkup(<ApartmentPriceList title="Example Project" details={[{
+      configuration: "2 BHK",
+      price: "₹1.21 Cr",
+      builtUpArea: "1097",
+      carpetArea: "900",
+      bedrooms: 2,
+      bathrooms: 2,
+      balconies: 1,
+      facings: ["East"],
+    }]} />);
+    expect(html).toContain("1,097 Sq. Ft.");
+    expect(html).toContain("₹11,030 / Sq. Ft.");
+    expect(html).toContain("Sq. Metre");
+    expect(html).toContain("Sq. Yard");
+    expect(html).toContain("₹1.21 Cr + Charges");
   });
 
   it("uses up to three dedicated Project Overview photos in their selected order", () => {

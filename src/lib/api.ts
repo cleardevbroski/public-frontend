@@ -209,6 +209,9 @@ function normalizePropertyRecord(value: unknown): unknown {
     image: normalizeMediaUrl(record.image),
     heroImages: normalizeMediaList(record.heroImages),
     images: normalizeMediaList(record.images),
+    masterPlan: record.masterPlan && typeof record.masterPlan === "object"
+      ? { ...(record.masterPlan as Record<string, unknown>), imageUrl: normalizeMediaUrl((record.masterPlan as Record<string, unknown>).imageUrl) }
+      : record.masterPlan,
   };
 }
 
@@ -318,7 +321,7 @@ export async function reviewPublicSubmission(id: string, action: "start_review" 
   return readJson(await apiFetch(`/api/properties/admin/submissions/${id}/review`, { method: "PUT", body: JSON.stringify({ action, message }) }), "Failed to update submission");
 }
 
-export async function uploadPropertyMedia(file: File, kind: "image" | "brochure" | "layout-map-image" | "layout-map-pdf" | "legal-document-image" | "legal-document-pdf" | "rera-document-image" | "rera-document-pdf"): Promise<string> {
+export async function uploadPropertyMedia(file: File, kind: "image" | "brochure" | "layout-map-image" | "layout-map-pdf" | "project-document-pdf" | "project-walkthrough" | "legal-document-image" | "legal-document-pdf" | "rera-document-image" | "rera-document-pdf"): Promise<string> {
   const res = await apiFetch(`/api/property-media?kind=${kind}`, {
     method: "POST",
     headers: { "Content-Type": file.type },
@@ -327,6 +330,26 @@ export async function uploadPropertyMedia(file: File, kind: "image" | "brochure"
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Media upload failed");
   return data.url;
+}
+
+export async function downloadProjectFile(propertyId: string, documentId: string, fileName: string) {
+  const res = await customerApiFetch(`/api/properties/${encodeURIComponent(propertyId)}/project-downloads/${encodeURIComponent(documentId)}/download`, { method: "GET" });
+  if (!res.ok) {
+    let message = "Project download failed";
+    try {
+      const data = await res.json();
+      message = data.error || message;
+    } catch {}
+    throw new Error(message);
+  }
+  const url = URL.createObjectURL(await res.blob());
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
 }
 
 export async function downloadPropertyDocument(propertyId: string, phaseId: string, documentId: string, fileName: string) {
@@ -422,6 +445,9 @@ export async function deleteDealer(id: string) {
 // ─── Builders ───────────────────────────────────────────────────
 export async function fetchBuilders(params: Record<string, unknown> = {}) {
   return readJson(await apiFetch(`/api/builders${toQuery(params)}`), "Failed to fetch builders");
+}
+export async function fetchBuilder(slug: string) {
+  return readJson(await apiFetch(`/api/builders/${encodeURIComponent(slug)}`), "Failed to fetch builder");
 }
 export async function createBuilder(data: Record<string, unknown>) {
   return readJson(await apiFetch("/api/builders", { method: "POST", body: JSON.stringify(data) }), "Failed to create builder");
