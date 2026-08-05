@@ -15,6 +15,7 @@ const CUSTOMER_TOKEN_KEY = "cleartitle_token";
 const CUSTOMER_TOKEN_BACKUP_KEY = "cleartitle_customer_token";
 const ADMIN_TOKEN_KEY = "cleartitle_admin_token";
 const ADMIN_FLAG_KEY = "cleartitle_admin_auth";
+const CHANNEL_PARTNER_TOKEN_KEY = "cleartitle_channel_partner_token";
 
 /**
  * Get the token for the currently active application area. Admin and customer
@@ -118,6 +119,80 @@ async function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Re
 
 async function customerApiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
   return apiFetchWithToken(endpoint, options, getCustomerToken());
+}
+
+// ─── Channel Partners ─────────────────────────────────────────
+export async function uploadChannelPartnerDocument(file: File, kind: import("./channelPartnerTypes").PartnerDocumentKind) {
+  const res = await apiFetch(`/api/channel-partner-media?kind=${encodeURIComponent(kind)}`, {
+    method: "POST",
+    headers: { "Content-Type": file.type },
+    body: file,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Document upload failed");
+  return { url: data.url, originalName: file.name, mimeType: data.mimeType || file.type, bytes: data.bytes || file.size };
+}
+
+export async function submitChannelPartner(data: Record<string, unknown>, idempotencyKey: string) {
+  return readJson(await apiFetch("/api/channel-partners", {
+    method: "POST",
+    headers: { "Idempotency-Key": idempotencyKey },
+    body: JSON.stringify(data),
+  }), "Failed to submit channel partner application");
+}
+
+export async function fetchChannelPartners(params: Record<string, unknown> = {}) {
+  return readJson(await apiFetch(`/api/channel-partners${toQuery(params)}`), "Failed to fetch channel partners");
+}
+
+export async function fetchChannelPartner(id: string) {
+  return readJson(await apiFetch(`/api/channel-partners/${encodeURIComponent(id)}`), "Failed to fetch channel partner application");
+}
+
+export async function updateChannelPartnerStatus(id: string, status: string, note = "") {
+  return readJson(await apiFetch(`/api/channel-partners/${encodeURIComponent(id)}/status`, { method: "PATCH", body: JSON.stringify({ status, note }) }), "Failed to update channel partner application");
+}
+
+export async function addChannelPartnerNote(id: string, note: string) {
+  return readJson(await apiFetch(`/api/channel-partners/${encodeURIComponent(id)}/notes`, { method: "POST", body: JSON.stringify({ note }) }), "Failed to add internal note");
+}
+
+export async function verifyChannelPartnerCode(partnerCode: string) {
+  const data = await readJson(await apiFetch("/api/channel-partner-leads/session", {
+    method: "POST",
+    body: JSON.stringify({ partnerCode }),
+  }), "Unable to verify Channel Partner code");
+  if (data.token && typeof window !== "undefined") sessionStorage.setItem(CHANNEL_PARTNER_TOKEN_KEY, data.token);
+  return data;
+}
+
+function channelPartnerFetch(endpoint: string, options: RequestInit = {}) {
+  const token = typeof window === "undefined" ? null : sessionStorage.getItem(CHANNEL_PARTNER_TOKEN_KEY);
+  return apiFetchWithToken(endpoint, options, token);
+}
+
+export async function fetchChannelPartnerProjects() {
+  return readJson(await channelPartnerFetch("/api/channel-partner-leads/projects"), "Unable to load projects");
+}
+
+export async function fetchMyChannelPartnerClients() {
+  return readJson(await channelPartnerFetch("/api/channel-partner-leads/mine"), "Unable to load registered clients");
+}
+
+export async function registerChannelPartnerClient(data: Record<string, unknown>, idempotencyKey: string) {
+  return readJson(await channelPartnerFetch("/api/channel-partner-leads", {
+    method: "POST",
+    headers: { "Idempotency-Key": idempotencyKey },
+    body: JSON.stringify(data),
+  }), "Unable to register client");
+}
+
+export async function fetchAdminChannelPartnerClients(partnerId: string) {
+  return readJson(await apiFetch(`/api/channel-partner-leads/admin/partners/${encodeURIComponent(partnerId)}`), "Unable to load Channel Partner clients");
+}
+
+export async function fetchAdminCPClients(params: Record<string, unknown> = {}) {
+  return readJson(await apiFetch(`/api/channel-partner-leads/admin/clients${toQuery(params)}`), "Unable to load CP clients");
 }
 
 // ─── Auth API ───────────────────────────────────────────────────

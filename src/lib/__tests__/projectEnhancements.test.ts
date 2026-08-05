@@ -4,6 +4,7 @@ import {
   calculateUnitPriceRange,
   convertAreaRange,
   formatAreaMeasurement,
+  formatAreaValue,
   formatAreaRange,
   formatInrUnitRate,
   formatPossessionDateOnly,
@@ -49,6 +50,7 @@ describe("project enhancements", () => {
     expect(formatAreaMeasurement(area!, "sqft")).toBe("1,097 Sq. Ft.");
     expect(formatAreaMeasurement(area!, "sqm")).toBe("101.91 Sq. Metres");
     expect(formatAreaMeasurement(area!, "sqyd")).toBe("121.89 Sq. Yards");
+    expect(formatAreaValue(area!, "sqm")).toBe("101.91");
   });
 
   it("normalizes explicit square metre and square yard inputs back to square feet", () => {

@@ -79,11 +79,15 @@ function formatAreaNumber(value: number, unit: AreaUnit): string {
   });
 }
 
-export function formatAreaMeasurement(rangeSqft: NumericRange, unit: AreaUnit): string {
+export function formatAreaValue(rangeSqft: NumericRange, unit: AreaUnit): string {
   const range = convertAreaRange(rangeSqft, unit);
   const first = formatAreaNumber(range.min, unit);
   const second = formatAreaNumber(range.max, unit);
-  return `${range.min === range.max ? first : `${first}–${second}`} ${AREA_LABELS[unit]}`;
+  return range.min === range.max ? first : `${first}–${second}`;
+}
+
+export function formatAreaMeasurement(rangeSqft: NumericRange, unit: AreaUnit): string {
+  return `${formatAreaValue(rangeSqft, unit)} ${AREA_LABELS[unit]}`;
 }
 
 export function formatInrUnitRate(range: NumericRange, unit: AreaUnit): string {

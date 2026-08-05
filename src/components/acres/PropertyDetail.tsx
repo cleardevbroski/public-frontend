@@ -65,6 +65,7 @@ import FacilityExplorer from "./FacilityExplorer";
 import AdRail from "./AdRail";
 import VerifiedPropertyActionModal, { type PropertyAction } from "./VerifiedPropertyActionModal";
 import LawyerConsultationModal from "./LawyerConsultationModal";
+import GovernmentChargesModal from "./GovernmentChargesModal";
 import { configurationPriceRange, getProjectHeroImages, priceWithCharges } from "@/lib/propertyPresentation";
 import { trackAnalytics } from "@/lib/analytics";
 import { useHomepagePromotion } from "@/lib/useHomepagePromotion";
@@ -110,6 +111,7 @@ function buildPools(property: Property): Pools {
 }
 
 const isBase64 = (src: string) => src.startsWith("data:");
+const withoutCharges = (price: string) => price.replace(/\s*\+\s*charges?\s*$/i, "").trim();
 
 type NearbyCategory = "schools" | "colleges" | "hospitals" | "shopping" | "metro";
 function NearbyPlaceSummary({ property, category, label, Icon, legacy }: { property: Property; category: NearbyCategory; label: string; Icon: typeof School; legacy?: string }) {
@@ -211,6 +213,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const [overviewPopover, setOverviewPopover] = useState<"size" | "area" | null>(null);
   const [verifiedAction, setVerifiedAction] = useState<PropertyAction | null>(null);
   const [showLawyerConsultation, setShowLawyerConsultation] = useState(false);
+  const [showGovernmentCharges, setShowGovernmentCharges] = useState(false);
 
   // DBG006: Reset media state when navigating to a different property to prevent out-of-bounds crash
   useEffect(() => {
@@ -220,6 +223,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     setDescriptionExpanded(false);
     setAreaUnit("sqft");
     setOverviewPopover(null);
+    setShowGovernmentCharges(false);
   }, [property.id]);
 
   useEffect(() => {
@@ -587,6 +591,11 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
         propertyPrice={property.price}
         onClose={() => setShowLawyerConsultation(false)}
       />
+      <GovernmentChargesModal
+        open={showGovernmentCharges}
+        onClose={() => setShowGovernmentCharges(false)}
+        onRequestCallback={() => { setShowGovernmentCharges(false); setVerifiedAction("enquiry"); }}
+      />
       <Header />
 
       <section ref={setSectionRef("photos-videos")} className="property-detail-intro mx-auto max-w-[1440px] px-4 pb-4 pt-3 md:px-5 md:pb-5">
@@ -743,10 +752,13 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
         <div className="property-reference-summary mt-3 grid overflow-hidden rounded-xl border border-[#DDE2EA] bg-white lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.9fr)]">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E8EE] px-4 py-4 md:px-5">
-              <button type="button" onClick={() => scrollToSection("price-list")} className="flex items-center gap-3 text-left">
-                <Tag className="size-7 text-[#303A50]" strokeWidth={1.7} />
-                <span className="text-[21px] font-extrabold text-[#172039] md:text-[24px]">{priceWithCharges(displayPrice)}</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button type="button" onClick={() => scrollToSection("price-list")} className="flex items-center gap-3 text-left">
+                  <Tag className="size-7 text-[#303A50]" strokeWidth={1.7} />
+                  <span className="text-[21px] font-extrabold text-[#172039] md:text-[24px]">{withoutCharges(displayPrice)}</span>
+                </button>
+                <button type="button" onClick={() => setShowGovernmentCharges(true)} className="text-[13px] font-extrabold text-[#9A6B12] underline decoration-dotted underline-offset-4 md:text-[15px]">+ Charges</button>
+              </div>
               {hasPriceList && <button type="button" onClick={() => scrollToSection("price-list")} className="inline-flex items-center gap-2 rounded-lg border border-[#E7D4A7] bg-[#FFF7E6] px-3 py-2 text-[12px] font-bold text-[#303A50]"><BarChart3 className="size-4" /> Price Insights <ChevronRight className="size-4" /></button>}
             </div>
             <div className="grid border-b border-[#E5E8EE] sm:grid-cols-2">
@@ -1068,7 +1080,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
 
             {property.configurationDetails?.length ? (
               <div ref={setSectionRef("price-list")}>
-                <ApartmentPriceList title={property.title} details={property.configurationDetails} />
+                <ApartmentPriceList title={property.title} details={property.configurationDetails} onChargesClick={() => setShowGovernmentCharges(true)} />
               </div>
             ) : null}
 

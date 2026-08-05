@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import RootLayout from "@/RootLayout";
 import Home from "@/pages/Home";
 
@@ -13,6 +13,8 @@ const Property = lazy(() => import("@/pages/Property"));
 const Dealer = lazy(() => import("@/pages/Dealer"));
 const Builder = lazy(() => import("@/pages/Builder"));
 const Bangalore = lazy(() => import("@/pages/Bangalore"));
+const ChannelPartners = lazy(() => import("@/pages/ChannelPartners"));
+const ChannelPartnerRegistration = lazy(() => import("@/pages/ChannelPartnerRegistration"));
 
 const AdminDealers = lazy(() => import("@/pages/admin/AdminDealers"));
 const AdminBuilders = lazy(() => import("@/pages/admin/AdminBuilders"));
@@ -25,6 +27,8 @@ const AdminPropertySubmissions = lazy(() => import("@/pages/admin/AdminPropertyS
 const AdminAdvertisements = lazy(() => import("@/pages/admin/AdminAdvertisements"));
 const AdminLoginReports = lazy(() => import("@/pages/admin/AdminLoginReports"));
 const AdminHomepagePlacements = lazy(() => import("@/pages/admin/AdminHomepagePlacements"));
+const AdminChannelPartners = lazy(() => import("@/pages/admin/AdminChannelPartners"));
+const AdminCPClients = lazy(() => import("@/pages/admin/AdminCPClients"));
 
 export const router = createBrowserRouter([
   {
@@ -34,6 +38,10 @@ export const router = createBrowserRouter([
       { path: "/account", element: <Account /> },
       { path: "/dealers", element: <Dealers /> },
       { path: "/postproperty", element: <PostProperty /> },
+      { path: "/channel-partner", element: <ChannelPartners /> },
+      { path: "/cp-registration", element: <ChannelPartnerRegistration /> },
+      { path: "/channel-partner/client-registration", element: <Navigate to="/cp-registration" replace /> },
+      { path: "/channel-partners", element: <Navigate to="/channel-partner" replace /> },
       { path: "/admin", element: <Admin /> },
       { path: "/admin/hero", element: <AdminHero /> },
       { path: "/admin/post", element: <AdminPost /> },
@@ -48,6 +56,8 @@ export const router = createBrowserRouter([
       { path: "/admin/advertisements", element: <AdminAdvertisements /> },
       { path: "/admin/login-reports", element: <AdminLoginReports /> },
       { path: "/admin/homepage-placements", element: <AdminHomepagePlacements /> },
+      { path: "/admin/channel-partners", element: <AdminChannelPartners /> },
+      { path: "/admin/cp-clients", element: <AdminCPClients /> },
       { path: "/property/:id", element: <Property /> },
       { path: "/dealer/:slug", element: <Dealer /> },
       { path: "/builder/:slug", element: <Builder /> },

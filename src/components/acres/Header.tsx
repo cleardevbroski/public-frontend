@@ -116,6 +116,18 @@ export default function Header() {
             >
               Dealers
             </Link>
+            <Link
+              href="/channel-partner"
+              className="relative px-3 h-9 flex items-center gap-1 text-[13px] font-semibold rounded-lg text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200"
+            >
+              Channel Partner
+            </Link>
+            <Link
+              href="/cp-registration"
+              className="relative px-3 h-9 flex items-center gap-1 text-[12px] font-bold rounded-lg bg-[#DDAA42] text-[#0B1328] hover:bg-[#F2C052] transition-all duration-200"
+            >
+              CP Registration
+            </Link>
           </nav>
 
           {/* Post property pill */}
@@ -219,6 +231,10 @@ export default function Header() {
             {/* Scrollable Categories List */}
             <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-4">
               <h2 className="text-[11px] font-bold tracking-[0.2em] text-[#F2C052] uppercase mb-2">Features & Portals</h2>
+              <div className="grid grid-cols-2 gap-2">
+                <Link href="/channel-partner" onClick={() => setIsMenuOpen(false)} className="rounded-xl border border-[#DDAA42]/30 bg-white/5 p-3 text-center text-[11px] font-bold text-[#F2C052] hover:bg-white/10">Channel Partner</Link>
+                <Link href="/cp-registration" onClick={() => setIsMenuOpen(false)} className="rounded-xl bg-[#DDAA42] p-3 text-center text-[11px] font-bold text-[#0B1328] hover:bg-[#F2C052]">CP Registration</Link>
+              </div>
               
               <div className="space-y-3">
                 {navItems.map((item) => {

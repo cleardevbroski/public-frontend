@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { act } from "react";
+import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import FloorPlanExplorer from "@/components/acres/FloorPlanExplorer";
 import FacilityExplorer from "@/components/acres/FacilityExplorer";
 import ApartmentPriceList from "@/components/acres/ApartmentPriceList";
+import GovernmentChargesModal from "@/components/acres/GovernmentChargesModal";
 import PropertyDetail from "@/components/acres/PropertyDetail";
 import { cityListings } from "@/components/acres/mock-data";
 import { AuthProvider } from "@/components/acres/AuthContext";
@@ -65,7 +68,7 @@ describe("interactive property presentation", () => {
     expect(html).toContain("View More Details");
   });
 
-  it("renders explicit apartment area units and a calculated base rate", () => {
+  it("renders a compact three-column apartment price list with a unit rate", () => {
     const html = renderToStaticMarkup(<ApartmentPriceList title="Example Project" details={[{
       configuration: "2 BHK",
       price: "₹1.21 Cr",
@@ -76,11 +79,78 @@ describe("interactive property presentation", () => {
       balconies: 1,
       facings: ["East"],
     }]} />);
-    expect(html).toContain("1,097 Sq. Ft.");
+    expect(html).toContain("Unit Type (Saleable)");
+    expect(html).toContain("2 BHK Apartment");
+    expect(html).toContain("1,097");
+    expect(html.match(/<select/g)).toHaveLength(1);
+    expect(html).toContain("Price per Unit");
     expect(html).toContain("₹11,030 / Sq. Ft.");
-    expect(html).toContain("Sq. Metre");
-    expect(html).toContain("Sq. Yard");
-    expect(html).toContain("₹1.21 Cr + Charges");
+    expect(html).toContain("₹1.21 Cr");
+    expect(html).toContain("+ Charges");
+    expect(html).not.toContain("Built-up area");
+    expect(html).not.toContain("Excludes additional charges");
+  });
+
+  it("converts one apartment row without changing other rows or prices", async () => {
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const root = createRoot(host);
+    await act(async () => {
+      root.render(<ApartmentPriceList title="Example Project" details={[
+        { configuration: "2 BHK", price: "₹1.21 Cr", builtUpArea: "1097", carpetArea: "900", bedrooms: 2, bathrooms: 2, balconies: 1, facings: ["East"] },
+        { configuration: "3 BHK", price: "₹1.56 Cr", builtUpArea: "1250", carpetArea: "1000", bedrooms: 3, bathrooms: 3, balconies: 2, facings: ["West"] },
+      ]} />);
+    });
+
+    const selectors = host.querySelectorAll("select");
+    expect(selectors).toHaveLength(2);
+    await act(async () => {
+      const first = selectors[0] as HTMLSelectElement;
+      first.value = "sqm";
+      first.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    expect(host.textContent).toContain("101.91");
+    expect(host.textContent).toContain("₹1,18,727 / Sq. Metres");
+    expect(host.textContent).toContain("1,250");
+    expect(host.textContent).toContain("₹1.21 Cr");
+
+    await act(async () => {
+      const first = host.querySelectorAll("select")[0] as HTMLSelectElement;
+      first.value = "sqyd";
+      first.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    expect(host.textContent).toContain("121.89");
+    expect(host.textContent).toContain("₹99,271 / Sq. Yards");
+    expect(host.textContent).toContain("₹1.21 Cr");
+    expect(host.textContent).toContain("₹1.56 Cr");
+
+    await act(async () => { root.unmount(); });
+    host.remove();
+  });
+
+  it("does not offer conversion for an invalid apartment area", () => {
+    const html = renderToStaticMarkup(<ApartmentPriceList title="Example Project" details={[{
+      configuration: "2 BHK",
+      price: "Price on request",
+      builtUpArea: "Not supplied",
+      carpetArea: "",
+      bedrooms: 2,
+      bathrooms: 2,
+      balconies: 1,
+      facings: [],
+    }]} />);
+    expect(html).toContain("Not supplied");
+    expect(html).not.toContain("<select");
+  });
+
+  it("shows current indicative Karnataka government charges", () => {
+    const html = renderToStaticMarkup(<GovernmentChargesModal open onClose={() => undefined} onRequestCallback={() => undefined} />);
+    expect(html).toContain("Applicable Government Charges");
+    expect(html).toContain("Male ownership");
+    expect(html).toContain("Female ownership");
+    expect(html).toContain("Joint ownership");
+    expect(html).toContain("Generally 2%");
+    expect(html).toContain("Karnataka Kaveri Online");
   });
 
   it("uses up to three dedicated Project Overview photos in their selected order", () => {

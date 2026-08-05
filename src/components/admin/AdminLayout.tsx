@@ -28,6 +28,7 @@ import {
   Megaphone,
   FileText,
   LayoutGrid,
+  Handshake,
 } from "lucide-react";
 import { isAdminAuthed, adminLogin, adminLogout, getAdminLoginError } from "@/lib/adminAuth";
 
@@ -40,6 +41,8 @@ const navItems = [
   { label: "Dealers", href: "/admin/dealers", icon: Users },
   { label: "Builders", href: "/admin/builders", icon: HardHat },
   { label: "Leads", href: "/admin/leads", icon: MessageSquare },
+  { label: "Channel Partners", href: "/admin/channel-partners", icon: Handshake },
+  { label: "CP Clients", href: "/admin/cp-clients", icon: Users },
   { label: "Analytics", href: "/admin/analytics", icon: LineChart },
   { label: "Testimonials", href: "/admin/testimonials", icon: Quote },
   { label: "Lawyers", href: "/admin/lawyers", icon: Scale },
@@ -275,7 +278,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <Search className="w-4 h-4 text-[#68646F]" />
             <input
               type="text"
-              placeholder="Search properties..."
+              placeholder="Search admin records..."
               className="flex-1 bg-transparent text-[14px] text-[#121B35] placeholder-[#68646F] outline-none"
             />
           </div>
