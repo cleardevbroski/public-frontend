@@ -123,7 +123,7 @@ export default function ProfileDrawer() {
               <ChevronRight className="size-4 text-[#68646F] group-hover:translate-x-1 transition-transform" />
             </Link>
 
-            <button className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-[#E4E0E7]/30 group">
+            <Link href="/account/saved-properties" onClick={() => setIsProfileDrawerOpen(false)} className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-[#E4E0E7]/30 group">
               <div className="flex items-center gap-3">
                 <div className="size-8 rounded-full bg-[#F8F7FA] flex items-center justify-center text-[#DDAA42]">
                   <Heart className="size-4" />
@@ -131,7 +131,7 @@ export default function ProfileDrawer() {
                 <span className="text-[14px] font-semibold text-[#121B35]">Saved Properties</span>
               </div>
               <ChevronRight className="size-4 text-[#68646F] group-hover:translate-x-1 transition-transform" />
-            </button>
+            </Link>
 
             <Link href="/postproperty" onClick={() => setIsProfileDrawerOpen(false)} className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-[#E4E0E7]/30 group">
               <div className="flex items-center gap-3">

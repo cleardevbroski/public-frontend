@@ -106,6 +106,47 @@ describe("api client", () => {
     });
   });
 
+  it("normalizes sparse legacy properties so admin filtering cannot crash", async () => {
+    mockFetchOnce({ properties: [{ _id: "legacy-empty", title: null, subtitle: null, configs: null }], pagination: {} });
+    const { fetchAdminProperties } = await import("@/lib/api");
+    const data = await fetchAdminProperties();
+
+    expect(data.properties[0]).toMatchObject({
+      id: "legacy-empty",
+      title: "Untitled property",
+      subtitle: "",
+      builder: "",
+      price: "",
+      configs: [],
+    });
+  });
+
+  it("loads and updates customer saved properties with the customer token", async () => {
+    localStorage.setItem("cleartitle_customer_token", "jwt-customer");
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, options?: RequestInit) => ({
+      ok: true,
+      status: 200,
+      json: async () => String(input).endsWith("/api/favorites") && (!options?.method || options.method === "GET")
+        ? { properties: [{ _id: "property-1", title: "Saved Home", configs: null }] }
+        : { message: "Updated" },
+    }) as Response);
+    vi.stubGlobal("fetch", fetchMock);
+    const { fetchFavoriteProperties, saveFavoriteProperty, removeFavoriteProperty } = await import("@/lib/api");
+
+    const list = await fetchFavoriteProperties();
+    await saveFavoriteProperty("property-1");
+    await removeFavoriteProperty("property-1");
+
+    expect(list.properties[0]).toMatchObject({ id: "property-1", title: "Saved Home", configs: [] });
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    expect(calls.map(([url, options]) => [url, options.method || "GET"])).toEqual([
+      ["http://localhost:5000/api/favorites", "GET"],
+      ["http://localhost:5000/api/favorites/property-1", "POST"],
+      ["http://localhost:5000/api/favorites/property-1", "DELETE"],
+    ]);
+    expect(calls.every(([, options]) => (options.headers as Record<string, string>).Authorization === "Bearer jwt-customer")).toBe(true);
+  });
+
   it("fetchHeroBanners returns the banners array", async () => {
     mockFetchOnce({ banners: [{ id: "1", title: "A" }] });
     const { fetchHeroBanners } = await import("@/lib/api");

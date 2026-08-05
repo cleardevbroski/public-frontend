@@ -2,6 +2,7 @@ import { lazy } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import RootLayout from "@/RootLayout";
 import Home from "@/pages/Home";
+import RouteErrorFallback from "@/components/RouteErrorFallback";
 
 const Account = lazy(() => import("@/pages/Account"));
 const Dealers = lazy(() => import("@/pages/Dealers"));
@@ -15,6 +16,7 @@ const Builder = lazy(() => import("@/pages/Builder"));
 const Bangalore = lazy(() => import("@/pages/Bangalore"));
 const ChannelPartners = lazy(() => import("@/pages/ChannelPartners"));
 const ChannelPartnerRegistration = lazy(() => import("@/pages/ChannelPartnerRegistration"));
+const SavedProperties = lazy(() => import("@/pages/SavedProperties"));
 
 const AdminDealers = lazy(() => import("@/pages/admin/AdminDealers"));
 const AdminBuilders = lazy(() => import("@/pages/admin/AdminBuilders"));
@@ -29,13 +31,16 @@ const AdminLoginReports = lazy(() => import("@/pages/admin/AdminLoginReports"));
 const AdminHomepagePlacements = lazy(() => import("@/pages/admin/AdminHomepagePlacements"));
 const AdminChannelPartners = lazy(() => import("@/pages/admin/AdminChannelPartners"));
 const AdminCPClients = lazy(() => import("@/pages/admin/AdminCPClients"));
+const AdminClientActivity = lazy(() => import("@/pages/admin/AdminClientActivity"));
 
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
+    errorElement: <RouteErrorFallback />,
     children: [
       { path: "/", element: <Home /> },
       { path: "/account", element: <Account /> },
+      { path: "/account/saved-properties", element: <SavedProperties /> },
       { path: "/dealers", element: <Dealers /> },
       { path: "/postproperty", element: <PostProperty /> },
       { path: "/channel-partner", element: <ChannelPartners /> },
@@ -48,6 +53,7 @@ export const router = createBrowserRouter([
       { path: "/admin/dealers", element: <AdminDealers /> },
       { path: "/admin/builders", element: <AdminBuilders /> },
       { path: "/admin/leads", element: <AdminLeads /> },
+      { path: "/admin/client-activity", element: <AdminClientActivity /> },
       { path: "/admin/analytics", element: <AdminAnalytics /> },
       { path: "/admin/testimonials", element: <AdminTestimonials /> },
       { path: "/admin/lawyers", element: <AdminLawyers /> },

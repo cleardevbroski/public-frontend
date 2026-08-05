@@ -1,10 +1,11 @@
 "use client";
 import Image from "@/components/Image";
 import Link from "@/components/Link";
-import { Heart, BedDouble, Maximize2, Calendar, MapPin, ShieldCheck } from "lucide-react";
+import { BedDouble, Maximize2, Calendar, MapPin, ShieldCheck } from "lucide-react";
 import type { Property } from "./mock-data";
 import { formatPossession } from "@/lib/propertyDetails";
 import { priceWithCharges } from "@/lib/propertyPresentation";
+import FavoriteButton from "./FavoriteButton";
 
 const isBase64 = (src: string) => src.startsWith("data:");
 
@@ -40,13 +41,7 @@ export default function PropertyCard({ p }: { p: Property }) {
         )}
 
         {/* Favorite */}
-        <button
-          className="absolute top-2 right-2 size-8 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-sm transition-colors"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-          aria-label="Shortlist property"
-        >
-          <Heart className="size-4 text-[#121B35] group-hover:text-red-500 transition-colors" />
-        </button>
+        <FavoriteButton property={p} className="absolute top-2 right-2 size-8 rounded-full bg-white/90 hover:bg-white shadow-sm" />
 
         {/* Price chip */}
         {p.price && <span className="absolute bottom-0 left-0 rounded-tr-lg bg-[#121B35]/90 text-white text-[15px] font-bold px-3 py-1.5">

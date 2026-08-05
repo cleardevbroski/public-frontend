@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { getMe, removeToken, hasToken, setToken } from "@/lib/api";
+import { recordClientVisit } from "@/lib/clientActivity";
 
 export type UserProfile = {
   id?: string;
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = (userData: UserProfile, token: string) => {
     setToken(token);
     setUser(userData);
+    recordClientVisit(`${window.location.pathname}${window.location.search}`, true);
     // Also store in localStorage for quick hydration
     localStorage.setItem("cleartitle_user", JSON.stringify(userData));
   };

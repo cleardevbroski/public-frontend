@@ -281,6 +281,11 @@ function normalizePropertyRecord(value: unknown): unknown {
   return {
     ...record,
     ...(!record.id && record._id ? { id: String(record._id) } : {}),
+    title: typeof record.title === "string" && record.title.trim() ? record.title.trim() : "Untitled property",
+    subtitle: typeof record.subtitle === "string" ? record.subtitle : "",
+    builder: typeof record.builder === "string" ? record.builder : "",
+    price: typeof record.price === "string" ? record.price : "",
+    configs: Array.isArray(record.configs) ? record.configs.filter((item): item is string => typeof item === "string") : [],
     image: normalizeMediaUrl(record.image),
     heroImages: normalizeMediaList(record.heroImages),
     images: normalizeMediaList(record.images),
@@ -345,6 +350,23 @@ export async function fetchAdminProperty(id: string) {
     "Failed to fetch property"
   );
   return normalizePropertyResponse(data);
+}
+
+export async function fetchFavoritePropertyIds() {
+  return readJson(await customerApiFetch("/api/favorites/ids"), "Failed to load saved properties");
+}
+
+export async function fetchFavoriteProperties() {
+  const data = await readJson(await customerApiFetch("/api/favorites"), "Failed to load saved properties");
+  return normalizePropertyResponse(data);
+}
+
+export async function saveFavoriteProperty(propertyId: string) {
+  return readJson(await customerApiFetch(`/api/favorites/${encodeURIComponent(propertyId)}`, { method: "POST" }), "Failed to save property");
+}
+
+export async function removeFavoriteProperty(propertyId: string) {
+  return readJson(await customerApiFetch(`/api/favorites/${encodeURIComponent(propertyId)}`, { method: "DELETE" }), "Failed to remove saved property");
 }
 
 export async function createProperty(propertyData: Record<string, unknown>) {
@@ -595,6 +617,54 @@ export async function fetchAnalyticsDashboard(days: 7 | 30 | 90 = 30) {
 }
 export async function submitAnalyticsEvent(data: Record<string, unknown>) {
   return readJson(await apiFetch("/api/analytics/track", { method: "POST", body: JSON.stringify(data), keepalive: true }), "Failed to track analytics event");
+}
+
+// Client activity uses the customer token when available so an anonymous
+// browser history can be joined to the customer after login.
+export async function submitClientActivityVisit(data: Record<string, unknown>) {
+  return readJson(await customerApiFetch("/api/client-activity/visit", {
+    method: "POST",
+    body: JSON.stringify(data),
+    keepalive: true,
+  }), "Failed to record client visit");
+}
+
+export async function submitClientActivityEngagement(data: Record<string, unknown>) {
+  return readJson(await customerApiFetch("/api/client-activity/engagement", {
+    method: "POST",
+    body: JSON.stringify(data),
+    keepalive: true,
+  }), "Failed to record property activity");
+}
+
+export async function fetchClientActivityVisitors(params: Record<string, unknown> = {}) {
+  return readJson(await apiFetch(`/api/client-activity/admin/visitors${toQuery(params)}`), "Failed to fetch client activity");
+}
+
+export async function fetchClientActivityVisitor(id: string) {
+  return readJson(await apiFetch(`/api/client-activity/admin/visitors/${encodeURIComponent(id)}`), "Failed to fetch visitor details");
+}
+
+// ─── Application error notifications ──────────────────────────
+export async function reportApplicationError(data: Record<string, unknown>) {
+  const response = await apiFetch("/api/system-notifications/report", {
+    method: "POST",
+    body: JSON.stringify(data),
+    keepalive: true,
+  });
+  if (!response.ok) throw new Error("Unable to report application error");
+}
+
+export async function fetchSystemNotifications(limit = 20) {
+  return readJson(await apiFetch(`/api/system-notifications/admin?limit=${limit}`), "Failed to fetch notifications");
+}
+
+export async function markSystemNotificationRead(id: string) {
+  return readJson(await apiFetch(`/api/system-notifications/admin/${encodeURIComponent(id)}/read`, { method: "PATCH" }), "Failed to update notification");
+}
+
+export async function markAllSystemNotificationsRead() {
+  return readJson(await apiFetch("/api/system-notifications/admin/read-all", { method: "PATCH" }), "Failed to update notifications");
 }
 
 // ─── Search ─────────────────────────────────────────────────────

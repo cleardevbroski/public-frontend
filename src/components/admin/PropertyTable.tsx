@@ -53,12 +53,11 @@ export default function PropertyTable({
   }, []);
 
   const adminIds = new Set(adminProperties.map((p) => p.id));
+  const normalizedSearch = searchQuery.trim().toLowerCase();
 
   const filteredProperties = properties.filter((p) => {
-    const matchesSearch =
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.subtitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.builder?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = [p?.title, p?.subtitle, p?.builder]
+      .some((value) => typeof value === "string" && value.toLowerCase().includes(normalizedSearch));
     const matchesFilter =
       filter === "all" ||
       (filter === "pending" && (p.status ? !["approved", "published"].includes(p.status) : p.published === false)) ||
@@ -205,7 +204,7 @@ export default function PropertyTable({
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="line-clamp-2 text-[14px] font-semibold text-[#121B35] lg:truncate" title={property.title}>{property.title}</p>
-                    {property.configs.length > 0 && (
+                    {property.configs?.length > 0 && (
                       <p className="truncate text-[11px] text-[#68646F]" title={property.configs.join(", ")}>{property.configs.join(", ")}</p>
                     )}
                   </div>

@@ -9,7 +9,6 @@ import {
   Bath,
   Car,
   Share2,
-  Heart,
   Phone,
   MessageCircle,
   ChevronLeft,
@@ -35,7 +34,6 @@ import {
   FileText,
   Sparkles,
   Compass,
-  Heart as HeartIcon,
   Star,
   TrendingUp,
   BarChart3,
@@ -77,6 +75,9 @@ import ProjectComparison from "./ProjectComparison";
 import ProjectFaqs from "./ProjectFaqs";
 import ProjectBuilderProfile from "./ProjectBuilderProfile";
 import { formatAreaRange, formatPossessionDateOnly, propertyAreaRange, rankComparableProperties, type AreaUnit } from "@/lib/projectEnhancements";
+import { submitPropertyActivity, type PropertyActivity } from "@/lib/clientActivity";
+import { usePropertyActivity } from "@/lib/usePropertyActivity";
+import FavoriteButton from "./FavoriteButton";
 
 type Pools = {
   recommended: Property[];
@@ -279,6 +280,14 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const possessionDate = formatPossessionDateOnly(property);
   const unitAreaRange = propertyAreaRange(property);
   const displayPrice = configurationPriceRange(property.configurationDetails, property.price);
+  const propertyActivity: PropertyActivity = {
+    propertyId: property.id,
+    propertyTitle: property.title,
+    propertyType: property.propertyType || "",
+    location: property.subtitle || "",
+    priceLabel: displayPrice || property.price || "",
+  };
+  usePropertyActivity(propertyActivity);
   const floorDisplay = property.totalFloors ? `${property.totalFloors} floors in building` : property.propertyType === "Apartment" ? "" : property.floor || "";
   const nearbyValue = (key: "schools" | "colleges" | "hospitals" | "shopping" | "metro", legacy?: string) => {
     const detail = property.nearbyDetails?.[key];
@@ -349,6 +358,8 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
       const headerOffset = 135;
       const elementPosition = element.getBoundingClientRect().top + window.scrollY;
       window.scrollTo({ top: elementPosition - headerOffset, behavior: "smooth" });
+      if (sectionId === "price-list") submitPropertyActivity(propertyActivity, 0, "priceList");
+      if (sectionId === "floor-plans") submitPropertyActivity(propertyActivity, 0, "floorPlan");
     }
   };
 
@@ -358,6 +369,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     trackAnalytics("property_share", { propertyId: property.id, propertyTitle: property.title, location: property.subtitle });
+    submitPropertyActivity(propertyActivity, 0, "share");
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   };
@@ -377,6 +389,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const completeVerifiedAction = (action: PropertyAction) => {
     const eventType = action === "brochure" ? "brochure_download" : action === "call" ? "contact_reveal" : "enquiry_submitted";
     trackAnalytics(eventType, { propertyId: property.id, propertyTitle: property.title, location: property.subtitle, source: "property_detail" });
+    submitPropertyActivity(propertyActivity, 0, action === "call" ? "contact" : action);
     if (action === "brochure") handleDownloadBrochure();
   };
 
@@ -689,9 +702,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
               <button onClick={handleShare} className="property-gallery-action" aria-label="Share property">
                 <Share2 className="size-4.5" />
               </button>
-              <button className="property-gallery-action" aria-label="Shortlist property">
-                <Heart className="size-4.5" />
-              </button>
+              <FavoriteButton property={property} className="property-gallery-action" />
             </div>
             <div className="absolute bottom-3 left-3 rounded-lg bg-white/95 px-3 py-1.5 text-[11px] font-bold text-[#121B35] shadow">
               <Images className="mr-1 inline size-3.5" /> {images.length || 1} Photos
@@ -941,9 +952,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                       <button onClick={handleShare} className="w-10 h-10 bg-white/90 backdrop-blur-md hover:bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-all" title="Copy Link">
                         <Share2 className="w-5 h-5 text-[#121B35]" />
                       </button>
-                      <button className="w-10 h-10 bg-white/90 backdrop-blur-md hover:bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-all">
-                        <Heart className="w-5 h-5 text-[#121B35] hover:fill-red-500" />
-                      </button>
+                      <FavoriteButton property={property} className="w-10 h-10 bg-white/90 backdrop-blur-md hover:bg-white rounded-full shadow-lg hover:scale-105" />
                     </div>
                     {copiedLink && (
                       <div className="absolute top-16 right-4 bg-white text-[#121B35] text-[12px] font-bold px-3 py-1.5 rounded-lg shadow-lg animate-in fade-in duration-300">

@@ -1,10 +1,11 @@
 "use client";
 import Image from "@/components/Image";
 import Link from "@/components/Link";
-import { Heart, MapPin, ShieldCheck, Star } from "lucide-react";
+import { MapPin, ShieldCheck, Star } from "lucide-react";
 import type { Property } from "./mock-data";
 import { formatPossession } from "@/lib/propertyDetails";
 import { priceWithCharges } from "@/lib/propertyPresentation";
+import FavoriteButton from "./FavoriteButton";
 
 const isBase64 = (src?: string) => !!src && src.startsWith("data:");
 
@@ -42,13 +43,7 @@ export default function PropertyListingRow({ p }: { p: Property }) {
               <span key={tag} className="bg-[#DDAA42] text-[#0B1328] text-[9px] font-bold px-2.5 py-1 rounded-md shadow-sm">{tag}</span>
             ))}
           </div>
-          <button
-            className="absolute right-3 top-3 size-8 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white flex items-center justify-center shadow"
-            aria-label="Shortlist property"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-          >
-            <Heart className="size-4 text-[#121B35] hover:text-red-500 transition-colors" />
-          </button>
+          <FavoriteButton property={p} className="absolute right-3 top-3 size-8 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white shadow" />
         </div>
 
         <div className="p-4.5 flex flex-col justify-between">

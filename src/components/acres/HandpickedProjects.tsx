@@ -1,12 +1,13 @@
 "use client";
 import { useRef } from "react";
 import Link from "@/components/Link";
-import { ChevronLeft, ChevronRight, Heart, ShieldCheck, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShieldCheck, Star } from "lucide-react";
 import { getPropertiesBySection } from "@/lib/propertyStore";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 import { handpickedProjects, type Property } from "./mock-data";
 import { formatPossession } from "@/lib/propertyDetails";
 import { priceWithCharges } from "@/lib/propertyPresentation";
+import FavoriteButton from "./FavoriteButton";
 
 function statusOf(p: Property): string {
   if (p.possession || p.possessionDetails) return formatPossession(p);
@@ -23,6 +24,7 @@ type DisplayProject = {
   status: string;
   rera: boolean;
   href: string;
+  canFavorite: boolean;
 };
 
 export default function HandpickedProjects() {
@@ -41,12 +43,14 @@ export default function HandpickedProjects() {
         status: statusOf(property),
         rera: Boolean(property.reraRegistered),
         href: `/property/${property.id}`,
+        canFavorite: true,
       }))
     : handpickedProjects.map((project) => ({
         ...project,
         status: project.status || "Featured",
         rera: Boolean(project.rera),
         href: "/new-projects-in-bangalore-ffid",
+        canFavorite: false,
       }));
 
   return (
@@ -79,9 +83,7 @@ export default function HandpickedProjects() {
                 <span className="absolute top-3 left-0 bg-[#DDAA42] text-[#0B1328] text-[11px] font-bold px-3 py-1 rounded-r-md shadow">
                   {p.status}
                 </span>
-                <button className="absolute top-3 right-3 size-9 rounded-full bg-white/90 flex items-center justify-center shadow hover:text-red-500 transition-colors" aria-label="Shortlist" onClick={(e) => e.preventDefault()}>
-                  <Heart className="size-4 text-[#121B35]" />
-                </button>
+                {p.canFavorite && <FavoriteButton property={{ id: p.id, title: p.name, subtitle: p.locality, price: p.price }} className="absolute top-3 right-3 size-9 rounded-full bg-white/90 shadow" />}
                 {/* Overlapping info card */}
                 <div className="absolute left-6 right-6 -bottom-px">
                   <div className="bg-white pt-10 px-5 pb-4 shadow-lg relative rounded-t-xl">

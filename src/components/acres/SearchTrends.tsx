@@ -1,12 +1,13 @@
 "use client";
 import { useRef } from "react";
 import Link from "@/components/Link";
-import { ChevronLeft, ChevronRight, Heart, ShieldCheck, TrendingUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShieldCheck, TrendingUp } from "lucide-react";
 import { getPropertiesBySection } from "@/lib/propertyStore";
 import { formatPossession } from "@/lib/propertyDetails";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 import { searchTrendProjects, type Property } from "./mock-data";
 import { priceWithCharges } from "@/lib/propertyPresentation";
+import FavoriteButton from "./FavoriteButton";
 
 function statusOf(p: Property): string {
   if (p.possession || p.possessionDetails) return formatPossession(p);
@@ -23,6 +24,7 @@ type DisplayProject = {
   status: string;
   rera: boolean;
   href: string;
+  canFavorite: boolean;
 };
 
 export default function SearchTrends() {
@@ -41,12 +43,14 @@ export default function SearchTrends() {
         status: statusOf(property),
         rera: Boolean(property.reraRegistered),
         href: `/property/${property.id}`,
+        canFavorite: true,
       }))
     : searchTrendProjects.map((project) => ({
         ...project,
         status: project.status || "New Launch",
         rera: Boolean(project.rera),
         href: "/new-projects-in-bangalore-ffid",
+        canFavorite: false,
       }));
 
   return (
@@ -83,9 +87,7 @@ export default function SearchTrends() {
                     <ShieldCheck className="size-3" /> RERA
                   </span>
                 )}
-                <button className="absolute top-3 right-3 size-8 rounded-full bg-white/90 flex items-center justify-center shadow hover:text-red-500" aria-label="Shortlist" onClick={(e) => e.preventDefault()}>
-                  <Heart className="size-4 text-[#121B35]" />
-                </button>
+                {p.canFavorite && <FavoriteButton property={{ id: p.id, title: p.name, subtitle: p.locality, price: p.price }} className="absolute top-3 right-3 size-8 rounded-full bg-white/90 shadow" />}
                 <span className="absolute bottom-3 left-3 text-white text-[13px] font-bold drop-shadow">{p.status}</span>
               </div>
               <h3 className="text-[17px] font-bold text-[#121B35] mt-3 group-hover:text-[#DDAA42] transition-colors truncate">{p.name}</h3>

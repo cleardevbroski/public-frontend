@@ -29,7 +29,7 @@ export default function AdminDashboard() {
     setLoadError("");
     try {
       const data = await fetchAdminProperties({ limit: 1000 });
-      const properties: Property[] = data.properties;
+      const properties: Property[] = Array.isArray(data.properties) ? data.properties : [];
       setAllProperties(properties);
       
       const adminProps = properties.filter((p) => p.postedBy?.role === "admin" || (!p.postedBy && p.source === "admin"));

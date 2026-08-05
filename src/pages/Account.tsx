@@ -1,16 +1,18 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "@/components/Link";
-import { UserRound, BadgeCheck, Building2, Phone, Mail, MapPin, CheckCircle2, ArrowRight, Home } from "lucide-react";
+import { UserRound, BadgeCheck, Building2, Phone, Mail, MapPin, CheckCircle2, ArrowRight, Home, Heart } from "lucide-react";
 import Header from "@/components/acres/Header";
 import Footer from "@/components/acres/Footer";
 import { useAuth } from "@/components/acres/AuthContext";
 import { registerDealer, getDealerByPhone, type Dealer } from "@/lib/dealerStore";
+import { useFavorites } from "@/components/acres/FavoritesContext";
 
 const DEAL_TYPES = ["RESALE", "NEW BOOKING", "RENT", "COMMERCIAL"];
 
 export default function AccountPage() {
   const { user, setIsAuthModalOpen } = useAuth();
+  const { favoriteIds } = useFavorites();
   const [isDealer, setIsDealer] = useState(false);
   const [existing, setExisting] = useState<Dealer | null>(null);
 
@@ -193,7 +195,12 @@ export default function AccountPage() {
           </div>
 
           {/* Quick links */}
-          <div className="grid sm:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Link href="/account/saved-properties" className="bg-white rounded-2xl border border-[#E4E0E7]/60 shadow-sm p-5 hover:shadow-lg hover:border-[#DDAA42]/60 transition-all">
+              <Heart className="size-6 text-[#DDAA42]" />
+              <p className="text-[15px] font-bold text-[#121B35] mt-3">Saved Properties</p>
+              <p className="text-[12px] text-[#68646F]">{user ? `${favoriteIds.size} project${favoriteIds.size === 1 ? "" : "s"} in your watchlist` : "Login to view your watchlist"}</p>
+            </Link>
             <Link href="/postproperty" className="bg-white rounded-2xl border border-[#E4E0E7]/60 shadow-sm p-5 hover:shadow-lg hover:border-[#DDAA42]/60 transition-all">
               <Home className="size-6 text-[#DDAA42]" />
               <p className="text-[15px] font-bold text-[#121B35] mt-3">Post a Property</p>

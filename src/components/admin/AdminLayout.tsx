@@ -29,18 +29,32 @@ import {
   FileText,
   LayoutGrid,
   Handshake,
+  Activity,
 } from "lucide-react";
 import { isAdminAuthed, adminLogin, adminLogout, getAdminLoginError } from "@/lib/adminAuth";
+import { fetchSystemNotifications, markAllSystemNotificationsRead, markSystemNotificationRead } from "@/lib/api";
+import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
+
+type SystemNotification = {
+  id: string;
+  title: string;
+  message: string;
+  path: string;
+  occurrences: number;
+  unread: boolean;
+  lastOccurredAt: string;
+};
 
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Dealers", href: "/admin/dealers", icon: Users },
   { label: "Builders", href: "/admin/builders", icon: HardHat },
   { label: "Leads", href: "/admin/leads", icon: MessageSquare },
+  { label: "Client Activity", href: "/admin/client-activity", icon: Activity },
   { label: "Channel Partners", href: "/admin/channel-partners", icon: Handshake },
   { label: "CP Clients", href: "/admin/cp-clients", icon: Users },
   { label: "Analytics", href: "/admin/analytics", icon: LineChart },
@@ -127,6 +141,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [authed, setAuthed] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<SystemNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   useEffect(() => {
     setAuthed(isAdminAuthed());
@@ -135,6 +153,40 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     window.addEventListener("cleartitle:admin-auth-changed", sync);
     return () => window.removeEventListener("cleartitle:admin-auth-changed", sync);
   }, []);
+
+  const loadNotifications = async () => {
+    if (!isAdminAuthed()) return;
+    setNotificationsLoading(true);
+    try {
+      const data = await fetchSystemNotifications(20);
+      setNotifications(Array.isArray(data.notifications) ? data.notifications : []);
+      setUnreadCount(Number(data.unreadCount) || 0);
+    } catch {
+      // A notification request must never interfere with the admin workspace.
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!authed) return;
+    void loadNotifications();
+    const timer = window.setInterval(() => void loadNotifications(), 60_000);
+    return () => window.clearInterval(timer);
+  }, [authed]);
+
+  const readNotification = async (notification: SystemNotification) => {
+    if (!notification.unread) return;
+    setNotifications((items) => items.map((item) => item.id === notification.id ? { ...item, unread: false } : item));
+    setUnreadCount((count) => Math.max(0, count - 1));
+    try { await markSystemNotificationRead(notification.id); } catch { void loadNotifications(); }
+  };
+
+  const readAllNotifications = async () => {
+    setNotifications((items) => items.map((item) => ({ ...item, unread: false })));
+    setUnreadCount(0);
+    try { await markAllSystemNotificationsRead(); } catch { void loadNotifications(); }
+  };
 
   // Avoid hydration flash before we know the auth state.
   if (!mounted) {
@@ -283,13 +335,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             />
           </div>
 
-          <div className="flex items-center gap-3 ml-auto">
-            <button className="relative w-10 h-10 rounded-xl bg-[#F8F7FA] flex items-center justify-center hover:bg-[#F3F1F5] transition-colors border border-[#E4E0E7]/30">
+          <div className="relative flex items-center gap-3 ml-auto">
+            <button onClick={() => { setNotificationsOpen((open) => !open); if (!notificationsOpen) void loadNotifications(); }} aria-label={`System notifications${unreadCount ? `, ${unreadCount} unread` : ""}`} aria-expanded={notificationsOpen} className="relative w-10 h-10 rounded-xl bg-[#F8F7FA] flex items-center justify-center hover:bg-[#F3F1F5] transition-colors border border-[#E4E0E7]/30">
               <Bell className="w-5 h-5 text-[#68646F]" />
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#F2C052] rounded-full text-[#0B1328] text-[10px] font-bold flex items-center justify-center">
-                3
-              </span>
+              {unreadCount > 0 && <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-[#F2C052] rounded-full text-[#0B1328] text-[10px] font-bold flex items-center justify-center">{unreadCount > 99 ? "99+" : unreadCount}</span>}
             </button>
+            {notificationsOpen && <div className="absolute right-0 top-12 z-50 w-[min(92vw,390px)] overflow-hidden rounded-2xl border border-[#E4E0E7] bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-[#EEEAF0] px-4 py-3"><div><h2 className="text-sm font-bold text-[#121B35]">System notifications</h2><p className="text-[11px] text-[#85808A]">Website problems reported automatically</p></div>{unreadCount > 0 && <button onClick={() => void readAllNotifications()} className="text-xs font-bold text-[#A66E00] hover:text-[#7B5100]">Mark all read</button>}</div>
+              <div className="max-h-[430px] overflow-y-auto">
+                {notificationsLoading && notifications.length === 0 ? <div className="p-8 text-center text-sm text-[#85808A]">Loading notifications…</div> : notifications.length === 0 ? <div className="p-8 text-center"><Bell className="mx-auto size-7 text-[#D8D3DA]" /><p className="mt-2 text-sm font-semibold text-[#68646F]">No system problems reported</p></div> : notifications.map((notification) => <Link key={notification.id} href={notification.path.startsWith("/") ? notification.path : "/admin"} onClick={() => { void readNotification(notification); setNotificationsOpen(false); }} className={`block border-b border-[#F0EDF1] px-4 py-3 hover:bg-[#FAF9FA] ${notification.unread ? "bg-[#FFF9EC]" : "bg-white"}`}>
+                  <div className="flex items-start gap-3"><span className={`mt-1 size-2 shrink-0 rounded-full ${notification.unread ? "bg-[#E4A82B]" : "bg-[#D8D3DA]"}`} /><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><p className="text-xs font-bold text-[#121B35]">{notification.title}</p>{notification.occurrences > 1 && <span className="rounded-full bg-[#FFF1EF] px-2 py-0.5 text-[10px] font-bold text-[#A83226]">{notification.occurrences}×</span>}</div><p className="mt-1 line-clamp-2 text-xs text-[#68646F]">{notification.message}</p><div className="mt-1.5 flex items-center justify-between gap-2 text-[10px] text-[#96909A]"><span className="max-w-[220px] truncate">{notification.path}</span><time>{new Date(notification.lastOccurredAt).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</time></div></div></div>
+                </Link>)}
+              </div>
+            </div>}
             <div className="hidden sm:block w-px h-8 bg-[#E4E0E7]/40" />
             <div className="hidden sm:flex items-center gap-2">
               <div className="w-9 h-9 bg-gradient-to-br from-[#DDAA42] to-[#F2C052] rounded-xl flex items-center justify-center text-[#121B35] font-bold text-[13px]">
@@ -301,7 +359,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <main className="admin-content flex-1">{children}</main>
+        <main className="admin-content flex-1"><SectionErrorBoundary resetKey={pathname} source="admin_content">{children}</SectionErrorBoundary></main>
       </div>
     </div>
   );
