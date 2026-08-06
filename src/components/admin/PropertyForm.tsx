@@ -46,7 +46,7 @@ import ReraPhasesEditor, { KARNATAKA_RERA_URL } from "./ReraPhasesEditor";
 import { addProperty, updateProperty } from "@/lib/propertyStore";
 import { createPropertyDraft, createPublicProperty, fetchBuilders, resubmitProperty, uploadPropertyMedia } from "@/lib/api";
 import { trackAnalytics } from "@/lib/analytics";
-import type { ConfigurationDetail, FacilityDetail, NearbyPlace, Property, VillaConfigurationDetail } from "@/components/acres/mock-data";
+import type { ConfigurationDetail, FacilityDetail, NearbyPlace, PlotDetails, Property, VillaConfigurationDetail } from "@/components/acres/mock-data";
 import {
   createConfigurationDetail,
   normalizeBhkLabel,
@@ -61,6 +61,7 @@ import {
   createPlotSizeDetail,
   initialPlotDetails,
   normalizePlotSize,
+  validatePlotDraft,
 } from "@/lib/plotDetails";
 import { initialCommercialDetails } from "@/lib/commercialDetails";
 import { initialPgDetails } from "@/lib/pgDetails";
@@ -313,6 +314,13 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
 
   const updateField = <K extends keyof FormData>(key: K, value: FormData[K]) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const setPlotDetails = (value: PlotDetails | ((current: PlotDetails) => PlotDetails)) => {
+    setFormData((previous) => {
+      const current = previous.plotDetails || initialPlotDetails();
+      return { ...previous, plotDetails: typeof value === "function" ? value(current) : value };
+    });
   };
 
   const updateNestedField = <K extends keyof FormData>(
@@ -594,6 +602,19 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
+    if (formData.propertyType === "Plot") {
+      const plotErrors = validatePlotDraft(formData);
+      if (Object.keys(plotErrors).length) {
+        const rowCount = formData.plotDetails?.inventory.length || 0;
+        const totalPlots = formData.plotDetails?.totalPlots || 0;
+        setValidationErrors(plotErrors);
+        setSubmitError(plotErrors.inventory && rowCount !== totalPlots
+          ? `Plot inventory has ${rowCount} row${rowCount === 1 ? "" : "s"}, but total plots is ${totalPlots}.`
+          : "Complete the highlighted plot details before publishing.");
+        setCurrentStep(1);
+        return;
+      }
+    }
     if (formData.reraRegistered && (!formData.reraPhases?.length || formData.reraPhases.some((phase) => !phase.name.trim() || !/^[A-Za-z0-9/._-]{8,50}$/.test(phase.reraNumber.trim())))) {
       setValidationErrors((previous) => ({ ...previous, reraPhases: "Every phase needs a name and a valid 8–50 character RERA registration number." }));
       setCurrentStep(1);
@@ -877,7 +898,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   addConfig={addConfig}
                   removeConfig={removeConfig}
                   details={formData.plotDetails || initialPlotDetails()}
-                  setDetails={(value) => updateField("plotDetails", value)}
+                  setDetails={setPlotDetails}
                   errors={validationErrors}
                   configError={configError}
                 />
