@@ -153,6 +153,10 @@ export async function updateChannelPartnerStatus(id: string, status: string, not
   return readJson(await apiFetch(`/api/channel-partners/${encodeURIComponent(id)}/status`, { method: "PATCH", body: JSON.stringify({ status, note }) }), "Failed to update channel partner application");
 }
 
+export async function resendChannelPartnerRegistrationEmail(id: string) {
+  return readJson(await apiFetch(`/api/channel-partners/${encodeURIComponent(id)}/resend-registration-email`, { method: "POST" }), "Failed to resend registration email");
+}
+
 export async function addChannelPartnerNote(id: string, note: string) {
   return readJson(await apiFetch(`/api/channel-partners/${encodeURIComponent(id)}/notes`, { method: "POST", body: JSON.stringify({ note }) }), "Failed to add internal note");
 }

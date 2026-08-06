@@ -17,6 +17,8 @@ export type ChannelPartnerApplication = {
   applicationNumber?: string;
   partnerCode?: string;
   partnerCodeLast4?: string;
+  sensitiveDataAvailable?: boolean;
+  decryptionWarnings?: string[];
   partnerType: ChannelPartnerType;
   company: { name: string; businessType: string; yearEstablished: string | number; panNumber: string; gstNumber: string; reraApplicable: boolean; reraNumber: string };
   contact: { name: string; designation: string; mobile: string; alternateMobile: string; email: string };
