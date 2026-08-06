@@ -199,6 +199,10 @@ export async function fetchAdminCPClients(params: Record<string, unknown> = {}) 
   return readJson(await apiFetch(`/api/channel-partner-leads/admin/clients${toQuery(params)}`), "Unable to load CP clients");
 }
 
+export async function resendCPClientConfirmationEmail(clientId: string) {
+  return readJson(await apiFetch(`/api/channel-partner-leads/admin/clients/${encodeURIComponent(clientId)}/resend-email`, { method: "POST" }), "Unable to resend client confirmation email");
+}
+
 // ─── Auth API ───────────────────────────────────────────────────
 
 export async function sendOtp(phone: string) {
