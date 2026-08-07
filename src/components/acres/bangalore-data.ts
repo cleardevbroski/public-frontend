@@ -1,4 +1,4 @@
-export type ListingKind = "buy" | "rent" | "projects" | "plots" | "pg" | "commercial-sale" | "commercial-rent";
+export type ListingKind = "buy" | "projects" | "plots" | "pg" | "commercial-sale";
 
 export type BangaloreListing = {
   id: string;
@@ -20,7 +20,7 @@ export type BangaloreListing = {
 
 export type BangaloreRoute = {
   slug: string;
-  kind: ListingKind | "city" | "price-trends" | "insights" | "home-loan" | "area-converter" | "rent-receipt" | "post-property";
+  kind: ListingKind | "city" | "price-trends" | "insights" | "home-loan" | "area-converter" | "post-property";
   label: string;
   title: string;
   subtitle: string;
@@ -39,13 +39,11 @@ export type BrowsePropertyType = {
 
 /** Canonical destinations for the public Browse by Type cards. */
 export const browsePropertyTypes: BrowsePropertyType[] = [
-  { key: "apartment", label: "Apartment", canonicalSlug: "flats-in-bangalore-ffid", aliases: ["apartments-in-bangalore"], related: ["villa", "rent", "plot"], propertyTypes: ["Apartment", "Penthouse"] },
-  { key: "villa", label: "Villa", canonicalSlug: "independent-house-in-bangalore-ffid", aliases: ["villas-in-bangalore"], related: ["apartment", "plot", "rent"], propertyTypes: ["Villa", "Independent House"] },
-  { key: "rent", label: "Rent", canonicalSlug: "property-for-rent-in-bangalore-ffid", aliases: ["properties-for-rent-in-bangalore"], related: ["apartment", "pg", "lease"] },
+  { key: "apartment", label: "Apartment", canonicalSlug: "flats-in-bangalore-ffid", aliases: ["apartments-in-bangalore"], related: ["villa", "plot", "commercial"], propertyTypes: ["Apartment", "Penthouse"] },
+  { key: "villa", label: "Villa", canonicalSlug: "independent-house-in-bangalore-ffid", aliases: ["villas-in-bangalore"], related: ["apartment", "plot", "commercial"], propertyTypes: ["Villa", "Independent House"] },
   { key: "plot", label: "Plot", canonicalSlug: "residential-land-in-bangalore-ffid", aliases: ["plots-in-bangalore"], related: ["villa", "apartment", "commercial"] },
-  { key: "commercial", label: "Commercial", canonicalSlug: "commercial-property-in-bangalore-ffid", aliases: ["commercial-properties-in-bangalore"], related: ["lease", "plot", "rent"] },
-  { key: "lease", label: "Lease", canonicalSlug: "commercial-property-for-rent-in-bangalore-ffid", aliases: ["properties-for-lease-in-bangalore"], related: ["commercial", "rent", "plot"] },
-  { key: "pg", label: "PG/Co-living", canonicalSlug: "pg-in-bangalore-ffid", aliases: ["pg-in-bangalore"], related: ["rent", "apartment", "commercial"] },
+  { key: "commercial", label: "Commercial", canonicalSlug: "commercial-property-in-bangalore-ffid", aliases: ["commercial-properties-in-bangalore"], related: ["plot", "apartment", "villa"] },
+  { key: "pg", label: "PG/Co-living", canonicalSlug: "pg-in-bangalore-ffid", aliases: ["pg-in-bangalore"], related: ["apartment", "commercial", "villa"] },
 ];
 
 export type BangaloreZone = "East" | "West" | "North" | "South" | "Central";
@@ -139,32 +137,19 @@ export const zoneRoutes: BangaloreRoute[] = [
   { slug: "property-in-bangalore-north-ffid", kind: "buy", label: "Buy in North", title: "Property in Bangalore North", subtitle: "Flats and villas near airport in Hebbal, Yelahanka, Thanisandra and North Bangalore.", resultCount: "12,340" },
   { slug: "property-in-bangalore-south-ffid", kind: "buy", label: "Buy in South", title: "Property in Bangalore South", subtitle: "Premium homes in Electronic City, JP Nagar, Bannerghatta Road and South Bangalore.", resultCount: "9,680" },
   { slug: "property-in-bangalore-central-ffid", kind: "buy", label: "Buy in Central", title: "Property in Central Bangalore", subtitle: "Luxury apartments in Koramangala, Indiranagar, MG Road and Central Bangalore.", resultCount: "4,122" },
-  { slug: "flats-for-rent-in-bangalore-east-ffid", kind: "rent", label: "Rent in East", title: "Flats for Rent in Bangalore East", subtitle: "Apartments for rent near IT parks in Whitefield, Marathahalli and Bellandur.", resultCount: "6,840" },
-  { slug: "flats-for-rent-in-bangalore-north-ffid", kind: "rent", label: "Rent in North", title: "Flats for Rent in Bangalore North", subtitle: "Rental apartments near Manyata Tech Park in Hebbal, Thanisandra.", resultCount: "3,920" },
-  { slug: "flats-for-rent-in-bangalore-south-ffid", kind: "rent", label: "Rent in South", title: "Flats for Rent in Bangalore South", subtitle: "Rental homes in Electronic City, HSR Layout, JP Nagar and South Bangalore.", resultCount: "4,580" },
 ];
 
 // Generate locality-specific routes dynamically
 export const generateLocalityRoutes = (): BangaloreRoute[] => {
   const localities = bangaloreLocalities.slice(0, 15); // Top 15 localities
-  return localities.flatMap(loc => [
-    {
+  return localities.map(loc => ({
       slug: `property-in-${loc.name.toLowerCase().replace(/\s+/g, '-')}-bangalore-ffid`,
       kind: "buy",
       label: `Buy in ${loc.name}`,
       title: `Property in ${loc.name}, Bangalore`,
       subtitle: `Flats, apartments and houses for sale in ${loc.name}, Bangalore ${loc.zone}.`,
       resultCount: loc.properties.toLocaleString()
-    },
-    {
-      slug: `flats-for-rent-in-${loc.name.toLowerCase().replace(/\s+/g, '-')}-bangalore-ffid`,
-      kind: "rent",
-      label: `Rent in ${loc.name}`,
-      title: `Flats for Rent in ${loc.name}, Bangalore`,
-      subtitle: `Apartments and homes for rent in ${loc.name}, Bangalore.`,
-      resultCount: Math.floor(loc.properties * 0.4).toLocaleString()
-    }
-  ]);
+    }));
 };
 
 export const bangaloreRoutes: BangaloreRoute[] = [
@@ -172,19 +157,15 @@ export const bangaloreRoutes: BangaloreRoute[] = [
   { slug: "property-in-bangalore-ffid", kind: "buy", label: "Buy property", title: "Property in Bangalore", subtitle: "Verified flats, villas, houses and builder floors for sale across Bangalore.", resultCount: "52,682" },
   { slug: "flats-in-bangalore-ffid", kind: "buy", label: "Flats for sale", title: "Flats for Sale in Bangalore", subtitle: "Apartments in Whitefield, Sarjapur Road, Hebbal, Marathahalli and more.", resultCount: "38,240" },
   { slug: "independent-house-in-bangalore-ffid", kind: "buy", label: "House for sale", title: "Independent House/Villa in Bangalore", subtitle: "Premium villas and independent homes in Bangalore gated communities.", resultCount: "5,918" },
-  { slug: "property-for-rent-in-bangalore-ffid", kind: "rent", label: "Rent property", title: "Property for Rent in Bangalore", subtitle: "Owner and dealer flats, houses and apartments for rent in Bangalore.", resultCount: "18,406" },
-  { slug: "flats-for-rent-in-bangalore-ffid", kind: "rent", label: "Flats for rent", title: "Flats for Rent in Bangalore", subtitle: "Furnished and semi-furnished apartments near IT parks and metro corridors.", resultCount: "14,922" },
   { slug: "new-projects-in-bangalore-ffid", kind: "projects", label: "New projects", title: "New Projects in Bangalore", subtitle: "Upcoming and under-construction residential projects from leading Bangalore builders.", resultCount: "1,237" },
   { slug: "residential-land-in-bangalore-ffid", kind: "plots", label: "Plots/Land", title: "Residential Plots in Bangalore", subtitle: "Approved plots and gated plotted developments in and around Bangalore.", resultCount: "7,842" },
   { slug: "pg-in-bangalore-ffid", kind: "pg", label: "PG in Bangalore", title: "PG and Co-living in Bangalore", subtitle: "Paying guest and co-living options near offices, colleges and metro stations.", resultCount: "3,594" },
   { slug: "commercial-property-in-bangalore-ffid", kind: "commercial-sale", label: "Commercial sale", title: "Commercial Property for Sale in Bangalore", subtitle: "Office spaces, shops, showrooms and commercial land for sale in Bangalore.", resultCount: "6,214" },
-  { slug: "commercial-property-for-rent-in-bangalore-ffid", kind: "commercial-rent", label: "Commercial rent", title: "Commercial Property for Rent in Bangalore", subtitle: "Lease ready offices, retail shops, warehouses and co-working spaces in Bangalore.", resultCount: "9,318" },
   { slug: "property-rates-and-price-trends-in-bangalore-prffid", kind: "price-trends", label: "Price trends", title: "Property Rates & Price Trends in Bangalore", subtitle: "Track locality-wise sale and rental trends before shortlisting a property.", heroStat: "8 localities tracked" },
   { slug: "real-estate-city-insights-lrffid", kind: "insights", label: "Locality insights", title: "Bangalore Locality Insights", subtitle: "Ratings, liveability scores and market signals for Bangalore localities.", heroStat: "4.2 average city rating" },
   { slug: "apply-for-home-loan-hlpg", kind: "home-loan", label: "Home loans", title: "Home Loan Tools for Bangalore Buyers", subtitle: "Estimate EMI, check eligibility and compare loan options for Bangalore homes.", heroStat: "Rates from 8.35%" },
   { slug: "area-converter-utyp", kind: "area-converter", label: "Area converter", title: "Area Unit Converter", subtitle: "Convert sqft, sqyd, acres, grounds, cents and hectares for property calculations.", heroStat: "Instant conversion" },
-  { slug: "online-rent-receipt", kind: "rent-receipt", label: "Rent receipt", title: "Online Rent Receipt Generator", subtitle: "Create monthly rent receipts for Bangalore rental homes and PG stays.", heroStat: "Free tool" },
-  { slug: "postproperty", kind: "post-property", label: "Post property", title: "Post Property in Bangalore", subtitle: "List your Bangalore property for sale or rent and reach verified buyers and tenants.", heroStat: "Post for FREE" },
+  { slug: "postproperty", kind: "post-property", label: "Post property", title: "Post Property in Bangalore", subtitle: "List your Bangalore property for sale and reach verified buyers.", heroStat: "Post for FREE" },
   ...zoneRoutes,
   ...generateLocalityRoutes(),
 ];
@@ -215,12 +196,10 @@ const base = [
 
 const kindConfig: Record<ListingKind, { config: string; price: string; sub: string; area: string; status: string; tag: string }> = {
   buy: { config: "2, 3 BHK Apartment", price: "₹1.18 - 2.84 Cr", sub: "₹9,450 /sqft", area: "1,180 - 2,240 sqft", status: "Ready To Move", tag: "RESALE" },
-  rent: { config: "2, 3 BHK Flat", price: "₹32,000 - 78,000 /month", sub: "Maintenance extra", area: "1,050 - 1,920 sqft", status: "Furnished", tag: "OWNER" },
   projects: { config: "2, 3, 4 BHK Apartment", price: "₹95 Lac - 3.75 Cr", sub: "New booking", area: "980 - 2,850 sqft", status: "Completion in 2027", tag: "NEW LAUNCH" },
   plots: { config: "Residential Plot", price: "₹54 Lac - 1.86 Cr", sub: "₹4,800 /sqyd", area: "1,200 - 3,600 sqft", status: "Gated plotted development", tag: "PLOT" },
   pg: { config: "Single, Double Sharing", price: "₹8,500 - 22,000 /month", sub: "Food included options", area: "Near offices/metro", status: "Available now", tag: "PG" },
   "commercial-sale": { config: "Office, Shop, Showroom", price: "₹82 Lac - 6.4 Cr", sub: "₹12,200 /sqft", area: "520 - 5,400 sqft", status: "Ready business spaces", tag: "COMMERCIAL" },
-  "commercial-rent": { config: "Managed Office, Retail", price: "₹55,000 - 9.8 Lac /month", sub: "Bare shell & furnished", area: "650 - 18,000 sqft", status: "Immediate lease", tag: "LEASE" },
 };
 
 export const bangaloreListings: BangaloreListing[] = (Object.keys(kindConfig) as ListingKind[]).flatMap((kind) =>
@@ -268,6 +247,6 @@ export const getRouteBySlug = (slug: string) => {
 };
 
 export const getListingsByKind = (kind: BangaloreRoute["kind"]) =>
-  kind === "city" || kind === "price-trends" || kind === "insights" || kind === "home-loan" || kind === "area-converter" || kind === "rent-receipt" || kind === "post-property"
+  kind === "city" || kind === "price-trends" || kind === "insights" || kind === "home-loan" || kind === "area-converter" || kind === "post-property"
     ? bangaloreListings.filter((item) => item.kind === "buy").slice(0, 6)
     : bangaloreListings.filter((item) => item.kind === kind);

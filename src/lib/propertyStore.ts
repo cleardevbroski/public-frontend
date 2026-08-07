@@ -35,7 +35,7 @@ export function getAllProperties(): Property[] {
 
 /** Only properties that should appear on the public site. */
 export function getPublishedProperties(): Property[] {
-  return getAllProperties().filter((p) => p.published !== false);
+  return getAllProperties().filter((p) => p.published !== false && !["Rent", "Lease"].includes(p.propertyType || ""));
 }
 
 /** Newest published listings first (admin posts surface to the top). */

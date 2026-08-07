@@ -6,7 +6,7 @@ import { bangaloreLocalities } from "./bangalore-data";
 import { getHeroSlides, heroHref, type HeroSlide } from "@/lib/heroStore";
 import { trackAnalytics } from "@/lib/analytics";
 
-const propertyKinds = ["Apartments", "Villas", "Plots", "Commercial"] as const;
+const propertyKinds = ["Apartments", "Villas", "Plots", "Commercial", "PG/Co-living"] as const;
 
 export default function HeroBanner() {
   const [activeKind, setActiveKind] = useState<string>("Apartments");
@@ -51,6 +51,8 @@ export default function HeroBanner() {
       path = "/commercial-property-in-bangalore-ffid";
     } else if (activeKind === "Plots") {
       path = "/residential-land-in-bangalore-ffid";
+    } else if (activeKind === "PG/Co-living") {
+      path = "/pg-in-bangalore-ffid";
     } else if (localityName) {
       path = `/property-in-${localityName.toLowerCase().replace(/\s+/g, "-")}-bangalore-ffid`;
     }
@@ -94,6 +96,12 @@ export default function HeroBanner() {
           <>
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-[#050A16]/90 via-[#050A16]/42 to-transparent px-5 pb-10 pt-20 text-white sm:px-10 md:px-16">
               <div className="max-w-[720px]">
+                {(slide.resolvedDetails?.propertyType || slide.badge) && (
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    {slide.resolvedDetails?.propertyType && <span className="rounded-full border border-[#F2C052]/55 bg-[#0B1328]/65 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#F2C052] backdrop-blur-md">{slide.resolvedDetails.propertyType}</span>}
+                    {slide.badge && <span className="rounded-full border border-white/25 bg-white/15 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-md">{slide.badge}</span>}
+                  </div>
+                )}
                 <h2 className="text-[22px] font-extrabold leading-tight drop-shadow-md sm:text-[28px] md:text-[34px]">{slide.title}</h2>
                 {(slide.location || slide.priceText) && (
                   <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] font-semibold text-white/85 sm:text-[14px]">
@@ -104,6 +112,12 @@ export default function HeroBanner() {
                 {(slide.resolvedDetails?.configuration || slide.resolvedDetails?.structure) && (
                   <p className="mt-1.5 line-clamp-1 text-[11px] font-medium text-white/75 sm:text-[13px]">
                     {[slide.resolvedDetails.configuration, slide.resolvedDetails.structure].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                {(slide.resolvedDetails?.area || slide.resolvedDetails?.possession) && (
+                  <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-white/65 sm:text-[12px]">
+                    {slide.resolvedDetails.area && <span>{slide.resolvedDetails.area}</span>}
+                    {slide.resolvedDetails.possession && <span>{slide.resolvedDetails.possession}</span>}
                   </p>
                 )}
               </div>

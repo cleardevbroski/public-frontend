@@ -1,41 +1,78 @@
+"use client";
+
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import type { PlotSizeDetail } from "./mock-data";
 import { formatPlotPrice } from "@/lib/plotDetails";
-import { priceWithCharges } from "@/lib/propertyPresentation";
-import { Compass, Maximize2, Ruler } from "lucide-react";
+import {
+  calculateUnitPriceRange,
+  formatAreaValue,
+  formatInrUnitRate,
+  type AreaUnit,
+} from "@/lib/projectEnhancements";
 
-export default function PlotSizeTable({ details }: { details: PlotSizeDetail[] }) {
+const unitOptions: Array<{ unit: AreaUnit; label: string }> = [
+  { unit: "sqft", label: "Sq. Ft." },
+  { unit: "sqm", label: "Sq. Metre" },
+  { unit: "sqyd", label: "Sq. Yard" },
+];
+
+export default function PlotSizeTable({ details, onChargesClick }: { details: PlotSizeDetail[]; onChargesClick?: () => void }) {
+  const [selectedUnits, setSelectedUnits] = useState<Record<string, AreaUnit>>({});
+  if (!details.length) return null;
+
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {details.map((row, index) => (
-        <article key={`${row.plotSize}-${index}`} className="overflow-hidden rounded-2xl border border-[#E4E0E7] bg-white hover:border-[#DDAA42]/60 hover:shadow-lg transition-all">
-          <div className="flex items-start justify-between gap-4 bg-gradient-to-r from-[#121B35] to-[#273559] px-5 py-4 text-white">
-            <div>
-              {row.plotSize && <h3 className="text-[18px] font-extrabold">{row.plotSize}</h3>}
+    <div>
+      <div className="grid grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_auto] gap-3 rounded-t-xl bg-[#F0F2F5] px-4 py-3 text-[11px] font-semibold text-[#39445A] md:px-5 md:text-[13px]">
+        <span>Plot Type (Saleable)</span>
+        <span>Price per Unit</span>
+        <span className="text-right">Price<sup>+</sup></span>
+      </div>
+      <div className="divide-y divide-[#E4E8EF] overflow-hidden rounded-b-xl border border-t-0 border-[#DDE2EA]">
+        {details.map((row, index) => {
+          const rowKey = `${row.plotSize}-${index}`;
+          const unit = selectedUnits[rowKey] || "sqft";
+          const area = row.areaSqft > 0 ? { min: row.areaSqft, max: row.areaSqft } : undefined;
+          const price = row.totalPrice > 0 ? { min: row.totalPrice, max: row.totalPrice } : undefined;
+          const unitRate = area && price ? calculateUnitPriceRange(price, area, unit) : undefined;
+          const dimensions = row.width && row.length ? `${row.width} × ${row.length} ft` : row.plotSize;
+
+          return (
+            <div key={rowKey} className="grid grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 text-[12px] md:px-5 md:text-[14px]">
+              <div className="min-w-0">
+                <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 font-extrabold text-[#172039]">
+                  <span>{row.plotSize ? `${row.plotSize} Plot` : "Residential Plot"}</span>
+                  {area && <span className="whitespace-nowrap text-[#39445A]">{formatAreaValue(area, unit)}</span>}
+                  {area && (
+                    <label className="relative inline-flex min-h-11 items-center">
+                      <span className="sr-only">Area unit for {row.plotSize || "plot"}</span>
+                      <select
+                        value={unit}
+                        onChange={(event) => setSelectedUnits((current) => ({ ...current, [rowKey]: event.target.value as AreaUnit }))}
+                        aria-label={`Area unit for ${row.plotSize || "plot"}`}
+                        className="h-9 cursor-pointer appearance-none rounded-md border border-transparent bg-transparent py-1 pl-1 pr-6 text-[13px] font-extrabold text-[#39445A] underline decoration-dotted underline-offset-4 outline-none transition hover:border-[#D8DEE8] focus:border-[#C8A258] focus:ring-2 focus:ring-[#C8A258]/25 md:text-[14px]"
+                      >
+                        {unitOptions.map((option) => <option key={option.unit} value={option.unit}>{option.label}</option>)}
+                      </select>
+                      <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-1.5 size-3.5 text-[#596277]" />
+                    </label>
+                  )}
+                </div>
+                <p className="mt-0.5 line-clamp-1 text-[10.5px] font-medium text-[#737B88]">
+                  {dimensions}{row.facings?.length ? ` · ${row.facings.join(", ")} facing` : ""}
+                </p>
+              </div>
+              <p className="font-extrabold leading-5 text-[#172039]">
+                {unitRate ? formatInrUnitRate(unitRate, unit) : row.pricePerSqft ? `₹${row.pricePerSqft.toLocaleString("en-IN")} / Sq. Ft.` : "Price per unit unavailable"}
+              </p>
+              <div className="text-right">
+                <p className="whitespace-nowrap font-extrabold text-[#172039]">{row.totalPrice ? formatPlotPrice(row.totalPrice) : "Price unavailable"}</p>
+                {onChargesClick ? <button type="button" onClick={onChargesClick} className="mt-0.5 whitespace-nowrap text-[10.5px] font-bold text-[#9A6B12] underline decoration-dotted underline-offset-2">+ Charges</button> : <p className="mt-0.5 whitespace-nowrap text-[10.5px] font-bold text-[#9A6B12]">+ Charges</p>}
+              </div>
             </div>
-            {row.totalPrice || row.pricePerSqft ? <div className="text-right">
-              {row.totalPrice && <p className="text-[19px] font-extrabold text-[#F2C052]">{priceWithCharges(formatPlotPrice(row.totalPrice))}</p>}
-              {row.pricePerSqft && <p className="mt-1 text-[10px] font-semibold text-white/55">₹{row.pricePerSqft.toLocaleString("en-IN")} / sq ft</p>}
-            </div> : null}
-          </div>
-          {(row.areaSqft || (row.width && row.length) || row.facings?.length) ? <div className="grid grid-cols-3 gap-px bg-[#EAE7ED]">
-            {row.areaSqft ? <div className="bg-white px-4 py-3.5">
-              <Maximize2 className="size-4 text-[#DDAA42]" />
-              <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-[#77717E]">Area</p>
-              <p className="mt-0.5 text-[13px] font-bold text-[#121B35]">{row.areaSqft.toLocaleString("en-IN")} sq ft</p>
-            </div> : null}
-            {row.width && row.length ? <div className="bg-white px-4 py-3.5">
-              <Ruler className="size-4 text-[#DDAA42]" />
-              <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-[#77717E]">Dimensions</p>
-              <p className="mt-0.5 text-[13px] font-bold text-[#121B35]">{row.width} × {row.length} ft</p>
-            </div> : null}
-            {row.facings?.length ? <div className="bg-white px-4 py-3.5">
-              <Compass className="size-4 text-[#DDAA42]" />
-              <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-[#77717E]">Facings</p>
-              <p className="mt-0.5 text-[13px] font-bold text-[#121B35]">{row.facings.join(", ")}</p>
-            </div> : null}
-          </div> : null}
-        </article>
-      ))}
+          );
+        })}
+      </div>
     </div>
   );
 }

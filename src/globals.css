@@ -710,6 +710,10 @@ h1, h2, h3 {
   height: clamp(350px, 34vw, 470px);
 }
 
+.property-media-grid--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .property-media-main,
 .property-media-side > * {
   border-radius: 14px;

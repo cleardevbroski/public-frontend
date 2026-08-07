@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import PropertyCard from "./PropertyCard";
 import { cityListings } from "./mock-data";
 
-const tabs = ["Buy", "Rent", "PG/Co-Living", "Commercial Buy", "Commercial Lease"];
+const tabs = ["Buy", "PG/Co-Living", "Commercial Buy"];
 
 export default function CityCarousel({ city }: { city: string }) {
   const [tab, setTab] = useState("Buy");

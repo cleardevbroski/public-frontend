@@ -337,6 +337,16 @@ export async function fetchPropertyById(id: string) {
   return normalizePropertyResponse(data);
 }
 
+export type LocationPriceComparison = {
+  comparisonMetric?: "pricePerSqft" | "monthlyRentPerBed";
+  currentLocation: string;
+  comparisons: Array<{ key: string; location: string; averagePricePerSqft: number; projectCount: number }>;
+};
+
+export async function fetchLocationPriceComparison(id: string): Promise<LocationPriceComparison> {
+  return readJson(await apiFetch(`/api/properties/price-comparison/${encodeURIComponent(id)}`), "Failed to load location price comparison");
+}
+
 export async function fetchAdminProperties(filters: PropertyFilters = {}) {
   const params = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {

@@ -31,13 +31,8 @@ describe("matchesKind", () => {
     expect(matchesKind(makeProp({ listingType: "For Sale" }), "buy")).toBe(true);
     expect(matchesKind(makeProp({ listingType: "For Rent" }), "buy")).toBe(false);
   });
-  it("rent matches only residential For Rent", () => {
-    expect(matchesKind(makeProp({ listingType: "For Rent" }), "rent")).toBe(true);
-    expect(matchesKind(makeProp({ listingType: "For Sale" }), "rent")).toBe(false);
-  });
   it("treats missing listingType as For Sale (legacy)", () => {
     expect(matchesKind(makeProp({ listingType: undefined }), "buy")).toBe(true);
-    expect(matchesKind(makeProp({ listingType: undefined }), "rent")).toBe(false);
   });
   it("projects require a new-construction signal", () => {
     expect(matchesKind(makeProp({ ageOfProperty: "Under Construction" }), "projects")).toBe(true);
@@ -47,7 +42,7 @@ describe("matchesKind", () => {
   it("plots / commercial / pg match by propertyType", () => {
     expect(matchesKind(makeProp({ propertyType: "Plot" }), "plots")).toBe(true);
     expect(matchesKind(makeProp({ propertyType: "Commercial", listingType: "For Sale" }), "commercial-sale")).toBe(true);
-    expect(matchesKind(makeProp({ propertyType: "Commercial", listingType: "For Rent" }), "commercial-rent")).toBe(true);
+    expect(matchesKind(makeProp({ propertyType: "Commercial", listingType: "For Rent" }), "commercial-sale")).toBe(false);
     expect(matchesKind(makeProp({ propertyType: "PG/Co-living" }), "pg")).toBe(true);
   });
 });

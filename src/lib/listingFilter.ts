@@ -24,16 +24,12 @@ export function matchesKind(p: Property, kind: ListingKind): boolean {
   switch (kind) {
     case "buy":
       return residential && !isForRent(p);
-    case "rent":
-      return residential && isForRent(p);
     case "projects":
       return residential && !isForRent(p) && isNewProject(p);
     case "plots":
       return type === "Plot";
     case "commercial-sale":
       return type === "Commercial" && !isForRent(p);
-    case "commercial-rent":
-      return type === "Commercial" && isForRent(p);
     case "pg":
       return type === "PG/Co-living";
     default:

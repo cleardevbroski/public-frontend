@@ -24,7 +24,6 @@ const footerHref = (label: string) =>
     "Builders in India": "/new-projects-in-bangalore-ffid",
     "Area Converter": "/area-converter-utyp",
     Articles: "/Bangalore-Real-Estate.htm",
-    "Rent Receipt": "/online-rent-receipt",
     "Customer Service": "/Bangalore-Real-Estate.htm",
     Sitemap: "/Bangalore-Real-Estate.htm",
     Testimonials: "/Bangalore-Real-Estate.htm",

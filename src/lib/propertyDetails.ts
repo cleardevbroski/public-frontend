@@ -16,13 +16,14 @@ export const facingOptions = [
 ] as const;
 
 export function normalizeBhkLabel(value: string): string | null {
-  const match = value.trim().match(/^(\d+)\s*bhk$/i);
+  const match = value.trim().match(/^(\d+(?:\.5)?)\s*bhk$/i);
   if (!match || Number(match[1]) < 1) return null;
   return `${Number(match[1])} BHK`;
 }
 
 export function createConfigurationDetail(configuration: string): ConfigurationDetail {
-  const bedrooms = Number(configuration.match(/^\d+/)?.[0] || 1);
+  // A 3.5 BHK still has three bedrooms plus an extra half-room/study.
+  const bedrooms = Math.floor(Number(configuration.match(/^\d+(?:\.5)?/)?.[0] || 1));
   return {
     configuration,
     price: "",
@@ -186,22 +187,23 @@ export function validateApartmentDraft(property: Partial<Property>): ApartmentEr
   const projectArea = property.projectArea;
   if (projectArea && Object.values(projectArea).some((value) => value !== undefined)) {
     const values = [projectArea.totalAcres, projectArea.openSpaceAcres, projectArea.builtUpAcres];
-    if (values.some((value) => value === undefined || !Number.isFinite(value) || Number(value) < 0)) {
-      errors.projectArea = "Enter all three project-area values using zero or positive numbers.";
-    } else if (Math.abs(Number(projectArea.totalAcres) - Number(projectArea.openSpaceAcres) - Number(projectArea.builtUpAcres)) > 0.001) {
+    if (values.some((value) => value !== undefined && (!Number.isFinite(value) || Number(value) < 0))) {
+      errors.projectArea = "Project-area values must be zero or positive numbers.";
+    } else if (values.every((value) => value !== undefined) && Math.abs(Number(projectArea.totalAcres) - Number(projectArea.openSpaceAcres) - Number(projectArea.builtUpAcres)) > 0.001) {
       errors.projectArea = "Open space and apartment built-up area must equal the total project area.";
     }
   }
   if (property.totalUnits !== undefined && (!Number.isInteger(property.totalUnits) || property.totalUnits < 1)) {
     errors.totalUnits = "Total units must be a whole number of at least 1.";
   }
+  if (property.totalTowers !== undefined && (!Number.isInteger(property.totalTowers) || property.totalTowers < 1)) errors.totalTowers = "Total towers must be a whole number of at least 1.";
   if ((property.description || "").trim().length < 50) errors.description = "Enter at least 50 characters.";
   if (property.locality?.pinCode && !/^\d{6}$/.test(property.locality.pinCode)) errors.pinCode = "Enter a 6-digit PIN code.";
   property.facilities?.forEach((facility, index) => {
     if (!facility.name.trim()) errors[`facility.${index}.name`] = "Facility name is required.";
     if (!validImageUrl(facility.imageUrl)) errors[`facility.${index}.imageUrl`] = "Enter a valid HTTP(S) facility image URL.";
   });
-  for (const key of ["schools", "colleges", "hospitals", "shopping", "metro"] as const) {
+  for (const key of ["schools", "colleges", "hospitals", "shopping", "metro", "workplaces", "parks", "roads"] as const) {
     const item = property.nearbyDetails?.[key];
     if (!item || (!item.places?.length && item.count === undefined && !item.distance?.trim())) continue;
     item.places?.forEach((place, index) => {

@@ -20,6 +20,8 @@ type Props = {
   setProjectArea?: (value: { totalAcres?: number; openSpaceAcres?: number; builtUpAcres?: number }) => void;
   totalUnits?: number;
   setTotalUnits?: (value?: number) => void;
+  totalTowers?: number;
+  setTotalTowers?: (value?: number) => void;
   errors: ApartmentErrors;
   configError?: string;
 };
@@ -181,7 +183,7 @@ export default function ApartmentDetailsFields(props: Props) {
           <h3 className="text-[14px] font-bold text-[#121B35]">Project area and inventory</h3>
           <p className="mt-1 text-[12px] text-[#68646F]">Enter all project-area values in acres. Open space plus apartment built-up area must equal the total.</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-5">
           {([
             ["totalAcres", "Total Project Area"],
             ["openSpaceAcres", "Open Space Area"],
@@ -196,6 +198,9 @@ export default function ApartmentDetailsFields(props: Props) {
           ))}
           <label className="text-[12px] font-semibold text-[#3F3D46]">Number of Units
             <input type="number" min={1} step={1} value={props.totalUnits ?? ""} onChange={(event) => props.setTotalUnits?.(event.target.value === "" ? undefined : Number(event.target.value))} className={`${inputClass} mt-1.5`} />
+          </label>
+          <label className="text-[12px] font-semibold text-[#3F3D46]">Number of Towers
+            <input type="number" min={1} step={1} value={props.totalTowers ?? ""} onChange={(event) => props.setTotalTowers?.(event.target.value === "" ? undefined : Number(event.target.value))} className={`${inputClass} mt-1.5`} />
           </label>
         </div>
         {(props.errors.projectArea || props.errors.totalUnits) && <p className="mt-2 text-[11px] text-red-600">{props.errors.projectArea || props.errors.totalUnits}</p>}

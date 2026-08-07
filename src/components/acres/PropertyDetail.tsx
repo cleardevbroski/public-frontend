@@ -78,6 +78,8 @@ import { formatAreaRange, formatPossessionDateOnly, propertyAreaRange, rankCompa
 import { submitPropertyActivity, type PropertyActivity } from "@/lib/clientActivity";
 import { usePropertyActivity } from "@/lib/usePropertyActivity";
 import FavoriteButton from "./FavoriteButton";
+import VillaPropertyInformationCard from "./VillaPropertyInformationCard";
+import VillaLocationPriceComparison from "./VillaLocationPriceComparison";
 
 type Pools = {
   recommended: Property[];
@@ -129,6 +131,187 @@ function NearbyPlaceSummary({ property, category, label, Icon, legacy }: { prope
 interface PropertyDetailProps {
   property: Property;
   relatedProperties?: Property[];
+}
+
+function PropertyMediaCarousel({
+  images,
+  videos,
+  title,
+}: {
+  images: string[];
+  videos: string[];
+  title: string;
+}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [manualChangeCount, setManualChangeCount] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [title]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setPrefersReducedMotion(mediaQuery.matches);
+    updatePreference();
+    mediaQuery.addEventListener("change", updatePreference);
+    return () => mediaQuery.removeEventListener("change", updatePreference);
+  }, []);
+
+  useEffect(() => {
+    if (images.length < 2 || isPaused || prefersReducedMotion) return;
+    const rotation = window.setInterval(() => {
+      setActiveIndex((current) => (current + 1) % images.length);
+    }, 3000);
+    return () => window.clearInterval(rotation);
+  }, [images.length, isPaused, manualChangeCount, prefersReducedMotion]);
+
+  useEffect(() => {
+    if (activeIndex >= images.length) setActiveIndex(0);
+  }, [activeIndex, images.length]);
+
+  if (!images.length && !videos.length) return null;
+
+  const showPrevious = () => {
+    setManualChangeCount((count) => count + 1);
+    setActiveIndex((current) => (current - 1 + images.length) % images.length);
+  };
+  const showNext = () => {
+    setManualChangeCount((count) => count + 1);
+    setActiveIndex((current) => (current + 1) % images.length);
+  };
+  const handleTouchEnd = (event: React.TouchEvent<HTMLElement>) => {
+    if (touchStartX.current === null || images.length < 2) return;
+    const distance = event.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(distance) < 45) return;
+    if (distance > 0) showPrevious();
+    else showNext();
+  };
+  const visiblePhotoCount = Math.min(3, images.length);
+  const visiblePhotos = Array.from({ length: visiblePhotoCount }, (_, offset) => {
+    const imageIndex = (activeIndex + offset) % images.length;
+    return { src: images[imageIndex], imageIndex };
+  });
+
+  return (
+    <section
+      className="rounded-2xl border border-[#DDE2EA] bg-white p-4 shadow-sm md:p-6"
+      aria-labelledby="property-gallery-heading"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onFocusCapture={() => setIsPaused(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setIsPaused(false);
+      }}
+    >
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 id="property-gallery-heading" className="text-[20px] font-extrabold text-[#172039] md:text-[22px]">
+            {title} Photos &amp; Videos
+          </h2>
+          <p className="mt-1 text-[12px] font-semibold text-[#68646F]">
+            {images.length} {images.length === 1 ? "photo" : "photos"}{videos.length ? ` · ${videos.length} ${videos.length === 1 ? "video" : "videos"}` : ""}
+          </p>
+        </div>
+        {images.length > 1 && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={showPrevious}
+              className="flex size-10 items-center justify-center rounded-full border border-[#D7DAE1] bg-white text-[#172039] shadow-sm transition hover:border-[#DDAA42] hover:text-[#9B6B0E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#DDAA42]"
+              aria-label="Show previous property photo"
+            >
+              <ChevronLeft className="size-5" />
+            </button>
+            <button
+              type="button"
+              onClick={showNext}
+              className="flex size-10 items-center justify-center rounded-full border border-[#D7DAE1] bg-white text-[#172039] shadow-sm transition hover:border-[#DDAA42] hover:text-[#9B6B0E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#DDAA42]"
+              aria-label="Show next property photo"
+            >
+              <ChevronRight className="size-5" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {images.length > 0 && (
+        <div
+          className="relative mt-4 overflow-hidden rounded-xl border border-[#E5E8EE] bg-[#F4F5F7] p-2 touch-pan-y md:p-3"
+          onTouchStart={(event) => {
+            touchStartX.current = event.touches[0].clientX;
+            setIsPaused(true);
+          }}
+          onTouchEnd={(event) => {
+            handleTouchEnd(event);
+            setIsPaused(false);
+          }}
+          onTouchCancel={() => {
+            touchStartX.current = null;
+            setIsPaused(false);
+          }}
+        >
+          <div
+            key={activeIndex}
+            className="grid gap-2 animate-in fade-in slide-in-from-right-4 duration-300 motion-reduce:animate-none md:gap-3"
+            style={{ gridTemplateColumns: `repeat(${visiblePhotoCount}, minmax(0, 1fr))` }}
+          >
+            {visiblePhotos.map(({ src, imageIndex }) => (
+              <div key={`${src}-${imageIndex}`} className="relative aspect-[4/3] min-w-0 overflow-hidden rounded-lg bg-[#E5E8EE] md:rounded-xl">
+                <img
+                  src={src}
+                  alt={`${title} property photo ${imageIndex + 1} of ${images.length}`}
+                  className="size-full object-cover"
+                />
+                <span className="absolute bottom-1.5 right-1.5 rounded-full bg-black/70 px-2 py-1 text-[9px] font-bold text-white backdrop-blur-sm md:bottom-2 md:right-2 md:text-[10px]">
+                  {imageIndex + 1} / {images.length}
+                </span>
+              </div>
+            ))}
+          </div>
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={showPrevious}
+                className="absolute left-3 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#172039] shadow-lg transition hover:bg-white md:size-11"
+                aria-label="Show previous property photo"
+              >
+                <ChevronLeft className="size-5" />
+              </button>
+              <button
+                type="button"
+                onClick={showNext}
+                className="absolute right-3 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#172039] shadow-lg transition hover:bg-white md:size-11"
+                aria-label="Show next property photo"
+              >
+                <ChevronRight className="size-5" />
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {videos.length > 0 && (
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Property videos">
+          {videos.map((video, index) => (
+            <a
+              key={`${video}-${index}`}
+              href={video}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#121B35] px-4 py-2.5 text-[12px] font-bold text-white transition hover:bg-[#25304E]"
+            >
+              <Play className="size-4 fill-white" /> Play video {index + 1}
+            </a>
+          ))}
+        </div>
+      )}
+    </section>
+  );
 }
 
 const sections = [
@@ -267,7 +450,6 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     ...(floorPlanPreview ? [{ key: "floor-plan", type: "floor-plan" as const, src: floorPlanPreview.floorPlan3dUrl || floorPlanPreview.floorPlan2dUrl || "", label: "3D Floor Plans" }] : []),
     ...(propertyVideo ? [{ key: "video", type: "video" as const, src: propertyVideo, label: "Video" }] : []),
   ].slice(0, 4);
-
   useEffect(() => {
     if (heroImages.length < 2) return;
     const rotation = window.setInterval(() => {
@@ -430,7 +612,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     { label: "RERA Number", val: property.reraRegistered ? property.reraNumber : "" },
   ].filter((item) => item.val) : [];
   const commercialOverviewFacts = property.commercialDetails ? [
-    { label: "Commercial type", val: property.commercialDetails.commercialSubtype }, { label: "Floor", val: `${property.commercialDetails.floor} of ${property.commercialDetails.totalFloors}` },
+    { label: "Commercial type", val: property.commercialDetails.commercialSubtype }, { label: "Floor", val: property.commercialDetails.floor ? `${property.commercialDetails.floor}${property.commercialDetails.totalFloors ? ` of ${property.commercialDetails.totalFloors}` : ""}` : "" },
     { label: "Zone", val: property.commercialDetails.zoneType }, { label: "Building grade", val: property.commercialDetails.buildingGrade },
     { label: "Structure", val: property.commercialDetails.structure }, { label: "Frontage", val: property.commercialDetails.frontage },
     { label: "Seating", val: property.commercialDetails.seatingCapacity ? String(property.commercialDetails.seatingCapacity) : "" }, { label: "Cabins", val: property.commercialDetails.cabins ? String(property.commercialDetails.cabins) : "" },
@@ -511,8 +693,8 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
             : property.leaseDetails
               ? leaseOverviewFacts
               : [];
-  const overviewFacts = [...commonOverviewFacts, ...typeOverviewFacts].filter(
-    (item, index, all) => all.findIndex((candidate) => candidate.label === item.label && candidate.val === item.val) === index
+  const overviewFacts = [...typeOverviewFacts, ...commonOverviewFacts].filter(
+    (item, index, all) => all.findIndex((candidate) => candidate.label.trim().toLowerCase() === item.label.trim().toLowerCase()) === index
   );
   const overviewTitle = property.villaDetails
     ? "A closer look at this villa"
@@ -593,6 +775,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
         action={verifiedAction}
         propertyId={property.id}
         propertyTitle={property.title}
+        contactNumber={property.postedBy?.phone}
         onClose={() => setVerifiedAction(null)}
         onComplete={completeVerifiedAction}
       />
@@ -611,7 +794,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
       />
       <Header />
 
-      <section ref={setSectionRef("photos-videos")} className="property-detail-intro mx-auto max-w-[1440px] px-4 pb-4 pt-3 md:px-5 md:pb-5">
+      <section className="property-detail-intro mx-auto max-w-[1440px] px-4 pb-4 pt-3 md:px-5 md:pb-5">
         <nav className="mb-3 hidden items-center gap-2 overflow-hidden text-[12px] font-medium text-[#77717E] md:flex">
           <Link href="/" className="shrink-0 hover:text-[#B98428]">Home</Link>
           <ChevronRight className="size-3.5 shrink-0 text-[#B9B5BE]" />
@@ -625,6 +808,11 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
         <div className="mb-4 grid grid-cols-[minmax(0,1fr)_64px] items-start gap-3 md:grid-cols-[minmax(0,1fr)_88px]">
           <div className="min-w-0">
             <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+              {property.propertyType && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#121B35] px-2 py-1 text-[9.5px] font-extrabold uppercase tracking-wide text-[#F2C052]">
+                  <Building2 className="size-3" /> {property.propertyType}
+                </span>
+              )}
               {property.verified && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF4D8] px-2 py-1 text-[9.5px] font-extrabold uppercase tracking-wide text-[#7A5710]">
                   <ShieldCheck className="size-3" /> ClearTitle verified
@@ -678,7 +866,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
           </div>
         </div>
 
-        <div className="property-media-grid">
+        <div className={`property-media-grid ${mediaTiles.length === 0 ? "property-media-grid--single" : ""}`}>
           <div className="property-media-main relative overflow-hidden bg-[#0B1328]">
             {primaryImage ? (
               <img src={primaryImage} alt={`${property.title} photo ${currentImageIndex + 1}`} className="size-full object-cover" />
@@ -726,7 +914,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
             ))}
           </div>
 
-          <div className="property-media-side">
+          {mediaTiles.length > 0 && <div className="property-media-side">
             {mediaTiles.map((item, previewIndex) => (
               <button
                 key={item.key}
@@ -752,15 +940,18 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                 )}
               </button>
             ))}
-            {mediaTiles.length === 0 && (
-              <div className="flex min-h-0 items-center justify-center bg-[#EEEDEF] text-[#8A858F]">
-                <Images className="size-7" />
-              </div>
-            )}
-          </div>
+          </div>}
         </div>
 
-        <div className="property-reference-summary mt-3 grid overflow-hidden rounded-xl border border-[#DDE2EA] bg-white lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.9fr)]">
+        {["Apartment", "Villa", "Plot", "Commercial", "PG/Co-living"].includes(property.propertyType || "") ? <div className="mt-3 grid items-stretch gap-3 xl:grid-cols-[minmax(0,800px)_minmax(260px,1fr)]">
+          <VillaPropertyInformationCard
+            property={property}
+            onCharges={() => setShowGovernmentCharges(true)}
+            onViewNumber={() => setVerifiedAction("call")}
+            onRequestCall={() => setVerifiedAction("enquiry")}
+          />
+          <VillaLocationPriceComparison property={property} />
+        </div> : <div className="property-reference-summary mt-3 grid overflow-hidden rounded-xl border border-[#DDE2EA] bg-white lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.9fr)]">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E8EE] px-4 py-4 md:px-5">
               <div className="flex flex-wrap items-center gap-2">
@@ -788,7 +979,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
             <div className="flex-1 px-5 py-4"><h2 className="text-[17px] font-extrabold text-[#172039]">Why you should consider {property.title}?</h2>{whyHighlights.length ? <ul className="mt-3 space-y-2.5">{whyHighlights.map((highlight) => <li key={highlight} className="flex gap-2 text-[12px] leading-5 text-[#4C566A]"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#172039]" />{highlight}</li>)}</ul> : <p className="mt-3 text-[12px] leading-5 text-[#4C566A]">Explore the project details, configurations and location information available for this property.</p>}<button type="button" onClick={() => scrollToSection("overview")} className="mt-3 text-[12px] font-bold text-[#172039] underline underline-offset-4">View More</button></div>
             <button type="button" onClick={() => setVerifiedAction("enquiry")} className="m-3 inline-flex items-center justify-center gap-2 rounded-lg bg-[#E3A815] px-4 py-3 text-[13px] font-extrabold text-[#241B09]"><Phone className="size-4" /> Request More Information or a Callback</button>
           </aside>
-        </div>
+        </div>}
       </section>
 
       {/* Main property media: every uploaded photo remains fully visible. */}
@@ -1041,23 +1232,34 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
               </div>
             </div>
 
+            <div ref={setSectionRef("overview")}><ProjectAbout property={property} title={overviewTitle} facts={overviewFacts} /></div>
+
             {property.villaDetails?.configurationDetails?.length ? (
-              <div ref={setSectionRef("price-list")} className="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-[#E4E0E7]/30">
-                <h2 className="text-[20px] font-bold text-[#121B35] flex items-center gap-2 mb-5">
-                  <div className="w-1.5 h-6 bg-[#DDAA42] rounded-full" /> Villa Configuration & Pricing
-                </h2>
-                <VillaConfigurationTable details={property.villaDetails.configurationDetails} />
+              <div ref={setSectionRef("price-list")}>
+                <section className="overflow-hidden rounded-2xl border border-[#DCE1EA] bg-white shadow-sm" aria-labelledby="villa-price-list-heading">
+                  <div className="border-b border-[#E5E8EE] px-5 py-4 md:px-6">
+                    <h2 id="villa-price-list-heading" className="text-[21px] font-extrabold text-[#172039]">{property.title} Price List</h2>
+                  </div>
+                  <div className="p-3 md:p-5">
+                    <VillaConfigurationTable details={property.villaDetails.configurationDetails} onChargesClick={() => setShowGovernmentCharges(true)} />
+                  </div>
+                </section>
               </div>
             ) : null}
 
             {property.plotDetails?.plotSizeDetails?.length ? (
-              <div ref={setSectionRef("price-list")} className="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-[#E4E0E7]/30 space-y-5">
-                <div><h2 className="text-[20px] font-bold text-[#121B35] flex items-center gap-2 mb-5"><div className="w-1.5 h-6 bg-[#DDAA42] rounded-full" /> Plot Sizes & Pricing</h2><PlotSizeTable details={property.plotDetails.plotSizeDetails} /></div>
-                {property.plotDetails.inventory?.length ? <div><h3 className="text-[17px] font-bold text-[#121B35] mb-4">Plot availability</h3><PlotInventoryTable inventory={property.plotDetails.inventory} /></div> : null}
+              <div ref={setSectionRef("price-list")} className="space-y-4">
+                <section className="overflow-hidden rounded-2xl border border-[#DCE1EA] bg-white shadow-sm" aria-labelledby="plot-price-list-heading">
+                  <div className="border-b border-[#E5E8EE] px-5 py-4 md:px-6">
+                    <h2 id="plot-price-list-heading" className="text-[21px] font-extrabold text-[#172039]">{property.title} Price List</h2>
+                  </div>
+                  <div className="p-3 md:p-5">
+                    <PlotSizeTable details={property.plotDetails.plotSizeDetails} onChargesClick={() => setShowGovernmentCharges(true)} />
+                  </div>
+                </section>
+                {property.plotDetails.inventory?.length ? <section className="rounded-2xl border border-[#DCE1EA] bg-white p-5 shadow-sm md:p-6"><h3 className="mb-4 text-[17px] font-extrabold text-[#172039]">Plot availability</h3><PlotInventoryTable inventory={property.plotDetails.inventory} /></section> : null}
               </div>
             ) : null}
-
-            <div ref={setSectionRef("overview")}><ProjectAbout property={property} title={overviewTitle} facts={overviewFacts} /></div>
 
             {property.pgDetails?.sharingDetails?.length ? (
               <div className="rounded-2xl border border-[#DDE2EA] bg-white p-5 shadow-sm md:p-7">
@@ -1106,7 +1308,15 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
 
             {hasMasterPlan && <div ref={setSectionRef("master-plan")}><ProjectMasterPlan property={property} /></div>}
 
-            {images.length > 0 && <section className="rounded-2xl border border-[#DDE2EA] bg-white p-5 shadow-sm md:p-7" aria-labelledby="property-gallery-heading"><h2 id="property-gallery-heading" className="text-[22px] font-extrabold text-[#172039]">{property.title} Photos &amp; Videos</h2><div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">{images.slice(0, 9).map((image, index) => <button key={`${image}-${index}`} type="button" onClick={() => setCurrentImageIndex(index)} className="aspect-[4/3] overflow-hidden rounded-xl border border-[#E5E8EE] bg-[#F4F5F7]"><img src={image} alt={`${property.title} photo ${index + 1}`} loading="lazy" className="size-full object-cover" /></button>)}</div></section>}
+            {hasPhotosOrVideos && (
+              <div ref={setSectionRef("photos-videos")}>
+                <PropertyMediaCarousel
+                  images={images}
+                  videos={[...new Set([...(property.videos || []), property.heroVideo].filter((video): video is string => Boolean(video)))]}
+                  title={property.title}
+                />
+              </div>
+            )}
 
             {(amenities.length > 0 || property.facilities?.length) && (
               <div ref={setSectionRef("facilities")}>

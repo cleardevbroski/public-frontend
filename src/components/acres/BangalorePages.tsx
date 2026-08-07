@@ -53,12 +53,10 @@ const filterGroups = [
 const featureLinks = bangaloreRoutes.filter((route) =>
   [
     "property-in-bangalore-ffid",
-    "property-for-rent-in-bangalore-ffid",
     "new-projects-in-bangalore-ffid",
     "residential-land-in-bangalore-ffid",
     "pg-in-bangalore-ffid",
     "commercial-property-in-bangalore-ffid",
-    "commercial-property-for-rent-in-bangalore-ffid",
     "property-rates-and-price-trends-in-bangalore-prffid",
     "postproperty",
   ].includes(route.slug)
@@ -88,8 +86,6 @@ function ListingPage({ route, query = "" }: { route: BangaloreRoute; query?: str
   const [searchInput, setSearchInput] = useState(query);
   const typeToSlug: Record<string, string> = {
     buy: "property-in-bangalore-ffid",
-    rent: "property-for-rent-in-bangalore-ffid",
-    lease: "commercial-property-for-rent-in-bangalore-ffid",
     projects: "new-projects-in-bangalore-ffid",
     commercial: "commercial-property-in-bangalore-ffid",
     plots: "residential-land-in-bangalore-ffid",
@@ -177,8 +173,6 @@ function ListingPage({ route, query = "" }: { route: BangaloreRoute; query?: str
               <div className="relative h-12 flex items-center border-r border-[#E4E0E7]/40 bg-slate-50 cursor-pointer">
                 <select name="type" className="appearance-none outline-none bg-transparent pl-4.5 pr-8 text-[13px] font-bold text-[#121B35] cursor-pointer h-full w-full">
                   <option value="buy">Buy</option>
-                  <option value="rent">Rent</option>
-                  <option value="lease">Lease</option>
                   <option value="projects">New Projects</option>
                   <option value="commercial">Commercial</option>
                   <option value="plots">Plots</option>
@@ -506,7 +500,6 @@ function CityOverview({ route }: { route: BangaloreRoute }) {
 function ToolsPage({ route }: { route: BangaloreRoute }) {
   const isLoan = route.kind === "home-loan";
   const isConverter = route.kind === "area-converter";
-  const isReceipt = route.kind === "rent-receipt";
   const isPost = route.kind === "post-property";
 
   return (
@@ -559,8 +552,6 @@ function ToolsPage({ route }: { route: BangaloreRoute }) {
                 ? ["Expected Property value (₹)", "Down payment amount (₹)", "Interest rate (%)", "Tenure (Years)"]
                 : isConverter
                 ? ["Sq.ft area value", "From layout unit (sqft)", "To target unit (acres)", "Calculated boundary"]
-                : isReceipt
-                ? ["Tenant Full Name", "Monthly rent paid (₹)", "Mailing address", "Receipt Cycle Month"]
                 : ["Asset details", "Locality bounds", "Expected sale value", "Lister Mobile number"]
               ).map((field) => (
                 <label key={field} className="block">
@@ -687,7 +678,7 @@ function listingsByTrends() {
 
 export default function BangalorePageRenderer({ route, query }: { route: BangaloreRoute; query?: string }) {
   if (
-    ["buy", "rent", "projects", "plots", "pg", "commercial-sale", "commercial-rent"].includes(
+    ["buy", "projects", "plots", "pg", "commercial-sale"].includes(
       route.kind
     )
   )

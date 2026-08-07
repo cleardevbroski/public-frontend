@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 const DEFAULT_TITLE =
-  "ClearTitle One — Buy/Rent/Sell/Lease Property in India | Premium Real Estate";
+  "ClearTitle One — Buy and Sell Property in India | Premium Real Estate";
 
 /**
  * Sets document.title and the meta-description for the current route, restoring

@@ -248,6 +248,7 @@ export type Property = {
     builtUpAcres?: number;
   };
   totalUnits?: number;
+  totalTowers?: number;
   projectNarrative?: ProjectNarrative;
   masterPlan?: MasterPlan;
   projectDownloads?: ProjectDownload[];
@@ -302,6 +303,9 @@ export type Property = {
     hospitals?: string;
     shopping?: string;
     metro?: string;
+    workplaces?: string;
+    parks?: string;
+    roads?: string;
   };
   nearbyDetails?: {
     schools?: NearbyDetail;
@@ -309,6 +313,9 @@ export type Property = {
     hospitals?: NearbyDetail;
     shopping?: NearbyDetail;
     metro?: NearbyDetail;
+    workplaces?: NearbyDetail;
+    parks?: NearbyDetail;
+    roads?: NearbyDetail;
   };
   reraRegistered?: boolean;
   reraNumber?: string;
@@ -397,20 +404,16 @@ export const cities = Object.keys(cityListings);
 
 export const tiles = [
   { label: "Buying a home", img: "/cleartitleone/tile-buy.webp", isNew: false, href: "/property-in-bangalore-ffid" },
-  { label: "Renting a home", img: "/cleartitleone/tile-rent.webp", isNew: false, href: "/property-for-rent-in-bangalore-ffid" },
   { label: "New Projects", img: "/cleartitleone/tile-invest.webp", isNew: true, href: "/new-projects-in-bangalore-ffid" },
-  { label: "Sell/Rent/Lease your property", img: "/cleartitleone/tile-sell.png", isNew: false, href: "/postproperty" },
+  { label: "Sell your property", img: "/cleartitleone/tile-sell.png", isNew: false, href: "/postproperty" },
   { label: "Plots/Land", img: "/cleartitleone/tile-plot.webp", isNew: false, href: "/residential-land-in-bangalore-ffid" },
   { label: "Explore Insights", img: "/cleartitleone/tile-insights.webp", isNew: true, href: "/property-rates-and-price-trends-in-bangalore-prffid" },
   { label: "PG and co-living", img: "/cleartitleone/tile-pg.webp", isNew: false, href: "/pg-in-bangalore-ffid" },
   { label: "Buying commercial spaces", img: "/cleartitleone/tile-com-buy.webp", isNew: false, href: "/commercial-property-in-bangalore-ffid" },
-  { label: "Lease commercial spaces", img: "/cleartitleone/tile-com-lease.webp", isNew: false, href: "/commercial-property-for-rent-in-bangalore-ffid" },
 ];
 
 export const searchTabs = [
   "Buy",
-  "Rent",
-  "Lease",
   "New Projects",
   "PG / Co-Living",
   "Commercial",
@@ -509,67 +512,6 @@ export const headerDropdowns: Record<string, DropdownMenu> = {
       timing: "9AM-11PM IST",
     },
   },
-  "For Tenants": {
-    leftSections: [
-      {
-        title: "RENT A HOME",
-        items: [
-          { label: "Flats for Rent", href: "/flats-for-rent-in-bangalore-ffid" },
-          { label: "House for Rent", href: "/property-for-rent-in-bangalore-ffid" },
-          { label: "PG/Co-Living", href: "/pg-in-bangalore-ffid" },
-        ],
-      },
-      {
-        title: "LEASE",
-        items: [
-          { label: "Commercial Lease", href: "/commercial-property-for-rent-in-bangalore-ffid" },
-          { label: "Land Lease", href: "/residential-land-in-bangalore-ffid" },
-        ],
-      },
-      {
-        title: "RENT BY ZONE",
-        items: [
-          { label: "East Bangalore", href: "/flats-for-rent-in-bangalore-east-ffid" },
-          { label: "North Bangalore", href: "/flats-for-rent-in-bangalore-north-ffid" },
-          { label: "South Bangalore", href: "/flats-for-rent-in-bangalore-south-ffid" },
-        ],
-      },
-    ],
-    centerSections: [
-      {
-        title: "POPULAR RENTAL AREAS",
-        items: [
-          { label: "Whitefield", href: "/flats-for-rent-in-whitefield-bangalore-ffid" },
-          { label: "Marathahalli", href: "/flats-for-rent-in-marathahalli-bangalore-ffid" },
-          { label: "HSR Layout", href: "/flats-for-rent-in-hsr-layout-bangalore-ffid" },
-          { label: "Koramangala", href: "/flats-for-rent-in-koramangala-bangalore-ffid" },
-          { label: "Electronic City", href: "/flats-for-rent-in-electronic-city-bangalore-ffid" },
-          { label: "Bellandur", href: "/flats-for-rent-in-bellandur-bangalore-ffid" },
-        ],
-      },
-      {
-        title: "POPULAR SEARCHES",
-        items: [
-          { label: "Bachelor Friendly", href: "/property-for-rent-in-bangalore-ffid" },
-          { label: "Furnished Homes", href: "/property-for-rent-in-bangalore-ffid" },
-          { label: "With Parking", href: "/property-for-rent-in-bangalore-ffid" },
-          { label: "Near Metro", href: "/property-for-rent-in-bangalore-ffid" },
-        ],
-      },
-    ],
-    rightCard: {
-      title: "INTRODUCING",
-      subtitle: "Insights",
-      items: ["Understand localities", "Read Resident Reviews", "Check Price Trends", "Tools, Utilities & more"],
-      ctaText: "Learn more",
-      ctaHref: "/real-estate-city-insights-lrffid",
-    },
-    contactInfo: {
-      tollFree: "1800 41 99099",
-      email: "services@cleartitleone.com",
-      timing: "9AM-11PM IST",
-    },
-  },
   "For Owners": {
     leftSections: [
       {
@@ -596,7 +538,7 @@ export const headerDropdowns: Record<string, DropdownMenu> = {
       },
     ],
     rightCard: {
-      title: "Sell, rent, or lease faster at the right price!",
+      title: "Sell faster at the right price!",
       subtitle: "List your property now for FREE",
       ctaText: "Post Property",
       ctaHref: "/postproperty",
@@ -638,7 +580,7 @@ export const headerDropdowns: Record<string, DropdownMenu> = {
       },
     ],
     rightCard: {
-      title: "Sell, rent, or lease faster at the right price!",
+      title: "Sell faster at the right price!",
       subtitle: "List your property now for FREE",
       ctaText: "Post Property",
       ctaHref: "/postproperty",
@@ -665,7 +607,6 @@ export const headerDropdowns: Record<string, DropdownMenu> = {
         items: [
           { label: "Area Converter", href: "/area-converter-utyp" },
           { label: "Home Loan Calculator", href: "/apply-for-home-loan-hlpg" },
-          { label: "Rent Receipt", href: "/online-rent-receipt" },
           { label: "EMI Calculator", href: "/apply-for-home-loan-hlpg" },
         ],
       },
@@ -693,7 +634,6 @@ export const headerDropdowns: Record<string, DropdownMenu> = {
 
 export const navItems = [
   { label: "For Buyers", hasDropdown: true, href: "/property-in-bangalore-ffid" },
-  { label: "For Tenants", hasDropdown: true, href: "/property-for-rent-in-bangalore-ffid" },
   { label: "For Owners", hasDropdown: true, href: "/postproperty" },
   { label: "For Dealers / Builders", hasDropdown: true, href: "/new-projects-in-bangalore-ffid" },
   { label: "Insights", hasDropdown: true, badge: "NEW", href: "/property-rates-and-price-trends-in-bangalore-prffid" },
@@ -771,7 +711,6 @@ export const footerColumns = {
     "Builders in India",
     "Area Converter",
     "Articles",
-    "Rent Receipt",
     "Customer Service",
     "Sitemap",
   ],
@@ -794,7 +733,7 @@ export const footerColumns = {
     "Hebbal Real Estate",
     "Sarjapur Road Properties",
     "Koramangala Luxury Suites",
-    "HSR Layout Rentals",
+    "HSR Layout Properties",
     "Electronic City Tech Parks",
     "JP Nagar Residential Belt",
     "Indiranagar Commercial Units",

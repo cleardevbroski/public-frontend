@@ -40,8 +40,7 @@ import VillaDetailsFields from "./VillaDetailsFields";
 import PlotDetailsFields from "./PlotDetailsFields";
 import CommercialDetailsFields from "./CommercialDetailsFields";
 import PgDetailsFields from "./PgDetailsFields";
-import RentDetailsFields from "./RentDetailsFields";
-import LeaseDetailsFields from "./LeaseDetailsFields";
+import PropertyQuickFill from "./PropertyQuickFill";
 import ReraPhasesEditor, { KARNATAKA_RERA_URL } from "./ReraPhasesEditor";
 import { addProperty, updateProperty } from "@/lib/propertyStore";
 import { createPropertyDraft, createPublicProperty, fetchBuilders, resubmitProperty, uploadPropertyMedia } from "@/lib/api";
@@ -65,8 +64,7 @@ import {
 } from "@/lib/plotDetails";
 import { initialCommercialDetails } from "@/lib/commercialDetails";
 import { initialPgDetails } from "@/lib/pgDetails";
-import { initialRentDetails } from "@/lib/rentDetails";
-import { initialLeaseDetails } from "@/lib/leaseDetails";
+import { mergeQuickFill, type QuickFillPatch } from "@/lib/propertyQuickFill";
 
 const steps = [
   { id: 1, label: "Basic Details", icon: Building2 },
@@ -78,7 +76,7 @@ const steps = [
 // Future extension point: add a Verification Documents step only after the
 // product owner supplies the required document categories and approval rules.
 
-const propertyTypes = ["Apartment", "Villa", "Rent", "Plot", "Commercial", "Lease", "PG/Co-living"];
+const propertyTypes = ["Apartment", "Villa", "Plot", "Commercial", "PG/Co-living"];
 const transactionTypes = ["New Property", "Resale"];
 const possessionOptions = ["Ready to Move", "Within 3 Months", "Within 6 Months", "Within 1 Year", "Dec 2026", "Mar 2027", "Jun 2027"];
 const furnishingOptions = ["Unfurnished", "Semi-Furnished", "Fully Furnished"];
@@ -150,9 +148,11 @@ const commercialOnlyAmenities = [
   { name: "ATM", icon: Building2, color: "#DDAA42" }, { name: "Food Court", icon: Building2, color: "#DDAA42" },
 ];
 
-const isStructuredType = (propertyType?: string) => propertyType === "Apartment" || propertyType === "Villa" || propertyType === "Plot" || propertyType === "Commercial" || propertyType === "PG/Co-living" || propertyType === "Rent" || propertyType === "Lease";
+const isStructuredType = (propertyType?: string) => propertyType === "Apartment" || propertyType === "Villa" || propertyType === "Plot" || propertyType === "Commercial" || propertyType === "PG/Co-living";
 
 type FormData = Omit<Property, "id">;
+type NearbyCategory = "schools" | "colleges" | "hospitals" | "shopping" | "metro" | "workplaces" | "parks" | "roads";
+const nearbyCategories: NearbyCategory[] = ["schools", "colleges", "hospitals", "shopping", "metro", "workplaces", "parks", "roads"];
 
 const initialFormData: FormData = {
   title: "",
@@ -170,6 +170,7 @@ const initialFormData: FormData = {
   area: "",
   projectArea: undefined,
   totalUnits: undefined,
+  totalTowers: undefined,
   projectNarrative: undefined,
   masterPlan: undefined,
   projectDownloads: [],
@@ -223,6 +224,9 @@ const initialFormData: FormData = {
     hospitals: { count: undefined, distance: "" },
     shopping: { count: undefined, distance: "" },
     metro: { count: undefined, distance: "" },
+    workplaces: { count: undefined, distance: "" },
+    parks: { count: undefined, distance: "" },
+    roads: { count: undefined, distance: "" },
   },
   reraRegistered: false,
   reraNumber: "",
@@ -316,6 +320,33 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
+  const applyQuickFill = (patch: QuickFillPatch, replaceExisting: boolean) => {
+    const importedType = patch.propertyType;
+    if (importedType && importedType !== formData.propertyType && formData.propertyType) {
+      const proceed = window.confirm(`Apply this ${importedType} import? Existing ${formData.propertyType} structured details will be replaced.`);
+      if (!proceed) return;
+    }
+    setFormData((previous) => {
+      const changingType = Boolean(importedType && importedType !== previous.propertyType);
+      const base = changingType
+        ? {
+            ...previous,
+            propertyType: importedType,
+            configs: [],
+            configurationDetails: undefined,
+            villaDetails: undefined,
+            plotDetails: undefined,
+            commercialDetails: undefined,
+            pgDetails: undefined,
+            possessionDetails: undefined,
+          }
+        : previous;
+      return mergeQuickFill(base, patch, replaceExisting);
+    });
+    setValidationErrors({});
+    setConfigError("");
+  };
+
   const setPlotDetails = (value: PlotDetails | ((current: PlotDetails) => PlotDetails)) => {
     setFormData((previous) => {
       const current = previous.plotDetails || initialPlotDetails();
@@ -335,7 +366,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
   };
 
   const updateNearbyPlace = (
-    category: "schools" | "colleges" | "hospitals" | "shopping" | "metro",
+    category: NearbyCategory,
     index: number,
     updates: Partial<NearbyPlace>
   ) => {
@@ -352,7 +383,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     });
   };
 
-  const addNearbyPlace = (category: "schools" | "colleges" | "hospitals" | "shopping" | "metro") => {
+  const addNearbyPlace = (category: NearbyCategory) => {
     setFormData((prev) => ({
       ...prev,
       nearbyDetails: {
@@ -364,7 +395,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     }));
   };
 
-  const removeNearbyPlace = (category: "schools" | "colleges" | "hospitals" | "shopping" | "metro", index: number) => {
+  const removeNearbyPlace = (category: NearbyCategory, index: number) => {
     setFormData((prev) => ({
       ...prev,
       nearbyDetails: {
@@ -435,7 +466,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     const plotSize = formData.propertyType === "Plot" ? normalizePlotSize(raw) : null;
     const config = formData.propertyType === "Plot" ? plotSize?.plotSize || "" : isStructuredType(formData.propertyType) ? normalizeBhkLabel(raw) : raw;
     if (!config) {
-      setConfigError(formData.propertyType === "Plot" ? "Use positive width × length values, for example 30 × 40." : "Use a positive whole-number BHK label, for example 2 BHK.");
+      setConfigError(formData.propertyType === "Plot" ? "Use positive width × length values, for example 30 × 40." : "Use a positive BHK label, for example 2 BHK or 3.5 BHK.");
       return;
     }
     if (formData.propertyType !== "Apartment" && formData.propertyType !== "Villa" && formData.configs.some((item) => item.toLowerCase() === config.toLowerCase())) {
@@ -562,8 +593,6 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 commercialDetails: undefined, possessionDetails: undefined,
               }
           : propertyType === "PG/Co-living" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: undefined, possessionDetails: undefined }
-          : propertyType === "Rent" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: undefined, rentDetails: undefined, listingType: "", possessionDetails: undefined }
-          : propertyType === "Lease" ? { configs: [], configurationDetails: undefined, villaDetails: undefined, plotDetails: undefined, commercialDetails: undefined, pgDetails: undefined, rentDetails: undefined, leaseDetails: undefined, listingType: "", possessionDetails: undefined }
           : {
               ...(isStructuredType(prev.propertyType) ? { configs: [] } : {}),
               configurationDetails: undefined,
@@ -792,6 +821,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
               <h2 className="text-[20px] font-bold text-[#121B35]" style={{ fontFamily: "var(--font-outfit)" }}>
                 Property Basic Details
               </h2>
+              {!isPublic && <PropertyQuickFill propertyType={formData.propertyType} onApply={applyQuickFill} />}
               {Object.values(validationErrors).some(Boolean) && (
                 <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-[13px] text-red-700">
                   Please correct the highlighted {formData.propertyType} details before continuing.
@@ -874,6 +904,8 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   setProjectArea={(value) => updateField("projectArea", value)}
                   totalUnits={formData.totalUnits}
                   setTotalUnits={(value) => updateField("totalUnits", value)}
+                  totalTowers={formData.totalTowers}
+                  setTotalTowers={(value) => updateField("totalTowers", value)}
                   errors={validationErrors}
                   configError={configError}
                 />
@@ -912,10 +944,6 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 />
               ) : formData.propertyType === "PG/Co-living" ? (
                 <PgDetailsFields details={formData.pgDetails || initialPgDetails()} setDetails={(value) => updateField("pgDetails", value)} errors={validationErrors} />
-              ) : formData.propertyType === "Rent" ? (
-                <RentDetailsFields details={formData.rentDetails || initialRentDetails()} setDetails={(value) => updateField("rentDetails", value)} errors={validationErrors} />
-              ) : formData.propertyType === "Lease" ? (
-                <LeaseDetailsFields details={formData.leaseDetails || initialLeaseDetails()} setDetails={(value) => updateField("leaseDetails", value)} errors={validationErrors} />
               ) : (
                 <div>
                   <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Configurations</label>
@@ -1474,11 +1502,11 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
 
                 <h3 className="text-[15px] font-semibold text-[#3F3D46] mb-3">Nearby Amenities</h3>
                 {isStructuredType(formData.propertyType) ? <div className="grid grid-cols-1 gap-4">
-                  {(["schools", "colleges", "hospitals", "shopping", "metro"] as const).map((key) => (
+                  {nearbyCategories.map((key) => (
                     <div key={key} className="rounded-xl border border-[#E4E0E7] bg-[#F8F7FA]/40 p-4">
                       <div className="mb-3 flex items-center justify-between gap-3">
-                        <label className="block text-[13px] font-semibold text-[#3F3D46] capitalize">{key === "metro" ? "Metro / Train" : key}</label>
-                        <button type="button" onClick={() => addNearbyPlace(key)} className="rounded-lg border border-[#DDAA42] bg-white px-3 py-1.5 text-[11px] font-bold text-[#121B35]">+ Add {key === "metro" ? "station" : key.slice(0, -1)}</button>
+                        <label className="block text-[13px] font-semibold text-[#3F3D46] capitalize">{key === "metro" ? "Metro / Train" : key === "workplaces" ? "IT Parks / Workplaces" : key === "roads" ? "Roads / Connectivity" : key}</label>
+                        <button type="button" onClick={() => addNearbyPlace(key)} className="rounded-lg border border-[#DDAA42] bg-white px-3 py-1.5 text-[11px] font-bold text-[#121B35]">+ Add {key === "metro" ? "station" : key === "workplaces" ? "workplace" : key === "roads" ? "road" : key.slice(0, -1)}</button>
                       </div>
                       {(formData.nearbyDetails?.[key]?.places || []).length === 0 && <p className="text-[11px] text-[#68646F]">Optional — add as many nearby places as needed.</p>}
                       <div className="space-y-3">
@@ -1653,10 +1681,10 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                       ].filter(([, value]) => value).map(([label, value]) => <div key={String(label)} className="bg-white rounded-lg p-2.5"><span className="text-[#68646F] text-[10px]">{label}</span><p className="font-medium text-[#121B35] break-words">{value}</p></div>)}
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px] mt-3">
-                      {(["schools", "colleges", "hospitals", "shopping", "metro"] as const).map((key) => {
+                      {nearbyCategories.map((key) => {
                         const item = formData.nearbyDetails?.[key];
                         if (!item || (!item.places?.length && item.count === undefined && !item.distance)) return null;
-                        return <div key={key} className="bg-white rounded-lg p-2.5"><span className="text-[#68646F] text-[10px] capitalize">{key === "metro" ? "Metro / Train" : key}</span><p className="font-medium text-[#121B35]">{item.places?.length ? item.places.map((place) => place.name).join(", ") : `${item.count ?? "—"} · ${item.distance || "—"}`}</p></div>;
+                        return <div key={key} className="bg-white rounded-lg p-2.5"><span className="text-[#68646F] text-[10px] capitalize">{key === "metro" ? "Metro / Train" : key === "workplaces" ? "IT Parks / Workplaces" : key === "roads" ? "Roads / Connectivity" : key}</span><p className="font-medium text-[#121B35]">{item.places?.length ? item.places.map((place) => place.name).join(", ") : `${item.count ?? "—"} · ${item.distance || "—"}`}</p></div>;
                       })}
                     </div>
                   </div>

@@ -24,7 +24,7 @@ export const initialVillaDetails = (): VillaDetails => ({
 });
 
 export function createVillaConfigurationDetail(configuration: string): VillaConfigurationDetail {
-  const bedrooms = Number(configuration.match(/^\d+/)?.[0] || 1);
+  const bedrooms = Math.floor(Number(configuration.match(/^\d+(?:\.5)?/)?.[0] || 1));
   return {
     configuration,
     price: "",
@@ -85,12 +85,12 @@ export function validateVillaDraft(property: Partial<Property>): VillaErrors {
   rows.forEach((row, index) => {
     const prefix = `villaConfiguration.${index}`;
     const normalized = normalizeBhkLabel(row.configuration);
-    if (!normalized) errors[`${prefix}.configuration`] = "Use a positive whole-number BHK label.";
+    if (!normalized) errors[`${prefix}.configuration`] = "Use a positive BHK label, for example 3 BHK or 3.5 BHK.";
     if (!positiveDisplay(row.price, true)) errors[`${prefix}.price`] = "Enter a positive price.";
     if (!positiveDisplay(row.plotArea)) errors[`${prefix}.plotArea`] = "Enter a positive plot area.";
     if (!positiveDisplay(row.builtUpArea)) errors[`${prefix}.builtUpArea`] = "Enter a positive built-up area.";
     if (!positiveDisplay(row.superArea)) errors[`${prefix}.superArea`] = "Enter a positive super area.";
-    const expectedBedrooms = Number(normalizeBhkLabel(row.configuration)?.match(/^\d+/)?.[0]);
+    const expectedBedrooms = Math.floor(Number(normalizeBhkLabel(row.configuration)?.match(/^\d+(?:\.5)?/)?.[0]));
     if (!Number.isInteger(row.bedrooms) || row.bedrooms !== expectedBedrooms) {
       errors[`${prefix}.bedrooms`] = `Bedrooms must equal ${expectedBedrooms || "the BHK value"}.`;
     }
@@ -126,7 +126,7 @@ export function validateVillaDraft(property: Partial<Property>): VillaErrors {
     errors.reraPhases = "Every phase needs a valid name and 8–50 character RERA number.";
   }
   if (property.locality?.pinCode && !/^\d{6}$/.test(property.locality.pinCode)) errors.pinCode = "Enter a 6-digit PIN code.";
-  for (const key of ["schools", "colleges", "hospitals", "shopping", "metro"] as const) {
+  for (const key of ["schools", "colleges", "hospitals", "shopping", "metro", "workplaces", "parks", "roads"] as const) {
     const item = property.nearbyDetails?.[key];
     if (!item || (!item.places?.length && item.count === undefined && !item.distance?.trim())) continue;
     item.places?.forEach((place, index) => {

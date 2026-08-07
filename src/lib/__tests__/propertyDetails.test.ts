@@ -32,6 +32,7 @@ describe("Apartment property helpers", () => {
 
   it("normalizes arbitrary positive BHK tags and rejects invalid tags", () => {
     expect(normalizeBhkLabel(" 4bhk ")).toBe("4 BHK");
+    expect(normalizeBhkLabel("3.5 BHK")).toBe("3.5 BHK");
     expect(normalizeBhkLabel("studio")).toBeNull();
     expect(normalizeBhkLabel("0 BHK")).toBeNull();
   });
