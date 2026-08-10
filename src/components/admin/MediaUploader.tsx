@@ -7,12 +7,13 @@ import { uploadPropertyMedia } from "@/lib/api";
 interface MediaUploaderProps {
   images: string[];
   onImagesChange: (images: string[]) => void;
+  onImagesAdd?: (images: string[]) => void;
 }
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
-export default function MediaUploader({ images, onImagesChange }: MediaUploaderProps) {
+export default function MediaUploader({ images, onImagesChange, onImagesAdd }: MediaUploaderProps) {
   const [dragOver, setDragOver] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -39,12 +40,15 @@ export default function MediaUploader({ images, onImagesChange }: MediaUploaderP
       }
     }
 
-    if (newImages.length) onImagesChange([...images, ...newImages]);
+    if (newImages.length) {
+      if (onImagesAdd) onImagesAdd(newImages);
+      else onImagesChange([...images, ...newImages]);
+    }
     if (newErrors.length) {
       setErrors(newErrors);
       setTimeout(() => setErrors([]), 5000);
     }
-  }, [images, onImagesChange]);
+  }, [images, onImagesAdd, onImagesChange]);
 
   const handleImageDragOver = (event: React.DragEvent, index: number) => {
     event.preventDefault();

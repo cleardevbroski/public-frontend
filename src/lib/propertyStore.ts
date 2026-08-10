@@ -5,6 +5,7 @@ import {
   fetchBuilders,
   createProperty as apiCreateProperty,
   updateProperty as apiUpdateProperty,
+  updatePropertyWorkflow as apiUpdatePropertyWorkflow,
   deleteProperty as apiDeleteProperty,
 } from "./api";
 import { isInHomepageSection, type HomepageSection } from "./homepagePlacements";
@@ -203,11 +204,15 @@ export async function togglePublish(id: string, currentState?: boolean): Promise
     if (!current) return null;
     isPublished = current.published !== false;
   }
-  return updateProperty(id, { published: !isPublished });
+  const data = await apiUpdatePropertyWorkflow(id, { published: !isPublished });
+  await cache.refresh();
+  return data.property as Property;
 }
 
 export async function setPropertyStatus(id: string, status: string): Promise<Property | null> {
-  return updateProperty(id, { status });
+  const data = await apiUpdatePropertyWorkflow(id, { status });
+  await cache.refresh();
+  return data.property as Property;
 }
 
 export async function toggleFeatured(id: string, currentState?: boolean): Promise<Property | null> {
@@ -217,7 +222,9 @@ export async function toggleFeatured(id: string, currentState?: boolean): Promis
     if (!current) return null;
     isFeatured = !!current.featured;
   }
-  return updateProperty(id, { featured: !isFeatured });
+  const data = await apiUpdatePropertyWorkflow(id, { featured: !isFeatured });
+  await cache.refresh();
+  return data.property as Property;
 }
 
 export async function deleteProperty(id: string): Promise<boolean> {

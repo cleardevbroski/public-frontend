@@ -7,13 +7,14 @@ import { uploadPropertyMedia } from "@/lib/api";
 interface HeroImageUploaderProps {
   images: string[];
   onChange: (images: string[]) => void;
+  onImagesAdd?: (images: string[]) => void;
 }
 
 const MAX_HERO_IMAGES = 3;
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
-export default function HeroImageUploader({ images, onChange }: HeroImageUploaderProps) {
+export default function HeroImageUploader({ images, onChange, onImagesAdd }: HeroImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -54,7 +55,10 @@ export default function HeroImageUploader({ images, onChange }: HeroImageUploade
       }
     }
 
-    if (uploaded.length) onChange([...selectedImages, ...uploaded]);
+    if (uploaded.length) {
+      if (onImagesAdd) onImagesAdd(uploaded);
+      else onChange([...selectedImages, ...uploaded]);
+    }
     if (failures.length) setError(failures.join(" "));
     setUploading(false);
     if (inputRef.current) inputRef.current.value = "";

@@ -10,9 +10,14 @@ import PropertyDetail from "@/components/acres/PropertyDetail";
 import { cityListings } from "@/components/acres/mock-data";
 import { AuthProvider } from "@/components/acres/AuthContext";
 import { MemoryRouter } from "react-router-dom";
-import { configurationPriceRange, getProjectHeroImages, priceWithCharges } from "@/lib/propertyPresentation";
+import { configurationPriceRange, getProjectHeroImages, getPropertyCoverImage, priceWithCharges } from "@/lib/propertyPresentation";
 
 describe("interactive property presentation", () => {
+  it("uses a main-display photo before gallery and legacy thumbnail fallbacks", () => {
+    expect(getPropertyCoverImage({ heroImages: ["hero.jpg"], images: ["gallery.jpg"], image: "legacy.jpg" }))
+      .toBe("hero.jpg");
+  });
+
   it("adds the public charges suffix once", () => {
     expect(priceWithCharges("₹1.49 Cr - ₹3.14 Cr")).toBe("₹1.49 Cr - ₹3.14 Cr + Charges");
     expect(priceWithCharges("₹6 Cr + Charges")).toBe("₹6 Cr + Charges");

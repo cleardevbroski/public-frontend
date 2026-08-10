@@ -1,13 +1,18 @@
 "use client";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Link from "@/components/Link";
 import { ChevronLeft, ChevronRight, ShieldCheck, Star } from "lucide-react";
-import { getPropertiesBySection } from "@/lib/propertyStore";
+import { getAllProperties } from "@/lib/propertyStore";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 import { handpickedProjects, type Property } from "./mock-data";
 import { formatPossession } from "@/lib/propertyDetails";
 import { priceWithCharges } from "@/lib/propertyPresentation";
 import FavoriteButton from "./FavoriteButton";
+import {
+  BANGALORE_ZONES,
+  getHandpickedProjectsByZone,
+  type BangaloreZone,
+} from "@/lib/homepagePlacements";
 
 function statusOf(p: Property): string {
   if (p.possession || p.possessionDetails) return formatPossession(p);
@@ -29,10 +34,12 @@ type DisplayProject = {
 
 export default function HandpickedProjects() {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const [activeZone, setActiveZone] = useState<BangaloreZone>("East");
   const scrollBy = (dir: 1 | -1) =>
     scrollerRef.current?.scrollBy({ left: dir * 620, behavior: "smooth" });
 
-  const configuredProjects = useLiveProperties<Property[]>(() => getPropertiesBySection("Handpicked"), []);
+  const allProperties = useLiveProperties<Property[]>(() => getAllProperties(), []);
+  const configuredProjects = getHandpickedProjectsByZone(allProperties, activeZone);
   const projects: DisplayProject[] = configuredProjects.length
     ? configuredProjects.map((property) => ({
         id: property.id,
@@ -53,19 +60,33 @@ export default function HandpickedProjects() {
         canFavorite: false,
       }));
 
+  const selectZone = (zone: BangaloreZone) => {
+    setActiveZone(zone);
+    scrollerRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+  };
+
   return (
     <section className="bg-[#F8F7FA] py-8">
       <div className="max-w-[1200px] mx-auto px-5">
         <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
           <div>
             <span className="inline-flex items-center gap-1.5 text-[12px] font-bold tracking-[0.18em] uppercase text-[#DDAA42]">
-              <Star className="size-4" /> Featured Projects in Bangalore East
+              <Star className="size-4" /> Featured projects
             </span>
             <h2 className="text-[28px] md:text-[34px] font-bold text-[#121B35] mt-1">
-              Handpicked <span className="text-gold-gradient">Projects</span>
+              Featured Handpicked <span className="text-gold-gradient">Projects</span>
             </h2>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <label className="sr-only" htmlFor="handpicked-project-zone">Select Bangalore zone</label>
+            <select
+              id="handpicked-project-zone"
+              value={activeZone}
+              onChange={(event) => selectZone(event.target.value as BangaloreZone)}
+              className="h-10 rounded-full border border-[#E4E0E7] bg-white px-3 text-[12px] font-bold text-[#121B35] shadow-sm outline-none transition focus:border-[#DDAA42]"
+            >
+              {BANGALORE_ZONES.map((zone) => <option key={zone} value={zone}>{zone} Bangalore</option>)}
+            </select>
             <button onClick={() => scrollBy(-1)} className="size-10 rounded-full bg-white border border-[#E4E0E7] flex items-center justify-center shadow-sm hover:border-[#DDAA42] transition-all" aria-label="Scroll left">
               <ChevronLeft className="size-5 text-[#121B35]" />
             </button>

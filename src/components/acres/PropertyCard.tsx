@@ -1,9 +1,8 @@
 "use client";
 import Image from "@/components/Image";
 import Link from "@/components/Link";
-import { BedDouble, Maximize2, Calendar, MapPin, ShieldCheck } from "lucide-react";
+import { MapPin, ShieldCheck } from "lucide-react";
 import type { Property } from "./mock-data";
-import { formatPossession } from "@/lib/propertyDetails";
 import { priceWithCharges } from "@/lib/propertyPresentation";
 import FavoriteButton from "./FavoriteButton";
 
@@ -27,26 +26,29 @@ export default function PropertyCard({ p }: { p: Property }) {
           );
         })()}
 
-        {/* Verified tag */}
-        <span className="absolute top-2.5 left-2.5 flex items-center gap-1 rounded-lg bg-white/95 px-2 py-1 shadow-sm">
-          <ShieldCheck className="size-3.5 text-[#1E7A46]" strokeWidth={2.4} />
-          <span className="text-[9.5px] font-bold tracking-wide text-[#121B35] uppercase">Clear Title Verified</span>
-        </span>
-
-        {/* Badge */}
-        {p.badges && p.badges.length > 0 && (
-          <span className="absolute top-2.5 right-11 rounded-md bg-[#121B35] text-[#F2C052] text-[9.5px] font-bold px-2 py-1 uppercase">
-            {p.badges[0]}
+        <div className="absolute left-2.5 top-2.5 z-10 flex flex-wrap gap-1.5">
+          <span className="flex items-center gap-1 rounded-lg bg-white/95 px-2 py-1 shadow-sm backdrop-blur-sm">
+            <ShieldCheck className="size-3.5 text-[#1E7A46]" strokeWidth={2.4} />
+            <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#121B35]">Clear Title Verified</span>
           </span>
-        )}
+          {p.reraRegistered && (
+            <span className="rounded-lg bg-white/95 px-2 py-1 text-[9.5px] font-bold uppercase tracking-wide text-[#121B35] shadow-sm backdrop-blur-sm">
+              RERA
+            </span>
+          )}
+        </div>
 
         {/* Favorite */}
         <FavoriteButton property={p} className="absolute top-2 right-2 size-8 rounded-full bg-white/90 hover:bg-white shadow-sm" />
 
-        {/* Price chip */}
-        {p.price && <span className="absolute bottom-0 left-0 rounded-tr-lg bg-[#121B35]/90 text-white text-[15px] font-bold px-3 py-1.5">
-          {priceWithCharges(p.price)}
-        </span>}
+        {/* A neutral scrim keeps the price readable across every photo color. */}
+        {p.price && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/80 via-black/35 to-transparent px-3.5 pb-3 pt-10">
+            <span className="text-[16px] font-extrabold tracking-[-0.01em] text-white drop-shadow-sm">
+              {priceWithCharges(p.price)}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Body */}
@@ -58,23 +60,6 @@ export default function PropertyCard({ p }: { p: Property }) {
           <MapPin className="size-3.5 text-[#DDAA42] shrink-0" />
           {p.subtitle}
         </p>}
-
-        {/* Config row */}
-        {(p.configs?.length || p.area) ? <div className="flex items-center gap-4 mt-2.5 pt-2.5 border-t border-[#F3F1F5] text-[12px] text-[#3F3D46]">
-          {!!p.configs?.length && <span className="flex items-center gap-1.5">
-            <BedDouble className="size-4 text-[#DDAA42]" /> {p.configs.join(", ")}
-          </span>}
-          {p.area && <span className="flex items-center gap-1.5">
-            <Maximize2 className="size-4 text-[#DDAA42]" /> {p.area}
-          </span>}
-        </div> : null}
-
-        <div className="flex items-center justify-between mt-2.5">
-          {p.possession && <span className="text-[11px] text-[#68646F] flex items-center gap-1"><Calendar className="size-3.5 text-[#DDAA42]" /> {formatPossession(p)}</span>}
-          {p.pricePerSqft && (
-            <span className="text-[11px] text-[#68646F] font-medium">{p.pricePerSqft}</span>
-          )}
-        </div>
       </div>
     </Link>
   );

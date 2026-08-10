@@ -499,6 +499,16 @@ export async function updateProperty(id: string, updates: Record<string, unknown
   return normalizePropertyResponse(data);
 }
 
+export async function updatePropertyWorkflow(id: string, updates: Record<string, unknown>) {
+  const res = await apiFetch(`/api/properties/${id}/workflow`, {
+    method: "PATCH",
+    body: JSON.stringify(updates),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to update property workflow");
+  return normalizePropertyResponse(data);
+}
+
 export async function deleteProperty(id: string) {
   const res = await apiFetch(`/api/properties/${id}`, {
     method: "DELETE",

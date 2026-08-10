@@ -1,5 +1,11 @@
 import type { ConfigurationDetail, Property } from "@/components/acres/mock-data";
 
+export function getPropertyCoverImage(property: Pick<Property, "image" | "images" | "heroImages">): string {
+  return [property.heroImages?.[0], property.images?.[0], property.image]
+    .find((image) => Boolean(image?.trim()))
+    ?.trim() || "";
+}
+
 export function getProjectHeroImages(property: Pick<Property, "image" | "images" | "heroImages">): string[] {
   const selected = (property.heroImages || []).map((image) => image.trim()).filter(Boolean);
   const fallback = [property.image, ...(property.images || [])]

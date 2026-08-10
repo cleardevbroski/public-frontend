@@ -65,6 +65,7 @@ import {
 import { initialCommercialDetails } from "@/lib/commercialDetails";
 import { initialPgDetails } from "@/lib/pgDetails";
 import { mergeQuickFill, type QuickFillPatch } from "@/lib/propertyQuickFill";
+import { mergeUploadedMedia } from "@/lib/propertyMediaState";
 
 const steps = [
   { id: 1, label: "Basic Details", icon: Building2 },
@@ -87,8 +88,8 @@ const badgeOptions = ["RERA", "Premium", "New Launch", "Verified", "Hot Deal", "
 // Values must match the backend Property.websiteSection enum
 const sectionOptions = [
   { value: "None", label: "None" },
-  { value: "Featured", label: "Featured Projects in Bangalore East" },
-  { value: "Handpicked", label: "Handpicked Projects" },
+  { value: "Featured", label: "Featured Property Recommendations" },
+  { value: "Handpicked", label: "Feature in Handpicked Projects" },
   { value: "Recommended Insights", label: "Recommended Insights" },
   { value: "Search Trends", label: "Based on search trends" },
   { value: "Offers", label: "Offers for you" },
@@ -1275,11 +1276,19 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
               <HeroImageUploader
                 images={formData.heroImages || []}
                 onChange={(imgs) => updateField("heroImages", imgs)}
+                onImagesAdd={(imgs) => setFormData((previous) => ({
+                  ...previous,
+                  heroImages: mergeUploadedMedia(previous.heroImages, imgs, 3),
+                }))}
               />
               <div className="my-8 border-t border-[#E4E0E7]" />
               <MediaUploader
                 images={formData.images || []}
                 onImagesChange={(imgs) => updateField("images", imgs)}
+                onImagesAdd={(imgs) => setFormData((previous) => ({
+                  ...previous,
+                  images: mergeUploadedMedia(previous.images, imgs),
+                }))}
               />
               <div className="mt-8 border-t border-[#F3F1F5] pt-6">
                 <div className="mb-4">

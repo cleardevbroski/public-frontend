@@ -21,6 +21,7 @@ import {
 import { deleteProperty, togglePublish, toggleFeatured, setPropertyStatus } from "@/lib/propertyStore";
 import StatusControls from "@/components/admin/StatusControls";
 import type { Property } from "@/components/acres/mock-data";
+import { getPropertyCoverImage } from "@/lib/propertyPresentation";
 
 interface PropertyTableProps {
   properties: Property[];
@@ -182,6 +183,7 @@ export default function PropertyTable({
         ) : (
           paged.map((property) => {
             const isAdmin = adminIds.has(property.id);
+            const coverImage = getPropertyCoverImage(property);
             return (
               <div
                 key={property.id}
@@ -190,9 +192,9 @@ export default function PropertyTable({
                 {/* Property Name + Thumbnail */}
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-[#F3F1F5] border border-[#E4E0E7]/30">
-                    {property.images?.[0] || property.image ? (
+                    {coverImage ? (
                       <img
-                        src={property.images?.[0] || property.image}
+                        src={coverImage}
                         alt=""
                         className="w-full h-full object-cover"
                       />
@@ -361,7 +363,7 @@ export default function PropertyTable({
               </div>
               <div>
                 <h3 className="text-[16px] font-bold text-[#121B35]">Delete Property</h3>
-                <p className="text-[13px] text-[#68646F]">This action cannot be undone</p>
+                <p className="text-[13px] text-[#68646F]">The project and its stored photos will be permanently deleted.</p>
               </div>
               <button onClick={() => setDeleteModal(null)} className="ml-auto text-[#68646F] hover:text-[#121B35]">
                 <X className="w-5 h-5" />

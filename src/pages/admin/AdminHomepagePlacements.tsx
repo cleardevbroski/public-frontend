@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, LayoutGrid, Search, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, LayoutGrid, MapPin, Search, Sparkles } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import type { Property } from "@/components/acres/mock-data";
 import { fetchAdminProperties } from "@/lib/api";
 import {
   getHomepageSections,
+  getBangaloreZone,
+  BANGALORE_ZONES,
   HOMEPAGE_SECTIONS,
+  type BangaloreZone,
   type HomepageSection,
 } from "@/lib/homepagePlacements";
 import { updateProperty } from "@/lib/propertyStore";
@@ -32,7 +35,7 @@ export default function AdminHomepagePlacements() {
     const query = search.trim().toLowerCase();
     if (!query) return properties;
     return properties.filter((property) =>
-      [property.title, property.subtitle, property.builder, property.propertyType]
+      [property.title, property.subtitle, property.builder, property.propertyType, property.locality?.zone]
         .filter(Boolean)
         .some((value) => value!.toLowerCase().includes(query))
     );
@@ -46,6 +49,20 @@ export default function AdminHomepagePlacements() {
           properties.filter((property) => getHomepageSections(property).includes(section.id)).length,
         ])
       ) as Record<HomepageSection, number>,
+    [properties]
+  );
+
+  const handpickedZoneCounts = useMemo(
+    () => Object.fromEntries(
+      BANGALORE_ZONES.map((zone) => [
+        zone,
+        properties.filter(
+          (property) =>
+            getHomepageSections(property).includes("Handpicked") &&
+            getBangaloreZone(property.locality?.zone) === zone
+        ).length,
+      ])
+    ) as Record<BangaloreZone, number>,
     [properties]
   );
 
@@ -126,6 +143,24 @@ export default function AdminHomepagePlacements() {
         ))}
       </div>
 
+      <div className="mb-5 rounded-2xl border border-[#E4E0E7]/80 bg-white p-4 shadow-sm">
+        <div className="mb-3 flex items-center gap-2">
+          <MapPin className="size-4 text-[#B98428]" />
+          <div>
+            <h2 className="text-[14px] font-bold text-[#121B35]">Featured Handpicked Projects by zone</h2>
+            <p className="text-[11px] text-[#77717E]">A selected property appears under the public tab matching its saved zone.</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {BANGALORE_ZONES.map((zone) => (
+            <div key={zone} className="rounded-xl bg-[#F8F7FA] px-3 py-2.5">
+              <p className="text-[11px] font-semibold text-[#68646F]">{zone} Bangalore</p>
+              <p className="mt-0.5 text-xl font-extrabold text-[#121B35]">{handpickedZoneCounts[zone]}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {error && (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-semibold text-red-700">
           {error}
@@ -160,6 +195,8 @@ export default function AdminHomepagePlacements() {
             {visibleProperties.map((property) => {
               const assigned = getHomepageSections(property);
               const saving = savingId === property.id;
+              const zone = getBangaloreZone(property.locality?.zone);
+              const handpickedWithoutPublicZone = assigned.includes("Handpicked") && !zone;
               return (
                 <article
                   key={property.id}
@@ -185,6 +222,10 @@ export default function AdminHomepagePlacements() {
                       <p className="truncate text-[11.5px] text-[#77717E]">
                         {[property.subtitle, property.propertyType].filter(Boolean).join(" · ")}
                       </p>
+                      <p className={`mt-0.5 inline-flex items-center gap-1 text-[10.5px] font-semibold ${zone ? "text-[#315F8C]" : "text-amber-700"}`}>
+                        {handpickedWithoutPublicZone && <AlertTriangle className="size-3" />}
+                        {zone ? `${zone} Bangalore` : property.locality?.zone ? `${property.locality.zone} (not shown in public tabs)` : "Zone required for Handpicked"}
+                      </p>
                       <p className="mt-0.5 text-[11px] font-semibold text-[#B98428]">
                         {assigned.length
                           ? `${assigned.length} section${assigned.length === 1 ? "" : "s"}`
@@ -196,12 +237,14 @@ export default function AdminHomepagePlacements() {
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
                     {HOMEPAGE_SECTIONS.map((section) => {
                       const selected = assigned.includes(section.id);
+                      const missingHandpickedZone = section.id === "Handpicked" && !zone && !selected;
                       return (
                         <button
                           key={section.id}
                           type="button"
-                          disabled={saving}
+                          disabled={saving || missingHandpickedZone}
                           onClick={() => togglePlacement(property, section.id)}
+                          title={missingHandpickedZone ? "Choose East, West, South, or North in the property Zone field first." : undefined}
                           className={`flex min-h-11 items-center gap-2 rounded-lg border px-2.5 py-2 text-left text-[10.5px] font-bold leading-3.5 transition ${
                             selected
                               ? "border-[#DDAA42] bg-[#FFF8E8] text-[#6E4F0D]"

@@ -2,7 +2,7 @@ import type { Property } from "@/components/acres/mock-data";
 
 export const HOMEPAGE_SECTIONS = [
   { id: "Recommended", label: "Recommended Properties" },
-  { id: "Handpicked", label: "Handpicked Projects" },
+  { id: "Handpicked", label: "Featured Handpicked Projects" },
   { id: "Newly Launched", label: "Newly Launched Projects" },
   { id: "Search Trends", label: "Based on Search Trends" },
   { id: "Offers", label: "Offers for You" },
@@ -11,6 +11,9 @@ export const HOMEPAGE_SECTIONS = [
 ] as const;
 
 export type HomepageSection = (typeof HOMEPAGE_SECTIONS)[number]["id"];
+
+export const BANGALORE_ZONES = ["East", "West", "South", "North"] as const;
+export type BangaloreZone = (typeof BANGALORE_ZONES)[number];
 
 const SECTION_IDS = new Set<string>(HOMEPAGE_SECTIONS.map((section) => section.id));
 
@@ -38,4 +41,25 @@ export function isInHomepageSection(
   section: HomepageSection
 ): boolean {
   return getHomepageSections(property).includes(section);
+}
+
+export function getBangaloreZone(zone?: string): BangaloreZone | null {
+  const normalized = (zone || "").trim().toLowerCase();
+  return BANGALORE_ZONES.find((item) => {
+    const value = item.toLowerCase();
+    return normalized === value || normalized === `${value} bangalore` || normalized === `bangalore ${value}`;
+  }) || null;
+}
+
+export function getHandpickedProjectsByZone(
+  properties: Property[],
+  zone: BangaloreZone
+): Property[] {
+  return properties.filter(
+    (property) =>
+      property.published !== false &&
+      !["Rent", "Lease"].includes(property.propertyType || "") &&
+      isInHomepageSection(property, "Handpicked") &&
+      getBangaloreZone(property.locality?.zone) === zone
+  );
 }
