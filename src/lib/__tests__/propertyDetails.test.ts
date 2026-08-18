@@ -102,6 +102,15 @@ describe("Apartment property helpers", () => {
     expect(errors.description).toBeTruthy();
   });
 
+  it("validates an explicit amenities-area split without estimating it", () => {
+    const valid = apartment();
+    valid.projectArea = { totalAcres: 5, builtUpAcres: 2, openSpaceAcres: 2, amenitiesAcres: 1 };
+    expect(validateApartmentDraft(valid).projectArea).toBeUndefined();
+
+    valid.projectArea.amenitiesAcres = 2;
+    expect(validateApartmentDraft(valid).projectArea).toMatch(/amenities area must equal/i);
+  });
+
   it("validates optional interactive plan and facility presentation fields", () => {
     const draft = apartment();
     draft.configurationDetails![0].floorPlan2dUrl = "not-a-url";

@@ -93,7 +93,12 @@ function buildCommonPatch(read: (names: string[]) => string, preferredType?: Sup
     reraRegistered: Boolean(reraNumber) || /yes|true|registered/i.test(read(["reraregistered"])),
     reraNumber: reraNumber || undefined,
     reraPhases: reraNumber ? [{ name: reraPhaseName || "Phase 1", reraNumber, reraDocuments: [], projectDocuments: [] }] : [],
-    projectArea: number(read(["totalprojectarea", "projectarea", "totalarea", "sitearea"])) !== undefined ? { totalAcres: number(read(["totalprojectarea", "projectarea", "totalarea", "sitearea"])) } : undefined,
+    projectArea: number(read(["totalprojectarea", "projectarea", "totalarea", "sitearea"])) !== undefined ? {
+      totalAcres: number(read(["totalprojectarea", "projectarea", "totalarea", "sitearea"])),
+      openSpaceAcres: number(read(["openspacearea", "emptyopenspacearea"])),
+      builtUpAcres: number(read(["apartmentbuiltuparea", "buildingarea"])),
+      amenitiesAcres: number(read(["amenitiesarea"])),
+    } : undefined,
     totalUnits: number(read(["totalunits", "units", "totalhomes"])),
     totalTowers: number(read(["totaltowers", "towers"])),
     locality: {
@@ -285,8 +290,8 @@ export async function parsePropertyExcel(file: File, preferredType?: SupportedPr
 export function downloadPropertyExcelTemplate() {
   const workbook = XLSX.utils.book_new();
   const properties = XLSX.utils.aoa_to_sheet([
-    ["Project Name", "Property Type", "Builder", "Location", "City", "Zone", "Address", "Landmark", "Pincode", "Price", "Price Per Sqft", "Area", "Total Project Area", "Open Space Area", "Apartment Built Up Area", "Total Units", "Total Towers", "Possession Year", "Transaction Type", "Listing Type", "RERA Registered", "RERA Number", "RERA Phase Name", "Furnishing", "Parking", "Facing", "Floor", "Total Floors", "Description"],
-    ["Example Project", "Apartment", "Example Builder", "Whitefield", "Bangalore", "East", "", "", "", "₹ 1.25 Cr", "₹ 8,500/sqft", "1200 sqft", "", "", "", "", "", "Dec 2030", "New Property", "For Sale", "Yes", "", "Phase 1", "", "", "", "", "", ""],
+    ["Project Name", "Property Type", "Builder", "Location", "City", "Zone", "Address", "Landmark", "Pincode", "Price", "Price Per Sqft", "Area", "Total Project Area", "Open Space Area", "Apartment Built Up Area", "Amenities Area", "Total Units", "Total Towers", "Possession Year", "Transaction Type", "Listing Type", "RERA Registered", "RERA Number", "RERA Phase Name", "Furnishing", "Parking", "Facing", "Floor", "Total Floors", "Description"],
+    ["Example Project", "Apartment", "Example Builder", "Whitefield", "Bangalore", "East", "", "", "", "₹ 1.25 Cr", "₹ 8,500/sqft", "1200 sqft", "", "", "", "", "", "", "Dec 2030", "New Property", "For Sale", "Yes", "", "Phase 1", "", "", "", "", "", ""],
   ]);
   const configurations = XLSX.utils.aoa_to_sheet([["Project Name", "Configuration", "Price", "Built Up Area", "Carpet Area", "Plot Area", "Super Area", "Bathrooms"], ["Example Project", "2 BHK", "₹ 1.25 Cr", "1200 sqft", "900 sqft", "", "", "2"]]);
   const society = XLSX.utils.aoa_to_sheet([["Project Name", "Security", "Water Supply", "Power Backup", "Lift", "Visitor Parking", "Maintenance Staff"], ["Example Project", "24x7 security", "24x7 water", "DG backup", "2 lifts", "Available", "Available"]]);
@@ -330,6 +335,7 @@ RERA Number:
 Total Project Area:
 Open Space Area:
 Apartment Built-up Area:
+Amenities Area:
 Total Units:
 Total Towers:
 
@@ -486,9 +492,9 @@ function analyzeStructuredDescription(source: string, preferredType?: SupportedP
   const fields: QuickFillSuggestion["fields"] = []; const warnings = ["Only fields supplied in this format are filled. Complete missing fields and all photo/document uploads manually."];
   const type = normalizePropertyType(get("Property Type")) || preferredType;
   const reraNumber = get("RERA Number");
-  const totalProjectArea = number(get("Total Project Area", inventory)); const openSpaceArea = number(get("Open Space Area", inventory)); const builtUpProjectArea = number(get("Apartment Built-up Area", inventory));
+  const totalProjectArea = number(get("Total Project Area", inventory)); const openSpaceArea = number(get("Open Space Area", inventory)); const builtUpProjectArea = number(get("Apartment Built-up Area", inventory)); const amenitiesArea = number(get("Amenities Area", inventory));
   const phaseRows = [...reraPhases.matchAll(/Phase\s+(\d+)\s+Name\s*:\s*(.+)/gi)].map((match) => { const index = match[1]; const name = clean(match[2]); const phaseNumber = labelled(reraPhases, `Phase ${index} RERA Number`); return isProvided(name) && phaseNumber ? { name, reraNumber: phaseNumber, reraDocuments: [], projectDocuments: [] } : null; }).filter((item): item is NonNullable<typeof item> => Boolean(item));
-  const patch: QuickFillPatch = { propertyType: type, title: get("Project / Property Name"), builder: get("Builder / Developer"), subtitle: get("Title / Subtitle"), description: get("Description"), price: get("Price"), pricePerSqft: get("Price Per Sqft"), area: get("Total Area"), transactionType: get("Transaction Type") || undefined, listingType: get("Listing Type") || undefined, possession: get("Possession Status") || undefined, possessionDetails: completion(`${get("Possession Status")} ${get("Expected Completion / Ready Date")}`), reraRegistered: /yes|true/i.test(get("RERA Registered")) || Boolean(reraNumber), reraNumber: reraNumber || phaseRows[0]?.reraNumber || undefined, reraPhases: phaseRows.length ? phaseRows : reraNumber ? [{ name: "Phase 1", reraNumber, reraDocuments: [], projectDocuments: [] }] : [], projectArea: totalProjectArea !== undefined || openSpaceArea !== undefined || builtUpProjectArea !== undefined ? { totalAcres: totalProjectArea, openSpaceAcres: openSpaceArea, builtUpAcres: builtUpProjectArea } : undefined, totalUnits: number(get("Total Units", inventory)), totalTowers: number(get("Total Towers", inventory)), locality: { address: get("Address", location), landmark: get("Landmark", location), city: get("City", location), zone: get("Zone", location), pinCode: get("Pincode", location) }, society: { security: get("Security", society), waterSupply: get("Water Supply", society), powerBackup: get("Power Backup", society), lift: get("Lift", society), visitorParking: get("Visitor Parking", society), maintenanceStaff: get("Maintenance Staff", society) } };
+  const patch: QuickFillPatch = { propertyType: type, title: get("Project / Property Name"), builder: get("Builder / Developer"), subtitle: get("Title / Subtitle"), description: get("Description"), price: get("Price"), pricePerSqft: get("Price Per Sqft"), area: get("Total Area"), transactionType: get("Transaction Type") || undefined, listingType: get("Listing Type") || undefined, possession: get("Possession Status") || undefined, possessionDetails: completion(`${get("Possession Status")} ${get("Expected Completion / Ready Date")}`), reraRegistered: /yes|true/i.test(get("RERA Registered")) || Boolean(reraNumber), reraNumber: reraNumber || phaseRows[0]?.reraNumber || undefined, reraPhases: phaseRows.length ? phaseRows : reraNumber ? [{ name: "Phase 1", reraNumber, reraDocuments: [], projectDocuments: [] }] : [], projectArea: totalProjectArea !== undefined || openSpaceArea !== undefined || builtUpProjectArea !== undefined || amenitiesArea !== undefined ? { totalAcres: totalProjectArea, openSpaceAcres: openSpaceArea, builtUpAcres: builtUpProjectArea, amenitiesAcres: amenitiesArea } : undefined, totalUnits: number(get("Total Units", inventory)), totalTowers: number(get("Total Towers", inventory)), locality: { address: get("Address", location), landmark: get("Landmark", location), city: get("City", location), zone: get("Zone", location), pinCode: get("Pincode", location) }, society: { security: get("Security", society), waterSupply: get("Water Supply", society), powerBackup: get("Power Backup", society), lift: get("Lift", society), visitorParking: get("Visitor Parking", society), maintenanceStaff: get("Maintenance Staff", society) } };
   const locality = get("Locality", location); if (locality && !patch.subtitle) patch.subtitle = locality;
   const configBlocks = [...configurations.matchAll(/Configuration\s+\d+\s*:\s*[\s\S]*?(?=\n\s*Configuration\s+\d+\s*:|$)/gi)];
   const configRows = configBlocks.map((block) => { const body = block[0]; const config = normalizeBhkLabel(get("BHK", body)); return config ? { configuration: config, price: get("Price", body), builtUpArea: get("Built-up Area", body), carpetArea: get("Carpet Area", body), superArea: get("Super Area", body), bedrooms: number(get("Bedrooms", body)), bathrooms: number(get("Bathrooms", body)), balconies: number(get("Balconies", body)), facing: get("Facing", body) } : null; }).filter((item): item is NonNullable<typeof item> => Boolean(item));

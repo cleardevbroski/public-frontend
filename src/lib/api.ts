@@ -175,12 +175,32 @@ function channelPartnerFetch(endpoint: string, options: RequestInit = {}) {
   return apiFetchWithToken(endpoint, options, token);
 }
 
+export function hasChannelPartnerSession() {
+  return typeof window !== "undefined" && Boolean(sessionStorage.getItem(CHANNEL_PARTNER_TOKEN_KEY));
+}
+
+export function clearChannelPartnerSession() {
+  if (typeof window !== "undefined") sessionStorage.removeItem(CHANNEL_PARTNER_TOKEN_KEY);
+}
+
 export async function fetchChannelPartnerProjects() {
   return readJson(await channelPartnerFetch("/api/channel-partner-leads/projects"), "Unable to load projects");
 }
 
 export async function fetchMyChannelPartnerClients() {
   return readJson(await channelPartnerFetch("/api/channel-partner-leads/mine"), "Unable to load registered clients");
+}
+
+export async function fetchChannelPartnerDashboard() {
+  return readJson(await channelPartnerFetch("/api/channel-partner-leads/mine/dashboard"), "Unable to load Channel Partner dashboard");
+}
+
+export async function fetchChannelPartnerClientHistory(params: Record<string, unknown> = {}) {
+  return readJson(await channelPartnerFetch(`/api/channel-partner-leads/mine/clients${toQuery(params)}`), "Unable to load client history");
+}
+
+export async function fetchChannelPartnerClashes(params: Record<string, unknown> = {}) {
+  return readJson(await channelPartnerFetch(`/api/channel-partner-leads/mine/clashes${toQuery(params)}`), "Unable to load clash history");
 }
 
 export async function registerChannelPartnerClient(data: Record<string, unknown>, idempotencyKey: string) {
@@ -201,6 +221,10 @@ export async function fetchAdminCPClients(params: Record<string, unknown> = {}) 
 
 export async function resendCPClientConfirmationEmail(clientId: string) {
   return readJson(await apiFetch(`/api/channel-partner-leads/admin/clients/${encodeURIComponent(clientId)}/resend-email`, { method: "POST" }), "Unable to resend client confirmation email");
+}
+
+export async function updateAdminCPClientStatus(clientId: string, data: Record<string, unknown>) {
+  return readJson(await apiFetch(`/api/channel-partner-leads/admin/clients/${encodeURIComponent(clientId)}/status`, { method: "PATCH", body: JSON.stringify(data) }), "Unable to update CP client status");
 }
 
 // ─── Auth API ───────────────────────────────────────────────────
@@ -436,7 +460,7 @@ export async function reviewPublicSubmission(id: string, action: "start_review" 
   return readJson(await apiFetch(`/api/properties/admin/submissions/${id}/review`, { method: "PUT", body: JSON.stringify({ action, message }) }), "Failed to update submission");
 }
 
-export async function uploadPropertyMedia(file: File, kind: "image" | "brochure" | "layout-map-image" | "layout-map-pdf" | "project-document-pdf" | "project-walkthrough" | "legal-document-image" | "legal-document-pdf" | "rera-document-image" | "rera-document-pdf"): Promise<string> {
+export async function uploadPropertyMedia(file: File, kind: "image" | "brochure" | "layout-map-image" | "layout-map-pdf" | "project-document-image" | "project-document-pdf" | "project-walkthrough" | "legal-document-image" | "legal-document-pdf" | "rera-document-image" | "rera-document-pdf"): Promise<string> {
   const res = await apiFetch(`/api/property-media?kind=${kind}`, {
     method: "POST",
     headers: { "Content-Type": file.type },

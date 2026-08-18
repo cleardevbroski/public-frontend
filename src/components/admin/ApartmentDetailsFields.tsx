@@ -16,8 +16,8 @@ type Props = {
   setFloorLabel?: (value: string) => void;
   totalFloors?: number;
   setTotalFloors: (value?: number) => void;
-  projectArea?: { totalAcres?: number; openSpaceAcres?: number; builtUpAcres?: number };
-  setProjectArea?: (value: { totalAcres?: number; openSpaceAcres?: number; builtUpAcres?: number }) => void;
+  projectArea?: { totalAcres?: number; openSpaceAcres?: number; builtUpAcres?: number; amenitiesAcres?: number };
+  setProjectArea?: (value: { totalAcres?: number; openSpaceAcres?: number; builtUpAcres?: number; amenitiesAcres?: number }) => void;
   totalUnits?: number;
   setTotalUnits?: (value?: number) => void;
   totalTowers?: number;
@@ -181,13 +181,14 @@ export default function ApartmentDetailsFields(props: Props) {
       <div className="rounded-2xl border border-[#E4E0E7] bg-[#F8F7FA]/60 p-5">
         <div className="mb-4">
           <h3 className="text-[14px] font-bold text-[#121B35]">Project area and inventory</h3>
-          <p className="mt-1 text-[12px] text-[#68646F]">Enter all project-area values in acres. Open space plus apartment built-up area must equal the total.</p>
+          <p className="mt-1 text-[12px] text-[#68646F]">Enter all project-area values in acres. Building, empty/open space and amenities area must equal the total when all three are supplied.</p>
         </div>
         <div className="grid gap-4 md:grid-cols-5">
           {([
             ["totalAcres", "Total Project Area"],
-            ["openSpaceAcres", "Open Space Area"],
+            ["openSpaceAcres", "Empty / Open Space Area"],
             ["builtUpAcres", "Apartment Built-up Area"],
+            ["amenitiesAcres", "Amenities Area"],
           ] as const).map(([key, label]) => (
             <label key={key} className="text-[12px] font-semibold text-[#3F3D46]">{label}
               <div className="relative mt-1.5">

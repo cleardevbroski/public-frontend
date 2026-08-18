@@ -80,6 +80,7 @@ import { usePropertyActivity } from "@/lib/usePropertyActivity";
 import FavoriteButton from "./FavoriteButton";
 import VillaPropertyInformationCard from "./VillaPropertyInformationCard";
 import VillaLocationPriceComparison from "./VillaLocationPriceComparison";
+import ExactLoanCalculator from "./ExactLoanCalculator";
 
 type Pools = {
   recommended: Property[];
@@ -314,7 +315,7 @@ function PropertyMediaCarousel({
   );
 }
 
-const sections = [
+export const PROPERTY_HERO_SECTION_ORDER = [
   { id: "overview", label: "About" },
   { id: "price-list", label: "Price List" },
   { id: "floor-plans", label: "Floor Plans" },
@@ -324,11 +325,12 @@ const sections = [
   { id: "brochure", label: "Download Hub" },
   { id: "locality", label: "Map & Landmarks" },
   { id: "rera-details", label: "RERA Details" },
+  { id: "project-details", label: "Project Details" },
   { id: "dealer", label: "About Builder" },
   { id: "comparison", label: "Market Comparison" },
   { id: "explore", label: "Similar Projects" },
   { id: "faq", label: "FAQ" },
-];
+] as const;
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Horizontal property rail Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 function PropertyRail({
@@ -398,6 +400,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const [verifiedAction, setVerifiedAction] = useState<PropertyAction | null>(null);
   const [showLawyerConsultation, setShowLawyerConsultation] = useState(false);
   const [showGovernmentCharges, setShowGovernmentCharges] = useState(false);
+  const [reraWorkspaceView, setReraWorkspaceView] = useState<"rera" | "project">("rera");
 
   // DBG006: Reset media state when navigating to a different property to prevent out-of-bounds crash
   useEffect(() => {
@@ -408,6 +411,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     setAreaUnit("sqft");
     setOverviewPopover(null);
     setShowGovernmentCharges(false);
+    setReraWorkspaceView("rera");
   }, [property.id]);
 
   useEffect(() => {
@@ -487,7 +491,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const hasFloorPlans = Boolean(property.configurationDetails?.some((detail) =>
     detail.floorPlan2dUrl || detail.floorPlan3dUrl || detail.rooms?.length
   ));
-  const hasPriceList = Boolean(property.configurationDetails?.length || property.villaDetails?.configurationDetails?.length || property.plotDetails?.plotSizeDetails?.length);
+  const hasPriceList = Boolean(property.configurationDetails?.length || property.villaDetails?.configurationDetails?.length || property.plotDetails?.plotSizeDetails?.length || property.pgDetails?.sharingDetails?.length);
   const hasPhotosOrVideos = Boolean(images.length || property.videos?.length || property.heroVideo);
   const hasBrochure = Boolean(property.brochure || property.projectDownloads?.length);
   const hasMasterPlan = Boolean(property.masterPlan?.imageUrl || property.masterPlan?.summary || property.masterPlan?.sections?.length || property.plotDetails?.layoutMapUrl);
@@ -500,7 +504,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     (property.nearbyAmenities && Object.values(property.nearbyAmenities).some(Boolean)) ||
     (property.nearbyDetails && Object.values(property.nearbyDetails).some((item) => item && (item.places?.length || item.count !== undefined || item.distance)))
   );
-  const visibleSections = sections.filter((section) =>
+  const visibleSections = PROPERTY_HERO_SECTION_ORDER.filter((section) =>
     (section.id !== "price-list" || hasPriceList) &&
     (section.id !== "floor-plans" || hasFloorPlans) &&
     (section.id !== "master-plan" || hasMasterPlan) &&
@@ -524,7 +528,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
         if (element) {
           const { offsetTop, offsetHeight } = element;
           if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-            setActiveSection(section.id);
+            setActiveSection(section.id === "rera-details" && reraWorkspaceView === "project" ? "project-details" : section.id);
             break;
           }
         }
@@ -532,11 +536,16 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [hasBrochure, hasFacilities, hasFloorPlans, hasLocalityContent, hasMasterPlan, hasPhotosOrVideos, hasPriceList, hasReraPhases]);
+  }, [hasBrochure, hasFacilities, hasFloorPlans, hasLocalityContent, hasMasterPlan, hasPhotosOrVideos, hasPriceList, hasReraPhases, reraWorkspaceView]);
 
   const scrollToSection = (sectionId: string) => {
-    const element = sectionRefs.current[sectionId];
+    const element = sectionRefs.current[sectionId] || (sectionId === "project-details" ? sectionRefs.current["rera-details"] : null);
     if (element) {
+      if (sectionId === "rera-details" || sectionId === "project-details") {
+        const nextView = sectionId === "project-details" ? "project" : "rera";
+        setReraWorkspaceView(nextView);
+        setActiveSection(sectionId);
+      }
       const headerOffset = 135;
       const elementPosition = element.getBoundingClientRect().top + window.scrollY;
       window.scrollTo({ top: elementPosition - headerOffset, behavior: "smooth" });
@@ -947,8 +956,11 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
           <VillaPropertyInformationCard
             property={property}
             onCharges={() => setShowGovernmentCharges(true)}
-            onViewNumber={() => setVerifiedAction("call")}
             onRequestCall={() => setVerifiedAction("enquiry")}
+            onContactLawyer={() => {
+              trackAnalytics("lawyer_consultation_opened", { propertyId: property.id, propertyTitle: property.title, location: property.subtitle, source: "property_information_card" });
+              setShowLawyerConsultation(true);
+            }}
           />
           <VillaLocationPriceComparison property={property} />
         </div> : <div className="property-reference-summary mt-3 grid overflow-hidden rounded-xl border border-[#DDE2EA] bg-white lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.9fr)]">
@@ -1089,10 +1101,11 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
         className={`${isTabBarSticky ? "fixed top-[60px] md:top-[64px] left-0 right-0 z-40 shadow-md border-b border-[#E4E0E7]/20" : ""} bg-white transition-all duration-300`}
       >
         <div className="mx-auto max-w-[1440px] px-4 md:px-5">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+          <nav className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" aria-label="Property information sections">
             {visibleSections.map((section) => (
               <button
                 key={section.id}
+                data-section-id={section.id}
                 onClick={() => scrollToSection(section.id)}
                 className={`px-4 py-3 text-[13px] font-bold transition-all duration-200 border-b-2 whitespace-nowrap ${
                   activeSection === section.id
@@ -1103,7 +1116,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                 {section.label}
               </button>
             ))}
-          </div>
+          </nav>
         </div>
       </div>
       {isTabBarSticky && <div className="h-[53px]" aria-hidden="true" />}
@@ -1114,7 +1127,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
         : "mx-auto grid max-w-[1580px] gap-5 px-4 py-5 min-[1500px]:grid-cols-[150px_minmax(0,1200px)_150px]"
       }>
         {!isPromotedProperty && <AdRail side="left" />}
-        <div className={`grid min-w-0 grid-cols-1 items-start gap-4 ${isPromotedProperty ? "lg:grid-cols-[minmax(0,1fr)_380px]" : "lg:grid-cols-[minmax(0,1.45fr)_340px]"}`}>
+        <div className={`grid min-w-0 grid-cols-1 items-start gap-4 ${isPromotedProperty ? "lg:grid-cols-[minmax(0,1fr)_320px]" : "lg:grid-cols-[minmax(0,1.45fr)_300px]"}`}>
           {/* Left Block */}
           <div className="space-y-4">
             {/* Photo gallery */}
@@ -1262,7 +1275,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
             ) : null}
 
             {property.pgDetails?.sharingDetails?.length ? (
-              <div className="rounded-2xl border border-[#DDE2EA] bg-white p-5 shadow-sm md:p-7">
+              <div ref={setSectionRef("price-list")} className="rounded-2xl border border-[#DDE2EA] bg-white p-5 shadow-sm md:p-7">
                 <div>
                   <div className="mb-3 flex items-end justify-between gap-3">
                     <h3 className="text-[17px] font-bold text-[#121B35]">Choose a sharing option</h3>
@@ -1388,30 +1401,30 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                 </div>
               </div>}
             </div>}
-            {hasReraPhases && <PropertyReraSections property={property} setSectionRef={setSectionRef} />}
+            {hasReraPhases && <div data-testid="rera-workspace-column"><PropertyReraSections property={property} setSectionRef={setSectionRef} activeView={reraWorkspaceView} onViewChange={(view) => { setReraWorkspaceView(view); setActiveSection(view === "rera" ? "rera-details" : "project-details"); }} /></div>}
             {(property.builder || property.developerLogoUrl) && <div ref={setSectionRef("dealer")}><ProjectBuilderProfile property={property} projects={pools.builderMore} /></div>}
             {comparisonMatches.length > 0 && <div ref={setSectionRef("comparison")}><ProjectComparison current={property} matches={comparisonMatches} /></div>}
           </div>
 
           {/* Right Sticky Contact Card */}
-          <div className="space-y-4 lg:sticky lg:top-24">
-            <div className="bg-[#121B35] rounded-3xl p-6 text-white border border-[#DDAA42]/35 shadow-xl relative overflow-hidden">
+          <aside className="property-detail-rail" data-testid="property-detail-rail" aria-label="Property contact and financing tools">
+            <div className="relative overflow-hidden rounded-2xl border border-[#DDAA42]/35 bg-[#121B35] p-4 text-white shadow-lg">
               <div className="absolute -right-10 -top-10 w-36 h-36 bg-gradient-to-br from-[#F2C052]/10 to-transparent rounded-full blur-2xl pointer-events-none" />
-              {property.builder && <div className="flex items-center gap-3.5 mb-6 relative z-10">
-                <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-white border border-white/20 font-bold">
+              {property.builder && <div className="relative z-10 mb-4 flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-[12px] font-bold text-white backdrop-blur-md">
                   {property.builder.slice(0, 2)}
                 </div>
                 <div>
-                  <h4 className="text-[15px] font-bold text-[#F2C052]">{property.builder}</h4>
-                  <p className="text-[11px] text-white/50">Verified Lister</p>
+                  <h4 className="line-clamp-2 text-[12px] font-bold leading-4 text-[#F2C052]">{property.builder}</h4>
+                  <p className="text-[10px] text-white/50">Verified Lister</p>
                 </div>
               </div>}
 
-              <div className="space-y-3 relative z-10">
-                <button onClick={() => setVerifiedAction("call")} className="w-full btn-gold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 text-[14px]">
+              <div className="relative z-10 grid gap-2">
+                <button onClick={() => setVerifiedAction("call")} className="btn-gold flex min-h-10 w-full items-center justify-center gap-2 rounded-lg px-3 text-[11px]">
                   <Phone className="w-4.5 h-4.5" /> Reveal Contact Number
                 </button>
-                {hasBrochure && <button onClick={() => setVerifiedAction("brochure")} className="w-full bg-white/10 hover:bg-white/15 border border-[#F2C052]/40 text-[#F2C052] font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2">
+                {hasBrochure && <button onClick={() => setVerifiedAction("brochure")} className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#F2C052]/40 bg-white/10 px-3 text-[11px] font-bold text-[#F2C052] transition-all hover:bg-white/15">
                   <Download className="w-4.5 h-4.5" /> Download Brochure
                 </button>}
                 <button
@@ -1419,11 +1432,11 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                     trackAnalytics("lawyer_consultation_opened", { propertyId: property.id, propertyTitle: property.title, location: property.subtitle, source: "property_detail" });
                     setShowLawyerConsultation(true);
                   }}
-                  className="w-full bg-[#DDAA42] hover:bg-[#B98428] text-[#0B1328] font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2"
+                  className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#DDAA42]/55 px-3 text-[11px] font-bold text-[#F2C052] transition-all hover:bg-white/10"
                 >
                   <Scale className="w-4.5 h-4.5 text-[#F2C052]" /> Consult Lawyer on Title
                 </button>
-                <button onClick={() => setVerifiedAction("enquiry")} className="w-full border-2 border-white/10 hover:bg-white/10 text-white font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2">
+                <button onClick={() => setVerifiedAction("enquiry")} className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-white/10 px-3 text-[11px] font-bold text-white transition-all hover:bg-white/10">
                   <MessageCircle className="w-4.5 h-4.5" /> Leave Message
                 </button>
               </div>
@@ -1440,21 +1453,16 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                 </div>
               )}
 
-              {(property.verified || property.reraRegistered) && <div className="mt-6 pt-5 border-t border-white/10 space-y-3 relative z-10">
+              {(property.verified || hasReraPhases) && <div className="relative z-10 mt-4 space-y-3 border-t border-white/10 pt-4">
                 {property.verified && <div className="flex items-center gap-2.5 text-[12.5px] text-[#F2C052]">
                   <Scale className="w-4 h-4 shrink-0" /> <span className="font-extrabold">Title deed audited by Legal Panel</span>
                 </div>}
-                {property.reraRegistered && <div className="flex items-center gap-2.5 text-[12.5px] text-white/80">
-                  <Shield className="w-4 h-4 text-[#F2C052] shrink-0" /> <span>RERA registration supplied</span>
-                </div>}
+                {hasReraPhases && <div className="rounded-lg border border-[#F2C052]/25 bg-white/[.06] p-3"><div className="flex items-center justify-between gap-2"><span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#F2C052]"><Shield className="size-3.5" />RERA record</span><span className="text-[9px] text-white/45">{property.reraPhases?.length} phase{property.reraPhases?.length === 1 ? "" : "s"}</span></div><p className="mt-2 truncate text-[11px] font-bold tabular-nums text-white">{property.reraPhases?.[0]?.reraNumber || property.reraNumber}</p><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => scrollToSection("rera-details")} className="min-h-8 rounded-md bg-[#DDAA42] px-2 text-[9px] font-bold text-[#121B35]">RERA details</button><button type="button" onClick={() => scrollToSection("project-details")} className="min-h-8 rounded-md border border-white/15 px-2 text-[9px] font-bold text-white">Project details</button></div></div>}
               </div>}
             </div>
 
-            <div className="bg-white rounded-2xl p-4.5 shadow-sm border border-[#E4E0E7]/30 text-center">
-              <p className="text-[12px] text-[#68646F] font-semibold">Spotted an error in this listing?</p>
-              <button className="text-[12.5px] text-[#DDAA42] font-bold hover:underline mt-1">Report listing</button>
-            </div>
-          </div>
+            <ExactLoanCalculator key={property.id} property={property} />
+          </aside>
         </div>
         {!isPromotedProperty && <AdRail side="right" />}
       </div>

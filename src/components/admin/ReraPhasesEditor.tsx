@@ -46,10 +46,12 @@ function DocumentRows({
   definitions,
   documents,
   onChange,
+  group,
 }: {
   definitions: DocumentDefinition[];
   documents: ReraDocument[];
   onChange: (documents: ReraDocument[]) => void;
+  group: "rera" | "project";
 }) {
   const [uploading, setUploading] = useState("");
   const [error, setError] = useState("");
@@ -67,7 +69,9 @@ function DocumentRows({
     setUploading(definition.key);
     setError("");
     try {
-      const kind = file.type === "application/pdf" ? "rera-document-pdf" : "rera-document-image";
+      const kind = file.type === "application/pdf"
+        ? group === "project" ? "project-document-pdf" : "rera-document-pdf"
+        : group === "project" ? "project-document-image" : "rera-document-image";
       const fileUrl = await uploadPropertyMedia(file, kind);
       const next: ReraDocument = {
         key: definition.key,
@@ -132,18 +136,18 @@ function DocumentRows({
 
 export default function ReraPhasesEditor({ phases, onChange, error }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const safePhases = (phases.length ? phases : [emptyPhase(1)]).map((phase) => ({ ...phase, reraSiteUrl: KARNATAKA_RERA_URL }));
+  const safePhases = (phases.length ? phases : [emptyPhase(1)]).map((phase) => ({ ...phase, reraSiteUrl: phase.reraSiteUrl || KARNATAKA_RERA_URL }));
   const active = safePhases[Math.min(activeIndex, safePhases.length - 1)];
 
   const updateActive = (updates: Partial<ReraPhase>) => {
     const next = [...safePhases];
     next[Math.min(activeIndex, next.length - 1)] = { ...active, ...updates };
-    onChange(next.map((phase, order) => ({ ...phase, reraSiteUrl: KARNATAKA_RERA_URL, order })));
+    onChange(next.map((phase, order) => ({ ...phase, reraSiteUrl: phase.reraSiteUrl || KARNATAKA_RERA_URL, order })));
   };
 
   const addPhase = () => {
     const next = [...safePhases, emptyPhase(safePhases.length + 1)];
-    onChange(next.map((phase, order) => ({ ...phase, reraSiteUrl: KARNATAKA_RERA_URL, order })));
+    onChange(next.map((phase, order) => ({ ...phase, reraSiteUrl: phase.reraSiteUrl || KARNATAKA_RERA_URL, order })));
     setActiveIndex(next.length - 1);
   };
 
@@ -153,7 +157,7 @@ export default function ReraPhasesEditor({ phases, onChange, error }: Props) {
       return;
     }
     const next = safePhases.filter((_, index) => index !== activeIndex);
-    onChange(next.map((phase, order) => ({ ...phase, reraSiteUrl: KARNATAKA_RERA_URL, order })));
+    onChange(next.map((phase, order) => ({ ...phase, reraSiteUrl: phase.reraSiteUrl || KARNATAKA_RERA_URL, order })));
     setActiveIndex(Math.max(0, activeIndex - 1));
   };
 
@@ -175,15 +179,19 @@ export default function ReraPhasesEditor({ phases, onChange, error }: Props) {
         <label className="text-[12px] font-bold text-[#3F3D46]">RERA registration number *
           <input value={active.reraNumber} onChange={(event) => updateActive({ reraNumber: event.target.value })} maxLength={100} placeholder="PRM/KA/RERA/..." className="mt-1 w-full rounded-xl border border-[#E4E0E7] bg-white px-4 py-3 font-normal" />
         </label>
+        <label className="text-[12px] font-bold text-[#3F3D46] md:col-span-2">Official Karnataka RERA project URL
+          <input type="url" value={active.reraSiteUrl || KARNATAKA_RERA_URL} onChange={(event) => updateActive({ reraSiteUrl: event.target.value })} maxLength={2000} placeholder={KARNATAKA_RERA_URL} className="mt-1 w-full rounded-xl border border-[#E4E0E7] bg-white px-4 py-3 font-normal" />
+          <span className="mt-1 block text-[10px] font-normal text-[#68646F]">Only HTTPS links on rera.karnataka.gov.in are accepted. The general project search page is used by default.</span>
+        </label>
       </div>
 
       <div className="mt-6">
         <h4 className="mb-3 flex items-center gap-2 text-[13px] font-bold text-[#121B35]"><FileText className="size-4 text-[#DDAA42]" />RERA Details</h4>
-        <DocumentRows definitions={RERA_DOCUMENT_DEFINITIONS} documents={active.reraDocuments || []} onChange={(reraDocuments) => updateActive({ reraDocuments })} />
+        <DocumentRows group="rera" definitions={RERA_DOCUMENT_DEFINITIONS} documents={active.reraDocuments || []} onChange={(reraDocuments) => updateActive({ reraDocuments })} />
       </div>
       <div className="mt-6">
         <h4 className="mb-3 flex items-center gap-2 text-[13px] font-bold text-[#121B35]"><FileText className="size-4 text-[#DDAA42]" />Project Details</h4>
-        <DocumentRows definitions={PROJECT_DOCUMENT_DEFINITIONS} documents={active.projectDocuments || []} onChange={(projectDocuments) => updateActive({ projectDocuments })} />
+        <DocumentRows group="project" definitions={PROJECT_DOCUMENT_DEFINITIONS} documents={active.projectDocuments || []} onChange={(projectDocuments) => updateActive({ projectDocuments })} />
       </div>
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">

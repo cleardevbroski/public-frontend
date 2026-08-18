@@ -736,6 +736,24 @@ h1, h2, h3 {
   box-shadow: 0 8px 25px rgba(16, 24, 40, 0.06);
 }
 
+.property-detail-rail {
+  display: flex;
+  min-width: 0;
+  align-self: start;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (min-width: 1024px) {
+  .property-detail-rail {
+    position: sticky;
+    top: calc(64px + 53px + 24px);
+    transform: none;
+    animation: none;
+    transition: none;
+  }
+}
+
 .property-gallery-action,
 .property-gallery-arrow {
   display: flex;

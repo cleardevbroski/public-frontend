@@ -267,7 +267,7 @@ function compactPropertyPayload<T>(value: T): T | undefined {
 function mergeInitialData(initialData?: Partial<FormData>): FormData {
   if (!initialData) return initialFormData;
   const reraPhases = initialData.reraPhases?.length
-    ? initialData.reraPhases.map((phase) => ({ ...phase, reraSiteUrl: KARNATAKA_RERA_URL }))
+    ? initialData.reraPhases.map((phase) => ({ ...phase, reraSiteUrl: phase.reraSiteUrl || KARNATAKA_RERA_URL }))
     : initialData.reraRegistered && initialData.reraNumber
       ? [{ name: "Phase 1", reraNumber: initialData.reraNumber, reraSiteUrl: KARNATAKA_RERA_URL, reraDocuments: [], projectDocuments: [] }]
       : [];
@@ -1218,7 +1218,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                     ...prev,
                     reraRegistered: !prev.reraRegistered,
                     reraNumber: "",
-                    reraPhases: prev.reraRegistered ? [] : (prev.reraPhases?.length ? prev.reraPhases.map((phase) => ({ ...phase, reraSiteUrl: KARNATAKA_RERA_URL })) : [{ name: "Phase 1", reraNumber: "", reraSiteUrl: KARNATAKA_RERA_URL, reraDocuments: [], projectDocuments: [] }]),
+                    reraPhases: prev.reraRegistered ? [] : (prev.reraPhases?.length ? prev.reraPhases.map((phase) => ({ ...phase, reraSiteUrl: phase.reraSiteUrl || KARNATAKA_RERA_URL })) : [{ name: "Phase 1", reraNumber: "", reraSiteUrl: KARNATAKA_RERA_URL, reraDocuments: [], projectDocuments: [] }]),
                   }))}
                   className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-200 ${
                     formData.reraRegistered
@@ -1234,7 +1234,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 </div>
               </div>
               {isStructuredType(formData.propertyType) && formData.reraRegistered && (
-                <ReraPhasesEditor phases={formData.reraPhases || []} onChange={(reraPhases) => setFormData((prev) => ({ ...prev, reraPhases: reraPhases.map((phase) => ({ ...phase, reraSiteUrl: KARNATAKA_RERA_URL })), reraNumber: reraPhases[0]?.reraNumber || "" }))} error={validationErrors.reraPhases || validationErrors.reraNumber} />
+                <ReraPhasesEditor phases={formData.reraPhases || []} onChange={(reraPhases) => setFormData((prev) => ({ ...prev, reraPhases: reraPhases.map((phase) => ({ ...phase, reraSiteUrl: phase.reraSiteUrl || KARNATAKA_RERA_URL })), reraNumber: reraPhases[0]?.reraNumber || "" }))} error={validationErrors.reraPhases || validationErrors.reraNumber} />
               )}
 
               {/* Description */}

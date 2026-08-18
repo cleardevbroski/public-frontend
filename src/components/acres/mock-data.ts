@@ -246,6 +246,7 @@ export type Property = {
     totalAcres?: number;
     openSpaceAcres?: number;
     builtUpAcres?: number;
+    amenitiesAcres?: number;
   };
   totalUnits?: number;
   totalTowers?: number;

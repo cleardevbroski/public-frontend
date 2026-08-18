@@ -186,10 +186,12 @@ export function validateApartmentDraft(property: Partial<Property>): ApartmentEr
   }
   const projectArea = property.projectArea;
   if (projectArea && Object.values(projectArea).some((value) => value !== undefined)) {
-    const values = [projectArea.totalAcres, projectArea.openSpaceAcres, projectArea.builtUpAcres];
+    const values = [projectArea.totalAcres, projectArea.openSpaceAcres, projectArea.builtUpAcres, projectArea.amenitiesAcres];
     if (values.some((value) => value !== undefined && (!Number.isFinite(value) || Number(value) < 0))) {
       errors.projectArea = "Project-area values must be zero or positive numbers.";
-    } else if (values.every((value) => value !== undefined) && Math.abs(Number(projectArea.totalAcres) - Number(projectArea.openSpaceAcres) - Number(projectArea.builtUpAcres)) > 0.001) {
+    } else if (projectArea.amenitiesAcres !== undefined && values.every((value) => value !== undefined) && Math.abs(Number(projectArea.totalAcres) - Number(projectArea.openSpaceAcres) - Number(projectArea.builtUpAcres) - Number(projectArea.amenitiesAcres)) > 0.001) {
+      errors.projectArea = "Building, empty/open space and amenities area must equal the total project area.";
+    } else if (projectArea.amenitiesAcres === undefined && [projectArea.totalAcres, projectArea.openSpaceAcres, projectArea.builtUpAcres].every((value) => value !== undefined) && Math.abs(Number(projectArea.totalAcres) - Number(projectArea.openSpaceAcres) - Number(projectArea.builtUpAcres)) > 0.001) {
       errors.projectArea = "Open space and apartment built-up area must equal the total project area.";
     }
   }

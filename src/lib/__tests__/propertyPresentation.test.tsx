@@ -6,13 +6,63 @@ import FloorPlanExplorer from "@/components/acres/FloorPlanExplorer";
 import FacilityExplorer from "@/components/acres/FacilityExplorer";
 import ApartmentPriceList from "@/components/acres/ApartmentPriceList";
 import GovernmentChargesModal from "@/components/acres/GovernmentChargesModal";
-import PropertyDetail from "@/components/acres/PropertyDetail";
+import PropertyDetail, { PROPERTY_HERO_SECTION_ORDER } from "@/components/acres/PropertyDetail";
 import { cityListings } from "@/components/acres/mock-data";
 import { AuthProvider } from "@/components/acres/AuthContext";
 import { MemoryRouter } from "react-router-dom";
 import { configurationPriceRange, getProjectHeroImages, getPropertyCoverImage, priceWithCharges } from "@/lib/propertyPresentation";
 
 describe("interactive property presentation", () => {
+  it("keeps the hero navigation in the same order as the property content", () => {
+    expect(PROPERTY_HERO_SECTION_ORDER.map((section) => section.label)).toEqual([
+      "About",
+      "Price List",
+      "Floor Plans",
+      "Master Plan",
+      "Photos & Videos",
+      "Amenities",
+      "Download Hub",
+      "Map & Landmarks",
+      "RERA Details",
+      "Project Details",
+      "About Builder",
+      "Market Comparison",
+      "Similar Projects",
+      "FAQ",
+    ]);
+  });
+
+  it("anchors PG sharing prices and keeps About before Price List", () => {
+    const base = cityListings.Bangalore[0];
+    const html = renderToStaticMarkup(
+      <MemoryRouter><AuthProvider><PropertyDetail property={{
+        ...base,
+        propertyType: "PG/Co-living",
+        configs: [],
+        configurationDetails: undefined,
+        villaDetails: undefined,
+        plotDetails: undefined,
+        pgDetails: {
+          genderPreference: "Co-ed",
+          sharingDetails: [{ sharingType: "Double sharing", rentPerBed: 18000, deposit: 36000, bedsAvailable: 4 }],
+          mealsIncluded: "Breakfast + Dinner",
+          wifiIncluded: true,
+          laundryIncluded: true,
+          availableFrom: "2026-09-01",
+          commonAmenities: ["Wi-Fi"],
+          contactType: "Company-run",
+        },
+      }} /></AuthProvider></MemoryRouter>
+    );
+    const order = [...html.matchAll(/data-section-id="([^"]+)"/g)].map((match) => match[1]);
+
+    expect(order.slice(0, 2)).toEqual(["overview", "price-list"]);
+    expect(html).toContain("Choose a sharing option");
+    expect(html).toContain('data-testid="property-detail-rail"');
+    expect(html).toContain('class="property-detail-rail"');
+    expect(html).toContain('aria-label="Property contact and financing tools"');
+  });
+
   it("uses a main-display photo before gallery and legacy thumbnail fallbacks", () => {
     expect(getPropertyCoverImage({ heroImages: ["hero.jpg"], images: ["gallery.jpg"], image: "legacy.jpg" }))
       .toBe("hero.jpg");

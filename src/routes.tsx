@@ -16,8 +16,8 @@ const Builder = lazy(() => import("@/pages/Builder"));
 const Bangalore = lazy(() => import("@/pages/Bangalore"));
 const ChannelPartners = lazy(() => import("@/pages/ChannelPartners"));
 const ChannelPartnerRegistration = lazy(() => import("@/pages/ChannelPartnerRegistration"));
+const ChannelPartnerDashboard = lazy(() => import("@/pages/ChannelPartnerDashboard"));
 const SavedProperties = lazy(() => import("@/pages/SavedProperties"));
-
 const AdminDealers = lazy(() => import("@/pages/admin/AdminDealers"));
 const AdminBuilders = lazy(() => import("@/pages/admin/AdminBuilders"));
 const AdminLeads = lazy(() => import("@/pages/admin/AdminLeads"));
@@ -45,6 +45,7 @@ export const router = createBrowserRouter([
       { path: "/postproperty", element: <PostProperty /> },
       { path: "/channel-partner", element: <ChannelPartners /> },
       { path: "/cp-registration", element: <ChannelPartnerRegistration /> },
+      { path: "/cp-dashboard", element: <ChannelPartnerDashboard /> },
       { path: "/channel-partner/client-registration", element: <Navigate to="/cp-registration" replace /> },
       { path: "/channel-partners", element: <Navigate to="/channel-partner" replace /> },
       { path: "/admin", element: <Admin /> },
