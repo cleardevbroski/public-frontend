@@ -103,7 +103,11 @@ export function countdownLabel(target: string | null, now: number) {
 }
 
 export default function ChannelPartnerDashboard() {
-  useDocumentTitle("CP Dashboard | ClearTitle One", "Track Channel Partner clients, approvals, clashes, and earnings.");
+  useDocumentTitle(
+    "CP Dashboard | ClearTitle One",
+    "Secure ClearTitle One channel partner dashboard for client registrations, approvals, clashes, and partner activity.",
+    { canonical: "/cp-dashboard", robots: "noindex, nofollow, noarchive" },
+  );
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [clashes, setClashes] = useState<Clash[]>([]);

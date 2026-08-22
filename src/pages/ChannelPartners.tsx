@@ -43,7 +43,15 @@ function FormSection({ number, title, description, children }: { number: number;
 }
 
 export default function ChannelPartners() {
-  useDocumentTitle("Channel Partner Empanelment | ClearTitle One", "Apply to become a ClearTitle One channel partner through the secure empanelment portal.");
+  useDocumentTitle(
+    "Channel Partner Program | ClearTitle One",
+    "Become a ClearTitle One channel partner. Apply for real estate channel partner empanelment, project access, and partner support in Bangalore.",
+    {
+      canonical: "/channel-partner",
+      image: "https://cleartitleone.com/cleartitleone/logo.png",
+      jsonLd: { "@context": "https://schema.org", "@type": "WebPage", name: "ClearTitle One Channel Partner Program", url: "https://cleartitleone.com/channel-partner", description: "Apply to become a ClearTitle One real estate channel partner." },
+    },
+  );
   const [form, setForm] = useState<FormState>(initialForm);
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);

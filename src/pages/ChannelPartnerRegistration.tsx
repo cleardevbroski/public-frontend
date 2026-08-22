@@ -10,7 +10,15 @@ type Partner = { name: string; type: string; code: string; contactName: string; 
 const inputClass = "h-12 w-full rounded-xl border border-[#D8D4DC] bg-white px-4 text-sm text-[#121B35] outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/15 disabled:bg-[#F7F7F8] disabled:text-[#8A8690]";
 
 export default function ChannelPartnerRegistration() {
-  useDocumentTitle("Register Client | ClearTitle One", "ClearTitle One Channel Partner client registration portal.");
+  useDocumentTitle(
+    "CP Client Registration | ClearTitle One",
+    "Register a property client through the ClearTitle One CP client registration portal for verified Bangalore real estate opportunities.",
+    {
+      canonical: "/cp-registration",
+      image: "https://cleartitleone.com/cleartitleone/logo.png",
+      jsonLd: { "@context": "https://schema.org", "@type": "WebPage", name: "ClearTitle One CP Client Registration", url: "https://cleartitleone.com/cp-registration", description: "Register a client through the ClearTitle One channel partner portal." },
+    },
+  );
   const [code, setCode] = useState("");
   const [partner, setPartner] = useState<Partner | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
