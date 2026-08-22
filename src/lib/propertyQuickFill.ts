@@ -38,6 +38,26 @@ function list(value: unknown): string[] {
   return clean(value).split(/[,;|\n]/).map((item) => item.trim()).filter(Boolean);
 }
 
+function jsonValue<T>(value: string, label: string, warnings: string[]): T | undefined {
+  if (!clean(value)) return undefined;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    warnings.push(`${label} contains invalid JSON and was skipped.`);
+    return undefined;
+  }
+}
+
+function approvedCloudinaryUrl(value: unknown): string | undefined {
+  const url = clean(value);
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && parsed.hostname === "res.cloudinary.com" ? parsed.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function normalizePropertyType(value: unknown): SupportedPropertyType | undefined {
   const normalized = key(value);
   if (normalized.includes("apartment") || normalized.includes("flat")) return "Apartment";
@@ -73,6 +93,14 @@ function buildCommonPatch(read: (names: string[]) => string, preferredType?: Sup
   const reraNumber = read(["reranumber", "reraregistrationnumber", "rera"]);
   const reraPhaseName = read(["reraphasename", "phasename"]);
   const amenities = list(read(["amenities", "commonamenities", "facilities"]));
+  const projectNarrative = jsonValue<Property["projectNarrative"]>(read(["projectnarrativejson"]), "Project Narrative JSON", warnings);
+  const faqs = jsonValue<Property["faqs"]>(read(["faqsjson"]), "FAQs JSON", warnings);
+  const projectDownloads = jsonValue<Property["projectDownloads"]>(read(["projectdownloadsjson"]), "Project Downloads JSON", warnings);
+  const reraPhasesJson = jsonValue<Property["reraPhases"]>(read(["reraphasesjson"]), "RERA Phases JSON", warnings);
+  const heroImages = list(read(["heroimages"])).map(approvedCloudinaryUrl).filter((value): value is string => Boolean(value)).slice(0, 3);
+  const galleryImages = list(read(["galleryimages"])).map(approvedCloudinaryUrl).filter((value): value is string => Boolean(value));
+  const developerLogoUrl = approvedCloudinaryUrl(read(["developerlogourl"]));
+  const safeDownloads = (projectDownloads || []).filter((item) => item?.mimeType === "application/pdf" && Boolean(approvedCloudinaryUrl(item.fileUrl))).map((item) => ({ ...item, fileUrl: approvedCloudinaryUrl(item.fileUrl) }));
   const patch: QuickFillPatch = {
     propertyType,
     title: read(["project", "projects", "projectname", "propertyname", "title", "name"]),
@@ -90,9 +118,15 @@ function buildCommonPatch(read: (names: string[]) => string, preferredType?: Sup
     floor: read(["floor", "propertyfloor"]),
     totalFloors: number(read(["totalfloors", "nofloors", "numberoffloors"])),
     amenities,
+    projectNarrative,
+    faqs,
+    heroImages,
+    images: galleryImages,
+    developerLogoUrl,
+    projectDownloads: safeDownloads,
     reraRegistered: Boolean(reraNumber) || /yes|true|registered/i.test(read(["reraregistered"])),
     reraNumber: reraNumber || undefined,
-    reraPhases: reraNumber ? [{ name: reraPhaseName || "Phase 1", reraNumber, reraDocuments: [], projectDocuments: [] }] : [],
+    reraPhases: reraPhasesJson || (reraNumber ? [{ name: reraPhaseName || "Phase 1", reraNumber, reraDocuments: [], projectDocuments: [] }] : []),
     projectArea: number(read(["totalprojectarea", "projectarea", "totalarea", "sitearea"])) !== undefined ? {
       totalAcres: number(read(["totalprojectarea", "projectarea", "totalarea", "sitearea"])),
       openSpaceAcres: number(read(["openspacearea", "emptyopenspacearea"])),
@@ -115,6 +149,7 @@ function buildCommonPatch(read: (names: string[]) => string, preferredType?: Sup
     if (Array.isArray(value) ? value.length : value && typeof value === "object" ? Object.values(value).some(Boolean) : value !== undefined) addField(fields, label, Array.isArray(value) ? value.join(", ") : value);
   });
   if (!propertyType) warnings.push("Select a property type before applying this import, or include a Property Type column in Excel.");
+  if ((read(["heroimages"]) || read(["galleryimages"]) || read(["developerlogourl"])) && !heroImages.length && !galleryImages.length && !developerLogoUrl) warnings.push("Media URLs were skipped because only permanent Cloudinary HTTPS URLs can be re-imported.");
   return { patch, fields, warnings };
 }
 
@@ -282,7 +317,7 @@ export async function parsePropertyExcel(file: File, preferredType?: SupportedPr
   const suggestion = buildCommonPatch(read, preferredType);
   applyTypeDetails(suggestion, data, headers, rawHeaders);
   applySupplementarySheets(workbook, suggestion);
-  suggestion.warnings.push("Photos, videos, floor plans, brochures and verification documents are never imported from Excel. Upload them manually in the next steps.");
+  suggestion.warnings.push("Only permanent Cloudinary HTTPS image/PDF URLs are imported. Videos and untrusted external media are skipped.");
   return suggestion;
 }
 
@@ -290,8 +325,8 @@ export async function parsePropertyExcel(file: File, preferredType?: SupportedPr
 export function downloadPropertyExcelTemplate() {
   const workbook = XLSX.utils.book_new();
   const properties = XLSX.utils.aoa_to_sheet([
-    ["Project Name", "Property Type", "Builder", "Location", "City", "Zone", "Address", "Landmark", "Pincode", "Price", "Price Per Sqft", "Area", "Total Project Area", "Open Space Area", "Apartment Built Up Area", "Amenities Area", "Total Units", "Total Towers", "Possession Year", "Transaction Type", "Listing Type", "RERA Registered", "RERA Number", "RERA Phase Name", "Furnishing", "Parking", "Facing", "Floor", "Total Floors", "Description"],
-    ["Example Project", "Apartment", "Example Builder", "Whitefield", "Bangalore", "East", "", "", "", "₹ 1.25 Cr", "₹ 8,500/sqft", "1200 sqft", "", "", "", "", "", "", "Dec 2030", "New Property", "For Sale", "Yes", "", "Phase 1", "", "", "", "", "", ""],
+    ["Project Name", "Property Type", "Builder", "Location", "City", "Zone", "Address", "Landmark", "Pincode", "Price", "Price Per Sqft", "Area", "Total Project Area", "Open Space Area", "Apartment Built Up Area", "Amenities Area", "Total Units", "Total Towers", "Possession Year", "Transaction Type", "Listing Type", "RERA Registered", "RERA Number", "RERA Phase Name", "Furnishing", "Parking", "Facing", "Floor", "Total Floors", "Description", "Project Narrative JSON", "FAQs JSON", "Hero Images", "Gallery Images", "Developer Logo URL", "Project Downloads JSON", "RERA Phases JSON", "Source References JSON"],
+    ["Example Project", "Apartment", "Example Builder", "Whitefield", "Bangalore", "East", "", "", "", "₹ 1.25 Cr", "₹ 8,500/sqft", "1200 sqft", "", "", "", "", "", "", "Dec 2030", "New Property", "For Sale", "Yes", "", "Phase 1", "", "", "", "", "", "", "", "[]", "", "", "", "[]", "[]", "[]"],
   ]);
   const configurations = XLSX.utils.aoa_to_sheet([["Project Name", "Configuration", "Price", "Built Up Area", "Carpet Area", "Plot Area", "Super Area", "Bathrooms"], ["Example Project", "2 BHK", "₹ 1.25 Cr", "1200 sqft", "900 sqft", "", "", "2"]]);
   const society = XLSX.utils.aoa_to_sheet([["Project Name", "Security", "Water Supply", "Power Backup", "Lift", "Visitor Parking", "Maintenance Staff"], ["Example Project", "24x7 security", "24x7 water", "DG backup", "2 lifts", "Available", "Available"]]);
@@ -559,9 +594,9 @@ export function analyzePropertyDescription(text: string, preferredType?: Support
   return { patch, fields, warnings };
 }
 
-const PROTECTED_KEYS = new Set(["image", "images", "heroImages", "heroVideo", "videos", "developerLogoUrl", "localityMapImageUrl", "masterPlan", "projectDownloads", "brochure", "brochureName", "reraPhases"]);
+const PROTECTED_KEYS = new Set(["image", "heroVideo", "videos", "localityMapImageUrl", "masterPlan", "brochure", "brochureName"]);
 
-/** Merge only into empty fields by default; media/documents are always preserved. */
+/** Merge only into empty fields by default; unsafe or deprecated media fields are always preserved. */
 export function mergeQuickFill<T extends Record<string, any>>(current: T, patch: QuickFillPatch, replaceExisting = false): T {
   const merge = (existing: any, incoming: any, field?: string): any => {
     if (incoming === undefined || incoming === null || PROTECTED_KEYS.has(field || "")) return existing;

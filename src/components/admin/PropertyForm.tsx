@@ -299,6 +299,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
 
   const buildPropertyPayload = () => compactPropertyPayload({
     ...formData,
+    ingestion: undefined,
     // Normalize legacy floor and brochure fields at submit time. Existing records
     // remain readable, while new saves use the current workflow fields only.
     floorLabel: undefined,

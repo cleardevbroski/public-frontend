@@ -20,6 +20,10 @@ import type { Property } from "./mock-data";
 
 type Fact = { label: string; val: unknown };
 
+function cleanDescription(text: string) {
+  return text.replace(/\*\*/g, "").trim();
+}
+
 function factIcon(label: string): LucideIcon {
   const value = label.toLowerCase();
   if (/area|size|dimension|width|frontage/.test(value)) return Scan;
@@ -48,7 +52,7 @@ export default function ProjectAbout({ property, title, facts }: { property: Pro
   const [expanded, setExpanded] = useState(false);
   const narrative = property.projectNarrative;
   const introductions = (narrative?.introduction?.length ? narrative.introduction : property.description ? [property.description] : [])
-    .map((paragraph) => paragraph.trim())
+    .map((paragraph) => cleanDescription(paragraph))
     .filter(Boolean);
   const validFacts = facts.filter(({ val }) => hasValue(val));
   const visibleFacts = expanded ? validFacts : validFacts.slice(0, 6);

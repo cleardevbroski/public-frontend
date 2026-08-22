@@ -117,15 +117,30 @@ function buildPools(property: Property): Pools {
 const isBase64 = (src: string) => src.startsWith("data:");
 const withoutCharges = (price: string) => price.replace(/\s*\+\s*charges?\s*$/i, "").trim();
 
+function ProjectBrandTile({ property }: { property: Property }) {
+  const projectLogo = property.developerLogoUrl;
+  return (
+    <div className="flex min-h-0 flex-col items-center justify-between gap-2 bg-[#F8F9FB] p-2 text-center" aria-label={`${property.title} project branding`}>
+      <div className="flex min-h-0 w-full flex-1 items-center justify-center rounded-lg border border-[#E5E8EE] bg-white px-3 py-2" title="Project logo">
+        {projectLogo ? <img src={projectLogo} alt={`${property.title} logo`} className="max-h-full max-w-full object-contain" /> : <span className="text-[20px] font-extrabold tracking-tight text-[#172039]">{(property.title || "Project").split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase()}</span>}
+      </div>
+      <div className="flex w-full items-center justify-center gap-2 rounded-md bg-white px-2 py-1.5" aria-label="ClearTitle One">
+        <img src="/cleartitleone/logo.png" alt="ClearTitle One" className="size-7 object-contain" />
+        <span className="text-[10px] font-extrabold leading-3 text-[#172039]">ClearTitle One</span>
+      </div>
+    </div>
+  );
+}
+
 type NearbyCategory = "schools" | "colleges" | "hospitals" | "shopping" | "metro";
-function NearbyPlaceSummary({ property, category, label, Icon, legacy }: { property: Property; category: NearbyCategory; label: string; Icon: typeof School; legacy?: string }) {
+function NearbyPlaceSummary({ property, category, label, Icon, legacy, showPlaces = false }: { property: Property; category: NearbyCategory; label: string; Icon: typeof School; legacy?: string; showPlaces?: boolean }) {
   const places = property.nearbyDetails?.[category]?.places || [];
   const detail = property.nearbyDetails?.[category];
   const summary = places.length ? `${places.length} nearby` : detail && (detail.count !== undefined || detail.distance) ? [detail.count !== undefined ? `${detail.count}` : "", detail.distance].filter(Boolean).join(" · ") : legacy || "";
   if (!summary && !places.length) return null;
-  return <details className="rounded-xl border border-[#E4E0E7] bg-white p-3">
-    <summary className="flex cursor-pointer list-none items-start gap-2"><Icon className="mt-0.5 size-5 shrink-0 text-[#DDAA42]" /><span className="min-w-0 flex-1"><span className="block text-[12px] font-bold text-[#121B35]">{summary || `${places.length} nearby`}</span><span className="block text-[10px] text-[#68646F]">{label}</span><span className="mt-2 block text-[11px] font-bold text-[#795A18]">View {label.toLowerCase()} details</span></span></summary>
-    {places.length > 0 && <div className="mt-3 space-y-2 border-t border-[#F0EDF2] pt-3">{places.map((place, index) => <div key={`${place.name}-${index}`} className="rounded-lg bg-[#F8F7FA] p-2.5"><p className="text-[12px] font-bold text-[#121B35]">{place.name}</p>{place.address && <p className="mt-1 text-[11px] text-[#68646F]">{place.address}</p>}{(place.distance || place.landmark) && <p className="mt-1 text-[11px] font-semibold text-[#5A5762]">{[place.distance, place.landmark].filter(Boolean).join(" · ")}</p>}</div>)}</div>}
+  return <details open={showPlaces} className="border-b border-[#E6E8ED] py-2.5 last:border-b-0">
+    <summary className="flex cursor-pointer list-none items-center gap-2"><Icon className="size-4 shrink-0 text-[#DDAA42]" /><span className="min-w-0 flex-1"><span className="text-[12px] font-bold text-[#121B35]">{label}</span><span className="ml-2 text-[10px] text-[#7A8290]">{summary || `${places.length} nearby`}</span></span><span className="text-[10px] font-bold text-[#795A18]">Details</span></summary>
+    {places.length > 0 && <div className="mt-2 space-y-1.5 pl-6">{places.map((place, index) => <div key={`${place.name}-${index}`} className="text-[11px] leading-5"><p className="font-bold text-[#121B35]">{place.name}</p>{place.address && <p className="text-[#68646F]">{place.address}</p>}{(place.distance || place.landmark) && <p className="font-semibold text-[#5A5762]">{[place.distance, place.landmark].filter(Boolean).join(" · ")}</p>}</div>)}</div>}
   </details>;
 }
 
@@ -394,12 +409,12 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const [isTabBarSticky, setIsTabBarSticky] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showAllOverviewFacts, setShowAllOverviewFacts] = useState(false);
-  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [areaUnit, setAreaUnit] = useState<AreaUnit>("sqft");
   const [overviewPopover, setOverviewPopover] = useState<"size" | "area" | null>(null);
   const [verifiedAction, setVerifiedAction] = useState<PropertyAction | null>(null);
   const [showLawyerConsultation, setShowLawyerConsultation] = useState(false);
   const [showGovernmentCharges, setShowGovernmentCharges] = useState(false);
+  const [showAllNearby, setShowAllNearby] = useState(false);
   const [reraWorkspaceView, setReraWorkspaceView] = useState<"rera" | "project">("rera");
 
   // DBG006: Reset media state when navigating to a different property to prevent out-of-bounds crash
@@ -407,7 +422,6 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     setCurrentImageIndex(0);
     setHeroImageIndex(0);
     setShowAllOverviewFacts(false);
-    setDescriptionExpanded(false);
     setAreaUnit("sqft");
     setOverviewPopover(null);
     setShowGovernmentCharges(false);
@@ -422,6 +436,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
       propertyType: property.propertyType || "",
     }, property.id);
   }, [property.id, property.propertyType, property.subtitle, property.title]);
+
   // Property rails (computed client-side from the live store, SSR-safe)
   const pools = useLiveProperties<Pools>(() => buildPools(property), EMPTY_POOLS);
   const comparisonMatches = rankComparableProperties(property, getPublishedProperties(), 2);
@@ -450,9 +465,10 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const floorPlanPreview = property.configurationDetails?.find((detail) => detail.floorPlan3dUrl || detail.floorPlan2dUrl);
   const propertyVideo = property.videos?.[0] || property.heroVideo;
   const mediaTiles = [
-    ...galleryPreviewImages.slice(0, floorPlanPreview || propertyVideo ? 2 : 4).map((item) => ({ key: `photo-${item.index}`, type: "photo" as const, src: item.image, index: item.index, label: "" })),
+    ...galleryPreviewImages.slice(0, floorPlanPreview || propertyVideo ? 1 : 3).map((item) => ({ key: `photo-${item.index}`, type: "photo" as const, src: item.image, index: item.index, label: "" })),
     ...(floorPlanPreview ? [{ key: "floor-plan", type: "floor-plan" as const, src: floorPlanPreview.floorPlan3dUrl || floorPlanPreview.floorPlan2dUrl || "", label: "3D Floor Plans" }] : []),
     ...(propertyVideo ? [{ key: "video", type: "video" as const, src: propertyVideo, label: "Video" }] : []),
+    { key: "project-branding", type: "brand" as const, src: "", label: "Project branding" },
   ].slice(0, 4);
   useEffect(() => {
     if (heroImages.length < 2) return;
@@ -713,10 +729,10 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
         ? "Workspace and building details"
         : property.pgDetails
           ? "Stay, sharing and house rules"
-          : property.rentDetails
-            ? "Rental terms at a glance"
-            : property.leaseDetails
-              ? "Lease terms at a glance"
+            : property.rentDetails
+              ? "Rental terms at a glance"
+              : property.leaseDetails
+              ? "Property overview"
               : "Apartment overview";
   const keySpecFacts = property.plotDetails
     ? [
@@ -766,7 +782,8 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                   { icon: Building2, label: "Number of units", val: property.totalUnits?.toLocaleString("en-IN") },
                   { icon: Layers, label: "Total area", val: property.projectArea?.totalAcres !== undefined ? `${property.projectArea.totalAcres} acres` : "" },
                 ];
-  const whyHighlights = (property.description || "")
+const whyHighlights = (property.description || "")
+    .replace(/\*\*/g, "")
     .split(/(?<=[.!?])\s+/)
     .map((line) => line.trim())
     .filter(Boolean)
@@ -813,67 +830,6 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
           <ChevronRight className="size-3.5 shrink-0 text-[#B9B5BE]" />
           <span className="truncate text-[#121B35]">{property.title}</span>
         </nav>
-
-        <div className="mb-4 grid grid-cols-[minmax(0,1fr)_64px] items-start gap-3 md:grid-cols-[minmax(0,1fr)_88px]">
-          <div className="min-w-0">
-            <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-              {property.propertyType && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#121B35] px-2 py-1 text-[9.5px] font-extrabold uppercase tracking-wide text-[#F2C052]">
-                  <Building2 className="size-3" /> {property.propertyType}
-                </span>
-              )}
-              {property.verified && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#FFF4D8] px-2 py-1 text-[9.5px] font-extrabold uppercase tracking-wide text-[#7A5710]">
-                  <ShieldCheck className="size-3" /> ClearTitle verified
-                </span>
-              )}
-              {property.reraRegistered && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[9.5px] font-extrabold uppercase tracking-wide text-emerald-700">
-                  <Shield className="size-3" /> RERA
-                </span>
-              )}
-            </div>
-            <h1 className="text-[25px] font-extrabold leading-[1.14] tracking-[-0.025em] text-[#1B2235] md:text-[34px]">
-              {property.title}
-            </h1>
-            {property.subtitle && (
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-[#5F5A66] md:text-[15px]">
-                <span>{property.subtitle}</span>
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.subtitle)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 font-semibold text-[#121B35] underline decoration-[#DDAA42] underline-offset-4"
-                >
-                  <MapPin className="size-4" /> See on map
-                </a>
-              </div>
-            )}
-            {property.description?.trim() && (
-              <div className="mt-3 max-w-[1180px]">
-                <p className={`text-[13px] leading-5 text-[#625D68] md:text-[14px] md:leading-6 ${descriptionExpanded ? "" : "line-clamp-2"}`}>
-                  {property.description}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setDescriptionExpanded((value) => !value)}
-                  className="mt-1 text-[12.5px] font-bold text-[#121B35] underline underline-offset-4 md:hidden"
-                >
-                  {descriptionExpanded ? "Read Less" : "Read More"}
-                </button>
-              </div>
-            )}
-          </div>
-          <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-[#E4E0E7] bg-white text-center shadow-sm">
-            {property.developerLogoUrl ? (
-              <img src={property.developerLogoUrl} alt={`${property.builder || property.title} logo`} className="size-full object-contain p-2" />
-            ) : (
-              <span className="px-1 text-[10px] font-extrabold leading-3 text-[#121B35] md:text-[12px]">
-                {(property.builder || property.title).split(" ").slice(0, 2).map((word) => word[0]).join("")}
-              </span>
-            )}
-          </div>
-        </div>
 
         <div className={`property-media-grid ${mediaTiles.length === 0 ? "property-media-grid--single" : ""}`}>
           <div className="property-media-main relative overflow-hidden bg-[#0B1328]">
@@ -924,7 +880,9 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
           </div>
 
           {mediaTiles.length > 0 && <div className="property-media-side">
-            {mediaTiles.map((item, previewIndex) => (
+            {mediaTiles.map((item, previewIndex) => item.type === "brand" ? (
+              <ProjectBrandTile key={item.key} property={property} />
+            ) : (
               <button
                 key={item.key}
                 type="button"
@@ -942,9 +900,9 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                   <img src={item.src} alt="" className="size-full object-cover transition-transform duration-500 hover:scale-105" />
                 )}
                 {item.type !== "photo" && <span className="absolute bottom-2 left-2 rounded bg-white/95 px-2 py-1 text-[10px] font-bold text-[#121B35] shadow">{item.label}</span>}
-                {item.type === "photo" && previewIndex === mediaTiles.length - 1 && images.length > mediaTiles.length + 1 && (
+                {item.type === "photo" && previewIndex === mediaTiles.length - 1 && images.length > mediaTiles.length && (
                   <span className="absolute bottom-3 left-3 rounded-lg bg-white/95 px-3 py-1.5 text-[11px] font-bold text-[#121B35] shadow">
-                    +{images.length - mediaTiles.length - 1} more photos
+                    +{images.length - mediaTiles.length} more photos
                   </span>
                 )}
               </button>
@@ -1098,7 +1056,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
       <div ref={tabBarMarkerRef} className="h-px" aria-hidden="true" />
       <div
         ref={tabBarRef}
-        className={`${isTabBarSticky ? "fixed top-[60px] md:top-[64px] left-0 right-0 z-40 shadow-md border-b border-[#E4E0E7]/20" : ""} bg-white transition-all duration-300`}
+        className={`${isTabBarSticky ? "fixed top-[60px] md:top-[64px] left-0 right-0 z-40 shadow-md border-b border-[#B98428]/40" : ""} bg-[#DDAA42] transition-all duration-300`}
       >
         <div className="mx-auto max-w-[1440px] px-4 md:px-5">
           <nav className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" aria-label="Property information sections">
@@ -1107,10 +1065,10 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                 key={section.id}
                 data-section-id={section.id}
                 onClick={() => scrollToSection(section.id)}
-                className={`px-4 py-3 text-[13px] font-bold transition-all duration-200 border-b-2 whitespace-nowrap ${
+                className={`rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all duration-200 border border-transparent whitespace-nowrap ${
                   activeSection === section.id
-                    ? "text-[#DDAA42] border-[#DDAA42]"
-                    : "text-[#68646F] border-transparent hover:text-[#121B35]"
+                    ? "bg-[#121B35] text-white border-[#121B35] shadow-sm"
+                    : "text-white"
                 }`}
               >
                 {section.label}
@@ -1365,15 +1323,19 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
                 </div>
               )}
               </div>
-              <aside className="rounded-2xl border border-[#E4E0E7]/60 bg-[#F8F7FA]/60 p-4">
-                <h3 className="mb-3 text-[13px] font-extrabold uppercase tracking-wider text-[#30394E]">Nearby Places</h3>
-                <div className="space-y-2">
-                  <NearbyPlaceSummary property={property} category="schools" label="Schools" Icon={School} legacy={property.nearbyAmenities?.schools} />
-                  <NearbyPlaceSummary property={property} category="colleges" label="Colleges" Icon={School} legacy={property.nearbyAmenities?.colleges} />
-                  <NearbyPlaceSummary property={property} category="hospitals" label="Hospitals" Icon={Hospital} legacy={property.nearbyAmenities?.hospitals} />
-                  <NearbyPlaceSummary property={property} category="shopping" label="Shopping" Icon={ShoppingBag} legacy={property.nearbyAmenities?.shopping} />
-                  <NearbyPlaceSummary property={property} category="metro" label="Metro / Train" Icon={Train} legacy={property.nearbyAmenities?.metro} />
+              <aside className="min-w-0 px-1 md:pl-2">
+                <h3 className="mb-2 text-[13px] font-extrabold uppercase tracking-wider text-[#30394E]">Nearby Places</h3>
+                <div>
+                  <NearbyPlaceSummary property={property} category="schools" label="Schools" Icon={School} legacy={property.nearbyAmenities?.schools} showPlaces={showAllNearby} />
+                  <NearbyPlaceSummary property={property} category="colleges" label="Colleges" Icon={School} legacy={property.nearbyAmenities?.colleges} showPlaces={showAllNearby} />
+                  <NearbyPlaceSummary property={property} category="hospitals" label="Hospitals" Icon={Hospital} legacy={property.nearbyAmenities?.hospitals} showPlaces={showAllNearby} />
+                  <NearbyPlaceSummary property={property} category="shopping" label="Shopping" Icon={ShoppingBag} legacy={property.nearbyAmenities?.shopping} showPlaces={showAllNearby} />
+                  <NearbyPlaceSummary property={property} category="metro" label="Metro / Train" Icon={Train} legacy={property.nearbyAmenities?.metro} showPlaces={showAllNearby} />
                 </div>
+                <button type="button" onClick={() => setShowAllNearby((value) => !value)} className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-[#795A18] underline underline-offset-4">
+                  {showAllNearby ? "Show less" : "Show more nearby places"}
+                  <ChevronDown className={`size-3.5 transition-transform ${showAllNearby ? "rotate-180" : ""}`} />
+                </button>
               </aside>
               </div>
 

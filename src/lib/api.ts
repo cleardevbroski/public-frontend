@@ -394,6 +394,14 @@ export async function fetchAdminProperty(id: string) {
   return normalizePropertyResponse(data);
 }
 
+export async function fetchPropertyIngestionReview(id: string) {
+  return readJson(await apiFetch(`/api/properties/admin/property/${encodeURIComponent(id)}/ingestion-review`), "Failed to fetch ingestion review");
+}
+
+export async function reviewPropertyIngestionCandidate(id: string, candidateId: string, decision: "accepted" | "rejected", reason: string) {
+  return readJson(await apiFetch(`/api/properties/admin/property/${encodeURIComponent(id)}/ingestion-candidates/${encodeURIComponent(candidateId)}`, { method: "PATCH", body: JSON.stringify({ decision, reason }) }), "Failed to review ingestion candidate");
+}
+
 export async function fetchFavoritePropertyIds() {
   return readJson(await customerApiFetch("/api/favorites/ids"), "Failed to load saved properties");
 }

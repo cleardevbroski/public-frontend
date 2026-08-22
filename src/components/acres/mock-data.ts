@@ -333,6 +333,8 @@ export type Property = {
   websiteSection?: string;
   /** Homepage sections can be assigned independently; legacy websiteSection remains supported. */
   homepageSections?: string[];
+  /** Present only on authenticated admin responses for imported drafts. */
+  ingestion?: Record<string, any>;
   /** "For Sale" | "For Rent" — routes the property to Buy vs Rent listing pages. */
   listingType?: string;
   status?: string;

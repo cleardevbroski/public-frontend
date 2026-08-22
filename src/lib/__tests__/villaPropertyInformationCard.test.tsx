@@ -8,6 +8,7 @@ const property = {
   id: "project-1",
   title: "Century Jakkur",
   subtitle: "Bangalore",
+  description: "A thoughtfully planned residential project near Jakkur Plantation Road.",
   price: "₹4.29 Cr - ₹4.42 Cr + Charges",
   area: "",
   image: "",
@@ -35,6 +36,10 @@ describe("VillaPropertyInformationCard", () => {
     expect(host.textContent).toContain("Possession");
     expect(host.textContent).toContain("Total Units");
     expect(host.textContent).toContain("184");
+    expect(host.querySelector("h1")?.textContent).toBe("Century Jakkur");
+    expect(host.textContent).toContain("Bangalore");
+    expect(host.textContent).toContain("thoughtfully planned residential project");
+    expect(host.querySelector('a[href*="google.com/maps/search"]')?.getAttribute("target")).toBe("_blank");
     expect(host.textContent).toContain("Contact Lawyer");
     expect(host.textContent).toContain("Request Call");
     expect(host.textContent).not.toContain("View Number");

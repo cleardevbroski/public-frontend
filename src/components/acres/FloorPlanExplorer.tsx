@@ -91,11 +91,11 @@ export default function FloorPlanExplorer({
 
   return (
     <section className="overflow-hidden rounded-2xl border border-[#E7E3EA] bg-white shadow-sm" aria-labelledby="floor-plan-heading">
-      <div className="border-b border-[#EAE7ED] px-5 py-5 md:px-6">
+      <div className="border-b border-[#EAE7ED] px-4 py-3.5 md:px-5 md:py-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C19A3C]">Unit plans</p>
-            <h2 id="floor-plan-heading" className="mt-1 text-[21px] font-bold text-[#12172B]">Floor Plans &amp; Pricing</h2>
+            <h2 id="floor-plan-heading" className="mt-0.5 text-[20px] font-bold text-[#12172B]">Floor Plans &amp; Pricing</h2>
           </div>
           <button
             type="button"
@@ -107,7 +107,7 @@ export default function FloorPlanExplorer({
           </button>
         </div>
 
-        <div className="mt-5 flex gap-1 overflow-x-auto border-b border-[#E7E3EA]" role="tablist" aria-label="Apartment configurations">
+        <div className="mt-3 flex gap-1 overflow-x-auto border-b border-[#E7E3EA]" role="tablist" aria-label="Apartment configurations">
           {configurations.map((configuration) => (
             <button
               key={configuration}
@@ -115,7 +115,7 @@ export default function FloorPlanExplorer({
               role="tab"
               aria-selected={activeConfiguration === configuration}
               onClick={() => selectConfiguration(configuration)}
-              className={`relative whitespace-nowrap px-4 py-3 text-[13px] font-bold transition-colors ${activeConfiguration === configuration ? "text-[#121B35]" : "text-[#68646F] hover:text-[#3F3D46]"}`}
+              className={`relative whitespace-nowrap px-3.5 py-2.5 text-[12px] font-bold transition-colors ${activeConfiguration === configuration ? "text-[#121B35]" : "text-[#68646F] hover:text-[#3F3D46]"}`}
             >
               {configuration} Apartment
               {activeConfiguration === configuration && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-[#121B35]" />}
@@ -124,47 +124,42 @@ export default function FloorPlanExplorer({
         </div>
       </div>
 
-      <div className="p-5 md:p-6">
+      <div className="p-4 md:p-5">
         <p className="text-[13px] font-bold text-[#3F3D46]">{visiblePlans.length} Floor {visiblePlans.length === 1 ? "Plan" : "Plans"} Available</p>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div className="mt-4 grid gap-4">
           {visiblePlans.map(({ detail, index }) => {
             const displayArea = detail.builtUpArea || detail.carpetArea;
             const metric = metricArea(displayArea);
             const canOpenPlan = Boolean(detail.floorPlan2dUrl || detail.floorPlan3dUrl || detail.rooms?.length);
             return (
-              <article key={detail.id || `${detail.configuration}-${index}`} className="overflow-hidden rounded-xl border border-[#E7E3EA] bg-white transition-shadow hover:shadow-md">
-                <div className="grid min-h-36 grid-cols-[112px_minmax(0,1fr)] border-b border-[#EAE7ED] sm:grid-cols-[140px_minmax(0,1fr)]">
+              <article key={detail.id || `${detail.configuration}-${index}`} className="grid min-h-[165px] overflow-hidden rounded-xl border border-[#E7E3EA] bg-white transition-shadow hover:shadow-md md:grid-cols-[minmax(280px,1.1fr)_minmax(0,0.9fr)]">
                   <button
                     type="button"
                     disabled={!canOpenPlan}
                     onClick={() => openPlan(index)}
-                    className="relative flex items-center justify-center overflow-hidden border-r border-[#EAE7ED] bg-[#F1F4F8] disabled:cursor-default"
+                    className="relative flex min-h-[165px] items-center justify-center overflow-hidden border-b border-[#EAE7ED] bg-[#F1F4F8] disabled:cursor-default md:border-b-0 md:border-r"
                     aria-label={`View ${displayArea} floor plan`}
                   >
                     {detail.floorPlan2dUrl || detail.floorPlan3dUrl ? (
-                      <img src={detail.floorPlan2dUrl || detail.floorPlan3dUrl} alt={`${detail.configuration} ${detail.builtUpArea || detail.carpetArea} floor plan`} className="h-full w-full object-contain p-2 transition-transform hover:scale-105" />
+                      <img src={detail.floorPlan2dUrl || detail.floorPlan3dUrl} alt={`${detail.configuration} ${detail.builtUpArea || detail.carpetArea} floor plan`} className="size-full object-contain p-4 transition-transform hover:scale-105" />
                     ) : (
                       <span className="text-center"><Box className="mx-auto size-7 text-[#A9B4C8]" /><span className="mt-2 block text-[9px] font-bold uppercase tracking-wider text-[#8B96A9]">Plan preview</span></span>
                     )}
                     {canOpenPlan && <span className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#12172B]/90 px-2 py-1 text-[9px] font-bold text-white">View plan</span>}
                   </button>
 
-                  <div className="p-4">
+                  <div className="flex flex-col justify-center p-4 sm:p-5">
                     <p className="text-[22px] font-extrabold leading-none text-[#12172B]">{displayArea}</p>
                     {metric && <p className="mt-1 text-[12px] font-semibold text-[#68646F]">({metric})</p>}
                     <p className="mt-2 text-[11px] text-[#68646F]">Built-up Area <span className="text-[#B0B8C6]">|</span> {detail.configuration}</p>
                     <p className="mt-4 text-[20px] font-extrabold text-[#12172B]">{priceWithCharges(detail.price)}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3 p-4">
-                  <div className="flex items-start justify-between gap-3">
+                    <div className="mt-3 flex items-start justify-between gap-3 border-t border-[#EAE7ED] pt-2.5">
                     {(status || possession) && <div>{status && <span className="inline-flex rounded bg-[#FFF2D8] px-2 py-1 text-[10px] font-bold text-[#9A6A12]">{status}</span>}{possession && <p className={status ? "mt-2 text-[12px] font-semibold text-[#5A5762]" : "text-[12px] font-semibold text-[#5A5762]"}>{possession}</p>}</div>}
                     {detail.builtUpArea && <div className="text-right"><p className="text-[10px] uppercase text-[#8A94A6]">Built-up area</p><p className="text-[12px] font-bold text-[#344467]">{detail.builtUpArea}</p></div>}
+                    </div>
+                    <button type="button" onClick={onRequestCallback} className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-lg border border-[#121B35] py-2 text-[11px] font-bold text-[#121B35] transition-colors hover:bg-[#121B35] hover:text-white">Request Callback <ChevronRight className="size-3.5" /></button>
                   </div>
-                  <button type="button" onClick={onRequestCallback} className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#121B35] py-2.5 text-[12px] font-bold text-[#121B35] transition-colors hover:bg-[#121B35] hover:text-white">Request Callback <ChevronRight className="size-3.5" /></button>
-                </div>
               </article>
             );
           })}

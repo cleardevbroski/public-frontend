@@ -291,7 +291,7 @@ describe("interactive property presentation", () => {
 
     expect(rentHtml).toContain("Rental terms at a glance");
     expect(rentHtml).toContain("Monthly rent");
-    expect(leaseHtml).toContain("Lease terms at a glance");
+    expect(leaseHtml).toContain("Property overview");
     expect(leaseHtml).toContain("Rent per sq ft");
   });
 });

@@ -7,6 +7,7 @@ import {
   CalendarDays,
   ChevronDown,
   LayoutGrid,
+  MapPin,
   Phone,
   Scale,
   Trees,
@@ -21,6 +22,10 @@ type Props = {
   onRequestCall: () => void;
   onContactLawyer: () => void;
 };
+
+function cleanDescription(text: string) {
+  return text.replace(/\*\*/g, "").trim();
+}
 
 export type PropertyLedgerInformation = {
   price: string;
@@ -85,6 +90,8 @@ function LedgerItem({ icon: Icon, label, value, className = "" }: LedgerItemProp
 
 export default function VillaPropertyInformationCard({ property, onCharges, onRequestCall, onContactLawyer }: Props) {
   const info = getPropertyLedgerInformation(property);
+  const projectLocation = property.locality?.address || property.subtitle || "";
+  const projectDescription = cleanDescription(property.description?.trim() || property.projectNarrative?.introduction?.[0]?.trim() || "");
   const [landOpen, setLandOpen] = useState(false);
   const landRef = useRef<HTMLDivElement>(null);
 
@@ -111,6 +118,29 @@ export default function VillaPropertyInformationCard({ property, onCharges, onRe
       style={{ fontFamily: "Inter, Arial, Helvetica, sans-serif" }}
     >
       <div className="flex flex-col gap-3">
+        {(property.title || projectLocation || projectDescription) && (
+          <div className="border-b border-[#E5E8EE] px-1 pb-3">
+            {property.title && <h1 className="text-[19px] font-extrabold leading-tight tracking-[-0.02em] text-[#172039] md:text-[21px]">{property.title}</h1>}
+            {projectLocation && (
+              <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12px] leading-5 text-[#596277] md:text-[13px]">
+                <span className="inline-flex min-w-0 items-start gap-1.5">
+                  <MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-[#C48608]" />
+                  <span className="line-clamp-2">{projectLocation}</span>
+                </span>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(projectLocation)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex shrink-0 items-center font-bold text-[#8B5C00] underline decoration-dotted underline-offset-2 hover:text-[#614000] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9A437]"
+                >
+                  See on map
+                </a>
+              </div>
+            )}
+            {projectDescription && <p className="mt-1.5 line-clamp-2 text-[12px] leading-5 text-[#59616F] md:text-[13px]">{projectDescription}</p>}
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           <div className="group flex min-h-[72px] min-w-0 items-center gap-2.5 rounded-[12px] border border-[#DDE2EA] bg-white px-3 py-3 shadow-[0_2px_8px_rgba(16,24,40,0.04)] transition-[background-color,border-color,box-shadow] duration-200 hover:border-[#E4C16D] hover:bg-[#FFFAEE] hover:shadow-[0_10px_22px_rgba(73,55,16,0.12)] focus-within:border-[#E4C16D] focus-within:bg-[#FFFAEE] focus-within:shadow-[0_10px_22px_rgba(73,55,16,0.12)]">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[#F0D79F] bg-[#FFFAF0] text-[#C48608] transition-colors group-hover:border-[#D9A437] group-hover:bg-[#FFF4D6]">
