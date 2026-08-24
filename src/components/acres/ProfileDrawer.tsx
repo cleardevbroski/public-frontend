@@ -54,7 +54,7 @@ export default function ProfileDrawer() {
               {user.name}
             </h2>
             <p className="text-[13px] text-[#E4E0E7] flex items-center gap-1.5 mt-0.5">
-              <Phone className="size-3.5" /> +91 {user.phone}
+              {user.role === "property_submitter" ? <><Mail className="size-3.5" /> {user.email}</> : <><Phone className="size-3.5" /> +91 {user.phone}</>}
             </p>
           </div>
         </div>
@@ -98,6 +98,7 @@ export default function ProfileDrawer() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    readOnly={user.role === "property_submitter"}
                     className="w-full h-10 px-3 rounded-lg border border-[#E4E0E7] focus:border-[#DDAA42] outline-none text-[14px] text-[#121B35]"
                     placeholder="Add your email"
                   />
@@ -113,7 +114,7 @@ export default function ProfileDrawer() {
 
           {/* Quick Links Menu */}
           <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-[#E4E0E7]/30">
-            <Link href="/account" onClick={() => setIsProfileDrawerOpen(false)} className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-[#E4E0E7]/30 group">
+            {user.role !== "property_submitter" && <Link href="/account" onClick={() => setIsProfileDrawerOpen(false)} className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-[#E4E0E7]/30 group">
               <div className="flex items-center gap-3">
                 <div className="size-8 rounded-full bg-[#FFF8E8] flex items-center justify-center text-[#DDAA42]">
                   <BadgeCheck className="size-4" />
@@ -121,9 +122,9 @@ export default function ProfileDrawer() {
                 <span className="text-[14px] font-semibold text-[#121B35]">Become a Dealer</span>
               </div>
               <ChevronRight className="size-4 text-[#68646F] group-hover:translate-x-1 transition-transform" />
-            </Link>
+            </Link>}
 
-            <Link href="/account/saved-properties" onClick={() => setIsProfileDrawerOpen(false)} className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-[#E4E0E7]/30 group">
+            {user.role !== "property_submitter" && <Link href="/account/saved-properties" onClick={() => setIsProfileDrawerOpen(false)} className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-[#E4E0E7]/30 group">
               <div className="flex items-center gap-3">
                 <div className="size-8 rounded-full bg-[#F8F7FA] flex items-center justify-center text-[#DDAA42]">
                   <Heart className="size-4" />
@@ -131,7 +132,7 @@ export default function ProfileDrawer() {
                 <span className="text-[14px] font-semibold text-[#121B35]">Saved Properties</span>
               </div>
               <ChevronRight className="size-4 text-[#68646F] group-hover:translate-x-1 transition-transform" />
-            </Link>
+            </Link>}
 
             <Link href="/postproperty" onClick={() => setIsProfileDrawerOpen(false)} className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-[#E4E0E7]/30 group">
               <div className="flex items-center gap-3">
@@ -143,7 +144,7 @@ export default function ProfileDrawer() {
               <ChevronRight className="size-4 text-[#68646F] group-hover:translate-x-1 transition-transform" />
             </Link>
 
-            <Link href="/account" onClick={() => setIsProfileDrawerOpen(false)} className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors group">
+            {user.role !== "property_submitter" && <Link href="/account" onClick={() => setIsProfileDrawerOpen(false)} className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors group">
               <div className="flex items-center gap-3">
                 <div className="size-8 rounded-full bg-[#F8F7FA] flex items-center justify-center text-[#DDAA42]">
                   <Settings className="size-4" />
@@ -151,7 +152,7 @@ export default function ProfileDrawer() {
                 <span className="text-[14px] font-semibold text-[#121B35]">Account Settings</span>
               </div>
               <ChevronRight className="size-4 text-[#68646F] group-hover:translate-x-1 transition-transform" />
-            </Link>
+            </Link>}
           </div>
           
         </div>

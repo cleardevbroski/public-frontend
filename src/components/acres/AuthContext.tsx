@@ -10,6 +10,8 @@ export type UserProfile = {
   name: string;
   email: string;
   role?: string;
+  isVerified?: boolean;
+  verificationSource?: "manual" | "truecaller" | "password" | "email" | "unknown";
 };
 
 interface AuthContextType {

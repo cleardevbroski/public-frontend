@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PropertyForm from "@/components/admin/PropertyForm";
-import IngestionReviewPanel from "@/components/admin/IngestionReviewPanel";
 import { fetchAdminProperty } from "@/lib/api";
 import type { Property } from "@/components/acres/mock-data";
 
@@ -14,7 +13,6 @@ export default function PostPropertyPage() {
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(Boolean(editId));
   const [error, setError] = useState("");
-  const [reloadVersion, setReloadVersion] = useState(0);
 
   useEffect(() => {
     if (!editId) {
@@ -40,7 +38,7 @@ export default function PostPropertyPage() {
     return () => {
       cancelled = true;
     };
-  }, [editId, reloadVersion]);
+  }, [editId]);
 
   return (
     <AdminLayout>
@@ -62,10 +60,7 @@ export default function PostPropertyPage() {
       ) : error ? (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">{error}</div>
       ) : (
-        <>
-          {editId && property?.ingestion && <IngestionReviewPanel propertyId={editId} onChanged={() => setReloadVersion((value) => value + 1)} />}
-          <PropertyForm key={`${editId || "new"}-${reloadVersion}`} initialData={property || undefined} submissionId={editId || undefined} />
-        </>
+        <PropertyForm key={editId || "new"} initialData={property || undefined} submissionId={editId || undefined} />
       )}
     </AdminLayout>
   );

@@ -3,9 +3,10 @@ import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 import ChannelPartners from "@/pages/ChannelPartners";
 import ChannelPartnerRegistration from "@/pages/ChannelPartnerRegistration";
+import ChannelPartnerDashboard from "@/pages/ChannelPartnerDashboard";
 
 describe("standalone channel partner portal", () => {
-  afterEach(() => { document.body.innerHTML = ""; });
+  afterEach(() => { document.body.innerHTML = ""; sessionStorage.clear(); });
 
   it("shows application sections only after choosing a partner type", async () => {
     const host = document.createElement("div");
@@ -79,6 +80,20 @@ describe("standalone channel partner portal", () => {
     expect(host.textContent).toContain("Client details");
     expect(host.querySelector('input[placeholder*="CT-0001"]')).toBeTruthy();
     expect(host.textContent).not.toContain("Admin approval");
+    await act(async () => { root.unmount(); });
+  });
+
+  it("offers code login and code recovery from the dashboard", async () => {
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const root = createRoot(host);
+    await act(async () => { root.render(<ChannelPartnerDashboard />); });
+    expect(host.textContent).toContain("Open your CP Dashboard");
+    expect(host.textContent).toContain("Forgot CP Code?");
+    const forgot = Array.from(host.querySelectorAll("button")).find((button) => button.textContent === "Forgot CP Code?");
+    await act(async () => { forgot?.click(); });
+    expect(host.textContent).toContain("Recover your CP code");
+    expect(host.querySelector('input[type="email"]')).toBeTruthy();
     await act(async () => { root.unmount(); });
   });
 });

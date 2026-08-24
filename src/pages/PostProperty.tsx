@@ -5,28 +5,55 @@ import { useSearchParams } from "react-router-dom";
 import Header from "@/components/acres/Header";
 import Footer from "@/components/acres/Footer";
 import PropertyForm from "@/components/admin/PropertyForm";
-import CustomerPropertyAuth from "@/components/property/CustomerPropertyAuth";
+import EmailPropertyAuth from "@/components/property/EmailPropertyAuth";
+import PropertyPosterProfileForm, { type PropertySubmissionProfileInput } from "@/components/property/PropertyPosterProfileForm";
 import MyProperties from "@/components/property/MyProperties";
 import { useAuth } from "@/components/acres/AuthContext";
 import { fetchMyProperty } from "@/lib/api";
 import type { Property } from "@/components/acres/mock-data";
-import { ShieldCheck, BadgeCheck, Clock, Gift, Loader2, PlusCircle, ListChecks } from "lucide-react";
+import { ShieldCheck, BadgeCheck, Clock, Gift, Loader2, PlusCircle, ListChecks, PencilLine } from "lucide-react";
 
 export default function PostPropertyPage() {
   const { user, isLoading } = useAuth();
   const [params, setParams] = useSearchParams();
   const editId = params.get("edit");
   const [editing, setEditing] = useState<Property | null>(null);
+  const [submissionProfile, setSubmissionProfile] = useState<PropertySubmissionProfileInput | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editError, setEditError] = useState("");
   const view = params.get("view") === "my" ? "my" : "form";
+  const canManageProperties = Boolean(user && user.role !== "guest" && user.isVerified !== false);
+  const requiresPosterProfile = user?.role === "property_submitter";
 
   useEffect(() => {
-    if (!user || !editId) { setEditing(null); return; }
+    if (!canManageProperties || !editId) { setEditing(null); if (!editId) { setSubmissionProfile(null); setIsEditingProfile(false); } return; }
     setEditError("");
-    fetchMyProperty(editId).then((data) => setEditing(data.property)).catch((cause) => setEditError(cause.message));
-  }, [editId, user]);
+    fetchMyProperty(editId).then((data) => {
+      setEditing(data.property);
+      setIsEditingProfile(false);
+      const profile = data.property.submissionProfile;
+      if (profile?.posterType === "company") {
+        setSubmissionProfile({ posterType: "company", consentAccepted: true, company: {
+          companyName: profile.company?.companyName || "", builderName: profile.company?.builderName || "",
+          contactPersonName: profile.company?.contactPersonName || "", designation: profile.company?.designation || "",
+          phone: profile.company?.phone || "", panNumber: "", panDocument: profile.company?.panDocument,
+          reraApplicable: Boolean(profile.company?.reraApplicable), reraNumber: profile.company?.reraNumber || "",
+          reraDocument: profile.company?.reraDocument, registrationDocument: profile.company?.registrationDocument,
+        } });
+      } else if (profile?.posterType === "individual") {
+        setSubmissionProfile({ posterType: "individual", consentAccepted: true, individual: {
+          ownerName: profile.individual?.ownerName || "", phone: profile.individual?.phone || "", panNumber: "",
+          panDocument: profile.individual?.panDocument, aadhaarLast4: profile.individual?.aadhaarLast4 || "",
+          aadhaarDocument: profile.individual?.aadhaarDocument, ownershipDocument: profile.individual?.ownershipDocument,
+        } });
+      }
+    }).catch((cause) => setEditError(cause.message));
+  }, [canManageProperties, editId]);
 
-  const setView = (next: "form" | "my") => setParams(next === "my" ? { view: "my" } : {});
+  const setView = (next: "form" | "my") => {
+    if (next === "form") { setSubmissionProfile(null); setIsEditingProfile(false); setEditing(null); }
+    setParams(next === "my" ? { view: "my" } : {});
+  };
 
   return (
     <>
@@ -44,14 +71,14 @@ export default function PostPropertyPage() {
         </div>
         <div className="relative z-10 max-w-[1100px] mx-auto px-5 py-11 md:py-14">
           <span className="inline-flex items-center gap-2 bg-white/5 backdrop-blur-md border border-[#DDAA42]/30 rounded-full px-4 py-1.5 text-[#F2C052] text-[11px] font-semibold tracking-[0.2em] uppercase">
-            <Gift className="size-3.5" /> List Your Property — Free
+            <Gift className="size-3.5" /> List Your Property - Free
           </span>
           <h1 className="text-[34px] md:text-[48px] font-bold text-white leading-tight mt-5 max-w-2xl">
             Post Your Property on <span className="text-gold-gradient">ClearTitle One</span>
           </h1>
           <p className="text-[15px] text-white/70 mt-4 max-w-xl">
             Fill in your property details below. Our team verifies every listing for a clear title before it goes
-            live — so buyers reach you with confidence.
+            live, so buyers reach you with confidence.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             {[
@@ -79,18 +106,25 @@ export default function PostPropertyPage() {
           </div>
           {isLoading ? (
             <div className="py-16 flex justify-center"><Loader2 className="size-8 animate-spin text-[#DDAA42]" /></div>
-          ) : !user ? (
-            <CustomerPropertyAuth />
+          ) : !canManageProperties ? (
+            <EmailPropertyAuth />
           ) : (
             <>
               <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-                <div><p className="text-[13px] text-[#68646F]">Signed in as</p><p className="font-bold text-[#121B35]">{user.name || user.email}</p></div>
+                <div><p className="text-[13px] text-[#68646F]">Signed in with verified email</p><p className="font-bold text-[#121B35]">{user?.email || user?.name}</p></div>
                 <div className="flex gap-2">
                   <button onClick={() => setView("form")} className={`h-10 px-4 rounded-xl text-[13px] font-bold inline-flex items-center gap-2 ${view === "form" ? "bg-[#121B35] text-white" : "bg-white text-[#121B35] border border-[#E4E0E7]"}`}><PlusCircle className="size-4" /> Post Property</button>
                   <button onClick={() => setView("my")} className={`h-10 px-4 rounded-xl text-[13px] font-bold inline-flex items-center gap-2 ${view === "my" ? "bg-[#121B35] text-white" : "bg-white text-[#121B35] border border-[#E4E0E7]"}`}><ListChecks className="size-4" /> My Properties</button>
                 </div>
               </div>
-              {view === "my" ? <MyProperties /> : editError ? <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-red-700">{editError}</div> : editId && !editing ? <div className="py-16 flex justify-center"><Loader2 className="size-8 animate-spin text-[#DDAA42]" /></div> : <PropertyForm key={editId || "new"} mode="public" initialData={editing || undefined} submissionId={editId || undefined} />}
+              {view === "my" ? <MyProperties /> : editError ? <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-red-700">{editError}</div> : editId && !editing ? <div className="py-16 flex justify-center"><Loader2 className="size-8 animate-spin text-[#DDAA42]" /></div> : requiresPosterProfile && (!submissionProfile || isEditingProfile) ? (
+                <PropertyPosterProfileForm key={`${editId || "new-profile"}-${isEditingProfile ? "edit" : "start"}`} email={user?.email || ""} initialProfile={submissionProfile || editing?.submissionProfile} onContinue={(profile) => { setSubmissionProfile(profile); setIsEditingProfile(false); }} />
+              ) : (
+                <>
+                  {requiresPosterProfile && submissionProfile && <div className="mx-auto mb-4 flex max-w-4xl flex-wrap items-center justify-between gap-3 rounded-xl border border-[#E2D7B8] bg-[#FFF9EC] px-4 py-3"><div><p className="text-[11px] font-bold text-[#80631C]">Posting as</p><p className="text-[13px] font-bold text-[#121B35]">{submissionProfile.posterType === "company" ? submissionProfile.company?.companyName : submissionProfile.individual?.ownerName}</p></div><button type="button" onClick={() => setIsEditingProfile(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#D7C58F] bg-white px-3 text-[12px] font-bold text-[#4D3A0D]"><PencilLine className="size-3.5" /> Edit owner details</button></div>}
+                  <PropertyForm key={editId || "new"} mode="public" initialData={editing || undefined} submissionId={editId || undefined} submissionProfile={submissionProfile || undefined} />
+                </>
+              )}
             </>
           )}
         </div>

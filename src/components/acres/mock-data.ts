@@ -354,6 +354,41 @@ export type Property = {
     email?: string;
     role?: string;
   };
+  propertyPoster?: {
+    _id?: string;
+    id?: string;
+    name?: string;
+    phone?: string;
+    email?: string;
+    role?: string;
+  };
+  submissionProfile?: {
+    posterType?: "company" | "individual";
+    verifiedEmail?: string;
+    consentAcceptedAt?: string;
+    company?: {
+      companyName?: string;
+      builderName?: string;
+      contactPersonName?: string;
+      designation?: string;
+      phone?: string;
+      reraApplicable?: boolean;
+      reraNumber?: string;
+      panLast4?: string;
+      panDocument?: { id: string; purpose?: string; fileName: string; mimeType: string };
+      reraDocument?: { id: string; purpose?: string; fileName: string; mimeType: string };
+      registrationDocument?: { id: string; purpose?: string; fileName: string; mimeType: string };
+    };
+    individual?: {
+      ownerName?: string;
+      phone?: string;
+      panLast4?: string;
+      aadhaarLast4?: string;
+      panDocument?: { id: string; purpose?: string; fileName: string; mimeType: string };
+      aadhaarDocument?: { id: string; purpose?: string; fileName: string; mimeType: string };
+      ownershipDocument?: { id: string; purpose?: string; fileName: string; mimeType: string };
+    };
+  };
 };
 
 const baseImages = [

@@ -1,220 +1,133 @@
 "use client";
 
 import { useState } from "react";
-import { X, Smartphone, ShieldCheck, ChevronRight, Loader2 } from "lucide-react";
-import { useAuth } from "./AuthContext";
-import { sendOtp, verifyOtp } from "@/lib/api";
+import { CheckCircle2, Loader2, Mail, ShieldCheck, Smartphone, UserRound, X } from "lucide-react";
+import { createManualSession, updateProfile as saveProfile } from "@/lib/api";
+import { useAuth, type UserProfile } from "./AuthContext";
+import TruecallerButton, { type TruecallerAuthResult } from "./TruecallerButton";
+
+type Step = "details" | "profile";
+
+const inputClass = "h-12 w-full rounded-xl border border-[#CFCBD3] bg-white px-4 text-[15px] text-[#121B35] outline-none transition-colors placeholder:text-[#77717D] focus:border-[#B98428] focus:ring-2 focus:ring-[#DDAA42]/20 disabled:bg-[#F4F3F5]";
 
 export default function AuthModal() {
   const { isAuthModalOpen, setIsAuthModalOpen, login } = useAuth();
-  const [step, setStep] = useState<"phone" | "otp">("phone");
+  const [step, setStep] = useState<Step>("details");
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [pendingAuth, setPendingAuth] = useState<TruecallerAuthResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [devMode, setDevMode] = useState(false);
 
   if (!isAuthModalOpen) return null;
 
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (phone.length < 10) return;
-    
+  function resetAndClose() {
+    setIsAuthModalOpen(false);
+    window.setTimeout(() => {
+      setStep("details");
+      setPhone("");
+      setName("");
+      setEmail("");
+      setPendingAuth(null);
+      setError("");
+    }, 200);
+  }
+
+  function normalizedUser(user: Partial<UserProfile>): UserProfile {
+    return {
+      id: user.id,
+      phone: String(user.phone || phone),
+      name: String(user.name || name),
+      email: String(user.email || email),
+      role: user.role,
+      isVerified: user.isVerified,
+      verificationSource: user.verificationSource,
+    };
+  }
+
+  const handleTruecallerVerified = async (result: TruecallerAuthResult) => {
+    const user = normalizedUser(result.user || {});
+    if (result.profileComplete === false || !user.name.trim() || !user.email.trim()) {
+      setPendingAuth({ ...result, user });
+      setPhone(user.phone);
+      setName(user.name);
+      setEmail(user.email);
+      setStep("profile");
+      return;
+    }
+    login(user, result.token);
+    resetAndClose();
+  };
+
+  const handleManual = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (name.trim().length < 2) return setError("Enter your full name.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Enter a valid email address.");
+    if (!/^[6-9]\d{9}$/.test(phone)) return setError("Enter a valid 10-digit Indian mobile number.");
     setIsLoading(true);
     setError("");
-
     try {
-      const data = await sendOtp(phone);
-      setStep("otp");
-      
-      // If backend is in dev mode, show a hint
-      if (data.mode === "dev") {
-        setDevMode(true);
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to send OTP";
-      setError(message);
+      const result = await createManualSession({ name: name.trim(), email: email.trim(), phone });
+      login(normalizedUser(result.user), result.token);
+      resetAndClose();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to save your details.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (otp.length < 6) return;
-
+  const handleProfile = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (name.trim().length < 2) return setError("Enter your full name.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Enter a valid email address.");
+    if (!pendingAuth) return setError("Your Truecaller session has expired. Please start again.");
     setIsLoading(true);
     setError("");
-
     try {
-      const data = await verifyOtp(phone, otp);
-      
-      // Call login with user data and token
-      login(data.user, data.token);
-      setIsAuthModalOpen(false);
-
-      // Reset state for next time
-      setTimeout(() => {
-        setStep("phone");
-        setPhone("");
-        setOtp("");
-        setError("");
-        setDevMode(false);
-      }, 300);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to verify OTP";
-      setError(message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleResend = async () => {
-    setOtp("");
-    setError("");
-    setIsLoading(true);
-    try {
-      await sendOtp(phone);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to resend OTP";
-      setError(message);
+      const profile = await saveProfile({ name: name.trim(), email: email.trim() });
+      login(normalizedUser(profile.user || { ...pendingAuth.user, name: name.trim(), email: email.trim() }), pendingAuth.token);
+      resetAndClose();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to save your details.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-[400px] bg-white rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
-        
-        {/* Close Button */}
-        <button 
-          onClick={() => setIsAuthModalOpen(false)}
-          className="absolute top-4 right-4 z-10 size-8 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 transition-colors"
-        >
-          <X className="size-4 text-[#121B35]" />
-        </button>
-
-        {/* Header Graphic */}
-        <div className="h-32 bg-gradient-to-br from-[#121B35] via-[#273559] to-[#DDAA42] p-6 flex flex-col justify-end relative overflow-hidden">
-          <div className="absolute -right-10 -top-10 w-40 h-40 bg-[#DDAA42]/20 rounded-full blur-2xl" />
-          <h2 className="text-white text-2xl font-bold relative z-10" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
-            {step === "phone" ? "Welcome Back" : "Verify Number"}
-          </h2>
-          <p className="text-white/80 text-sm relative z-10">
-            {step === "phone" ? "Login or register to continue" : `Code sent to +91 ${phone}`}
-          </p>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#071633]/75 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="customer-auth-title">
+      <div className="relative w-full max-w-[420px] overflow-hidden rounded-2xl bg-white shadow-[0_24px_70px_rgba(7,22,51,.28)]">
+        <button type="button" onClick={resetAndClose} className="absolute right-4 top-4 z-10 flex size-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition-colors hover:bg-white/20 active:scale-[.98]" aria-label="Close login"><X className="size-4" /></button>
+        <div className="bg-[#121B35] px-7 pb-6 pt-8 text-white">
+          <div className="mb-4 flex size-10 items-center justify-center rounded-xl bg-[#F2C052] text-[#121B35]"><ShieldCheck className="size-5" /></div>
+          <h2 id="customer-auth-title" className="text-2xl font-bold">{step === "profile" ? "Complete your details" : "Continue to ClearTitle"}</h2>
+          <p className="mt-2 max-w-sm text-sm leading-6 text-white/75">{step === "profile" ? "Add any information missing from your verified Truecaller profile." : "Use Truecaller on Android or enter your contact details manually."}</p>
         </div>
 
-        {/* Body */}
         <div className="p-6">
-          {/* Error Message */}
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
-              {error}
-            </div>
-          )}
+          {error && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-5 text-red-700">{error}</div>}
 
-          {/* Dev mode notice */}
-          {devMode && step === "otp" && (
-            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-xs">
-              🛠️ <strong>Dev Mode:</strong> Check the backend console for your OTP code.
-            </div>
-          )}
-
-          {step === "phone" ? (
-            <form onSubmit={handleSendOtp} className="space-y-6">
-              <div>
-                <label className="block text-xs font-bold text-[#68646F] uppercase tracking-wider mb-2">
-                  Mobile Number
-                </label>
-                <div className="relative flex items-center">
-                  <div className="absolute left-0 top-0 bottom-0 flex items-center px-3 border-r border-[#E4E0E7]/50 bg-slate-50 text-[#121B35] font-semibold text-sm rounded-l-xl">
-                    +91
-                  </div>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    placeholder="Enter 10 digit number"
-                    className="w-full h-12 pl-16 pr-4 rounded-xl border border-[#E4E0E7] focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/20 outline-none text-[#121B35] font-semibold transition-all placeholder:font-normal placeholder:text-[#68646F]/60"
-                    autoFocus
-                    required
-                    disabled={isLoading}
-                  />
-                  <Smartphone className="absolute right-4 size-5 text-[#68646F]/50 pointer-events-none" />
-                </div>
-              </div>
-              
-              <button 
-                type="submit"
-                disabled={phone.length < 10 || isLoading}
-                className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-[#121B35] text-[#F2C052] font-bold hover:bg-[#DDAA42] hover:text-[#0B1328] transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
-              >
-                {isLoading ? (
-                  <Loader2 className="size-5 animate-spin" />
-                ) : (
-                  <>
-                    Get OTP
-                    <ChevronRight className="size-4 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </button>
+          {step === "details" && <>
+            <TruecallerButton purpose="login" onVerified={handleTruecallerVerified} onError={setError} />
+            <div className="my-5 flex items-center gap-3 text-xs font-semibold text-[#68646F]"><span className="h-px flex-1 bg-[#DEDADF]" /><span>Enter details manually</span><span className="h-px flex-1 bg-[#DEDADF]" /></div>
+            <form onSubmit={handleManual} className="space-y-4">
+              <label className="block text-sm font-bold text-[#121B35]">Full name<div className="relative mt-2"><input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" placeholder="Your full name" className={`${inputClass} pl-11`} autoFocus /><UserRound className="pointer-events-none absolute left-4 top-3.5 size-5 text-[#77717D]" /></div></label>
+              <label className="block text-sm font-bold text-[#121B35]">Email address<div className="relative mt-2"><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" placeholder="you@example.com" className={`${inputClass} pl-11`} /><Mail className="pointer-events-none absolute left-4 top-3.5 size-5 text-[#77717D]" /></div></label>
+              <label className="block text-sm font-bold text-[#121B35]">Mobile number<div className="relative mt-2"><span className="absolute inset-y-0 left-0 flex items-center border-r border-[#DEDADF] px-3 text-sm font-semibold text-[#3F3D46]">+91</span><input value={phone} onChange={(event) => setPhone(event.target.value.replace(/\D/g, "").slice(0, 10))} inputMode="numeric" autoComplete="tel" placeholder="10-digit mobile number" className={`${inputClass} pl-16 pr-11`} /><Smartphone className="pointer-events-none absolute right-4 top-3.5 size-5 text-[#77717D]" /></div></label>
+              <button disabled={isLoading} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#DDAA42] px-4 text-sm font-bold text-[#0B1328] hover:bg-[#C99734] active:scale-[.98] disabled:opacity-55">{isLoading && <Loader2 className="size-4 animate-spin" />}Save and continue</button>
             </form>
-          ) : (
-            <form onSubmit={handleVerifyOtp} className="space-y-6">
-              <div>
-                <label className="block text-xs font-bold text-[#68646F] uppercase tracking-wider mb-2">
-                  Enter 6-Digit OTP
-                </label>
-                <div className="relative flex items-center">
-                  <input
-                    type="text"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="• • • • • •"
-                    className="w-full h-12 px-4 text-center tracking-[0.8em] rounded-xl border border-[#E4E0E7] focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/20 outline-none text-[20px] text-[#121B35] font-bold transition-all placeholder:tracking-normal placeholder:text-sm placeholder:text-[#68646F]/60"
-                    autoFocus
-                    required
-                    disabled={isLoading}
-                  />
-                  <ShieldCheck className="absolute right-4 size-5 text-[#68646F]/50 pointer-events-none" />
-                </div>
-                <div className="mt-3 flex justify-between items-center text-xs">
-                  <span className="text-[#68646F]">Didn&apos;t receive it?</span>
-                  <button type="button" onClick={handleResend} className="text-[#DDAA42] font-bold hover:underline" disabled={isLoading}>
-                    Resend Code
-                  </button>
-                </div>
-              </div>
-              
-              <button 
-                type="submit"
-                disabled={otp.length < 6 || isLoading}
-                className="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#DDAA42] to-[#F2C052] text-[#121B35] font-bold hover:from-[#B98428] hover:to-[#DDAA42] shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <Loader2 className="size-5 animate-spin" />
-                ) : (
-                  "Verify & Login"
-                )}
-              </button>
-              
-              <button 
-                type="button"
-                onClick={() => { setStep("phone"); setError(""); }}
-                className="w-full py-2 text-center text-xs font-semibold text-[#68646F] hover:text-[#121B35]"
-                disabled={isLoading}
-              >
-                Change mobile number
-              </button>
-            </form>
-          )}
+          </>}
 
-          <div className="mt-6 text-center text-[11px] text-[#68646F]/80 leading-relaxed">
-            By proceeding, you agree to ClearTitle One&apos;s <br/>
-            <a href="#" className="underline hover:text-[#DDAA42]">Terms of Service</a> & <a href="#" className="underline hover:text-[#DDAA42]">Privacy Policy</a>
-          </div>
+          {step === "profile" && <form onSubmit={handleProfile} className="space-y-4">
+            <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3"><CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-700" /><p className="text-sm leading-5 text-emerald-900">Mobile number +91 {phone} was verified by Truecaller.</p></div>
+            <label className="block text-sm font-bold text-[#121B35]">Full name<input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" placeholder="Your full name" className={`${inputClass} mt-2`} autoFocus /></label>
+            <label className="block text-sm font-bold text-[#121B35]">Email address<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" placeholder="you@example.com" className={`${inputClass} mt-2`} /></label>
+            <button disabled={isLoading} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#DDAA42] px-4 text-sm font-bold text-[#0B1328] active:scale-[.98] disabled:opacity-55">{isLoading && <Loader2 className="size-4 animate-spin" />}Save and continue</button>
+          </form>}
+
+          <p className="mt-6 text-center text-[11px] leading-5 text-[#68646F]">By continuing, you agree to ClearTitle One's terms and consent to storing these details for requested services and follow-up.</p>
         </div>
       </div>
     </div>

@@ -15,8 +15,9 @@ import {
   Star,
   X,
 } from "lucide-react";
-import { fetchLawyers, sendOtp, submitPropertyConsultation, updateProfile, verifyOtp } from "@/lib/api";
+import { createManualSession, fetchLawyers, submitPropertyConsultation, updateProfile } from "@/lib/api";
 import { useAuth } from "./AuthContext";
+import TruecallerButton, { type TruecallerAuthResult } from "./TruecallerButton";
 import { trackAnalytics } from "@/lib/analytics";
 
 type Lawyer = {
@@ -39,7 +40,7 @@ type Lawyer = {
   whatsappAvailable?: boolean;
 };
 
-type Step = "identity" | "otp" | "lawyers" | "request" | "success";
+type Step = "identity" | "lawyers" | "request" | "success";
 
 type Props = {
   open: boolean;
@@ -58,7 +59,7 @@ export default function LawyerConsultationModal({ open, propertyId, propertyTitl
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
+  const [pendingAuth, setPendingAuth] = useState<TruecallerAuthResult | null>(null);
   const [lawyers, setLawyers] = useState<Lawyer[]>([]);
   const [selectedLawyer, setSelectedLawyer] = useState<Lawyer | null>(null);
   const [topic, setTopic] = useState(topics[0]);
@@ -74,7 +75,7 @@ export default function LawyerConsultationModal({ open, propertyId, propertyTitl
     setName(user?.name || "");
     setEmail(user?.email || "");
     setPhone(user?.phone || "");
-    setOtp("");
+    setPendingAuth(null);
     setSelectedLawyer(null);
     setTopic(topics[0]);
     setRequest("");
@@ -113,9 +114,14 @@ export default function LawyerConsultationModal({ open, propertyId, propertyTitl
         const profile = await updateProfile({ name: name.trim(), email: email.trim() });
         updateAuthProfile(profile.user);
         setStep("lawyers");
+      } else if (pendingAuth) {
+        const profile = await updateProfile({ name: name.trim(), email: email.trim() });
+        login(profile.user || { ...pendingAuth.user, name: name.trim(), email: email.trim() }, pendingAuth.token);
+        setStep("lawyers");
       } else {
-        const result = await sendOtp(phone);
-        setStep("otp");
+        const manual = await createManualSession({ name: name.trim(), email: email.trim(), phone });
+        login(manual.user, manual.token);
+        setStep("lawyers");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to continue.");
@@ -124,21 +130,17 @@ export default function LawyerConsultationModal({ open, propertyId, propertyTitl
     }
   };
 
-  const verifyIdentity = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (otp.length !== 6) return setError("Enter the 6-digit OTP.");
-    setLoading(true);
+  const acceptTruecaller = (result: TruecallerAuthResult) => {
+    setName(result.user.name || "");
+    setEmail(result.user.email || "");
+    setPhone(result.user.phone || "");
     setError("");
-    try {
-      const auth = await verifyOtp(phone, otp);
-      const profile = await updateProfile({ name: name.trim(), email: email.trim() });
-      login(profile.user, auth.token);
+    if (result.profileComplete !== false && result.user.name && result.user.email) {
+      login(result.user, result.token);
       setStep("lawyers");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "OTP verification failed.");
-    } finally {
-      setLoading(false);
+      return;
     }
+    setPendingAuth(result);
   };
 
   const chooseLawyer = (lawyer: Lawyer) => {
@@ -198,33 +200,31 @@ export default function LawyerConsultationModal({ open, propertyId, propertyTitl
         <div className="relative shrink-0 bg-gradient-to-r from-[#121B35] via-[#273559] to-[#121B35] px-6 py-5 text-white md:px-8">
           <button type="button" onClick={onClose} className="absolute right-4 top-4 rounded-full p-2 text-white/80 hover:bg-white/10" aria-label="Close"><X className="size-5" /></button>
           <div className="flex items-center gap-3 pr-10"><span className="flex size-11 items-center justify-center rounded-2xl bg-[#DDAA42] text-[#121B35]"><Scale className="size-6" /></span><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#F2C052]">ClearTitle Legal Shield</p><h2 className="text-xl font-bold md:text-2xl">Consult a Lawyer on Title</h2></div></div>
-          <p className="mt-3 max-w-3xl text-sm text-white/70">{propertyTitle} Â· {propertyLocation}</p>
+          <p className="mt-3 max-w-3xl text-sm text-white/70">{propertyTitle} - {propertyLocation}</p>
         </div>
 
         <div className="overflow-y-auto p-5 md:p-8">
           {error && <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>}
 
-          {step === "identity" && <form onSubmit={continueIdentity} className="mx-auto max-w-xl space-y-5">
-            <div><h3 className="text-xl font-bold text-[#121B35]">Verify your customer details</h3><p className="mt-1 text-sm text-[#68646F]">Your phone is verified with OTP before lawyer profiles and consultation access are provided.</p></div>
+          {step === "identity" && <div className="mx-auto max-w-xl">
+            {!user && !pendingAuth && <><TruecallerButton purpose="enquiry" onVerified={acceptTruecaller} onError={setError} /><div className="my-5 flex items-center gap-3 text-xs font-semibold text-[#68646F]"><span className="h-px flex-1 bg-[#DEDADF]" /><span>Enter details manually</span><span className="h-px flex-1 bg-[#DEDADF]" /></div></>}
+            <form onSubmit={continueIdentity} className="space-y-5">
+            <div><h3 className="text-xl font-bold text-[#121B35]">Your consultation details</h3><p className="mt-1 text-sm text-[#68646F]">Enter your contact information to view available lawyers.</p></div>
+            {(pendingAuth || user?.isVerified) && <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"><CheckCircle2 className="size-4 text-emerald-700" />Phone verified by Truecaller</div>}
             <label className="block text-sm font-bold text-[#121B35]">Full name<input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" className="mt-2 w-full rounded-xl border border-[#E4E0E7] bg-white px-4 py-3 font-normal outline-none focus:border-[#DDAA42]" /></label>
             <label className="block text-sm font-bold text-[#121B35]">Email / Gmail<input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@gmail.com" className="mt-2 w-full rounded-xl border border-[#E4E0E7] bg-white px-4 py-3 font-normal outline-none focus:border-[#DDAA42]" /></label>
-            <label className="block text-sm font-bold text-[#121B35]">Mobile number<div className="mt-2 flex overflow-hidden rounded-xl border border-[#E4E0E7] bg-white focus-within:border-[#DDAA42]"><span className="bg-[#F3F1F5] px-4 py-3 font-normal text-[#68646F]">+91</span><input required disabled={Boolean(user)} value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} inputMode="numeric" placeholder="10-digit mobile number" className="min-w-0 flex-1 px-4 py-3 font-normal outline-none disabled:bg-[#F8FAFC]" /></div></label>
-            <button disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#DDAA42] px-5 py-3.5 font-bold text-[#0B1328] disabled:opacity-60">{loading && <Loader2 className="size-4 animate-spin" />}{user ? "Save details & view lawyers" : "Get OTP"}</button>
-          </form>}
-
-          {step === "otp" && <form onSubmit={verifyIdentity} className="mx-auto max-w-md space-y-5 text-center">
-            <ShieldCheck className="mx-auto size-12 text-[#DDAA42]" /><div><h3 className="text-xl font-bold text-[#121B35]">Verify mobile number</h3><p className="mt-1 text-sm text-[#68646F]">Enter the OTP sent to +91 {phone}.</p></div>
-            <input autoFocus value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" placeholder="6-digit OTP" className="w-full rounded-xl border border-[#E4E0E7] bg-white px-4 py-3 text-center text-lg font-bold tracking-[0.4em] outline-none focus:border-[#DDAA42]" />
-            <button disabled={loading || otp.length !== 6} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#DDAA42] px-5 py-3.5 font-bold text-[#0B1328] disabled:opacity-60">{loading && <Loader2 className="size-4 animate-spin" />}Verify & view lawyers</button>
-            <button type="button" onClick={() => { setStep("identity"); setOtp(""); setError(""); }} className="text-sm font-bold text-[#121B35]">Change details</button>
-          </form>}
+            <label className="block text-sm font-bold text-[#121B35]">Mobile number<div className="mt-2 flex overflow-hidden rounded-xl border border-[#E4E0E7] bg-white focus-within:border-[#DDAA42]"><span className="bg-[#F3F1F5] px-4 py-3 font-normal text-[#68646F]">+91</span><input required disabled={Boolean(user || pendingAuth)} value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} inputMode="numeric" autoComplete="tel" placeholder="10-digit mobile number" className="min-w-0 flex-1 px-4 py-3 font-normal outline-none disabled:bg-[#F8FAFC]" /></div></label>
+            <button disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#DDAA42] px-5 py-3.5 font-bold text-[#0B1328] disabled:opacity-60">{loading && <Loader2 className="size-4 animate-spin" />}Save details and view lawyers</button>
+            </form>
+            <p className="mt-5 text-center text-[11px] leading-5 text-[#68646F]">By continuing, you consent to storing these details for consultation access and follow-up.</p>
+          </div>}
 
           {step === "lawyers" && <div>
             <div className="mb-6"><h3 className="text-xl font-bold text-[#121B35]">Choose your lawyer</h3><p className="mt-1 text-sm text-[#68646F]">{lawyers.length} approved lawyer{lawyers.length === 1 ? "" : "s"} available for property consultation.</p></div>
             {lawyersLoading ? <div className="flex justify-center py-10"><Loader2 className="size-8 animate-spin text-[#DDAA42]" /></div> : lawyers.length === 0 ? <div className="rounded-2xl border border-[#E4E0E7] bg-white p-10 text-center text-[#68646F]">No approved lawyers are available right now.</div> : <div className="grid gap-5 md:grid-cols-2">
               {lawyers.map((lawyer) => <article key={lawyer.id} className="flex flex-col rounded-2xl border border-[#E4E0E7] bg-white p-5 shadow-sm">
-                <div className="flex gap-4"><div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#121B35] text-xl font-bold text-[#F2C052]">{lawyer.image ? <img src={lawyer.image} alt={lawyer.name} className="size-full object-cover" /> : lawyer.name.charAt(0)}</div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><h4 className="font-bold text-[#121B35]">{lawyer.name}</h4><p className="text-xs font-bold text-[#DDAA42]">{lawyer.specialty}</p></div><span className="flex items-center gap-1 text-sm font-bold text-[#121B35]"><Star className="size-3.5 fill-[#F2C052] text-[#F2C052]" />{lawyer.rating}</span></div><p className="mt-2 text-xs text-[#68646F]">{lawyer.experience} Â· {lawyer.cases}</p></div></div>
-                <div className="mt-4 grid gap-2 text-xs text-[#3F3D46] sm:grid-cols-2"><p className="flex gap-2"><GraduationCap className="size-4 shrink-0 text-[#DDAA42]" /><span><strong className="block text-[#121B35]">{lawyer.qualification || "Law graduate"}</strong>{lawyer.college || "College not provided"}{lawyer.graduationYear ? ` Â· ${lawyer.graduationYear}` : ""}</span></p><p className="flex gap-2"><BadgeCheck className="size-4 shrink-0 text-[#DDAA42]" /><span><strong className="block text-[#121B35]">Bar Council</strong>{lawyer.barCouncil}</span></p><p className="flex gap-2"><Languages className="size-4 shrink-0 text-[#DDAA42]" /><span>{lawyer.languages || "Languages not provided"}</span></p><p className="flex gap-2"><MapPin className="size-4 shrink-0 text-[#DDAA42]" /><span>{lawyer.city || "Location not provided"}</span></p></div>
+                <div className="flex gap-4"><div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#121B35] text-xl font-bold text-[#F2C052]">{lawyer.image ? <img src={lawyer.image} alt={lawyer.name} className="size-full object-cover" /> : lawyer.name.charAt(0)}</div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><h4 className="font-bold text-[#121B35]">{lawyer.name}</h4><p className="text-xs font-bold text-[#DDAA42]">{lawyer.specialty}</p></div><span className="flex items-center gap-1 text-sm font-bold text-[#121B35]"><Star className="size-3.5 fill-[#F2C052] text-[#F2C052]" />{lawyer.rating}</span></div><p className="mt-2 text-xs text-[#68646F]">{lawyer.experience} - {lawyer.cases}</p></div></div>
+                <div className="mt-4 grid gap-2 text-xs text-[#3F3D46] sm:grid-cols-2"><p className="flex gap-2"><GraduationCap className="size-4 shrink-0 text-[#DDAA42]" /><span><strong className="block text-[#121B35]">{lawyer.qualification || "Law graduate"}</strong>{lawyer.college || "College not provided"}{lawyer.graduationYear ? ` - ${lawyer.graduationYear}` : ""}</span></p><p className="flex gap-2"><BadgeCheck className="size-4 shrink-0 text-[#DDAA42]" /><span><strong className="block text-[#121B35]">Bar Council</strong>{lawyer.barCouncil}</span></p><p className="flex gap-2"><Languages className="size-4 shrink-0 text-[#DDAA42]" /><span>{lawyer.languages || "Languages not provided"}</span></p><p className="flex gap-2"><MapPin className="size-4 shrink-0 text-[#DDAA42]" /><span>{lawyer.city || "Location not provided"}</span></p></div>
                 {lawyer.bio && <p className="mt-4 text-xs leading-relaxed text-[#68646F]">{lawyer.bio}</p>}
                 {lawyer.documentVerified && <p className="mt-4 flex items-center gap-1.5 text-xs font-bold text-green-700"><ShieldCheck className="size-4" />Professional document verified by ClearTitle</p>}
                 <button type="button" disabled={!lawyer.whatsappAvailable} onClick={() => chooseLawyer(lawyer)} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#121B35] px-4 py-3 text-sm font-bold text-[#F2C052] disabled:cursor-not-allowed disabled:opacity-45"><MessageCircle className="size-4" />{lawyer.whatsappAvailable ? "Choose lawyer" : "WhatsApp not available"}</button>
@@ -234,10 +234,10 @@ export default function LawyerConsultationModal({ open, propertyId, propertyTitl
 
           {step === "request" && selectedLawyer && <form onSubmit={sendRequest} className="mx-auto max-w-3xl space-y-5">
             <button type="button" onClick={() => { setStep("lawyers"); setError(""); }} className="flex items-center gap-1 text-sm font-bold text-[#121B35]"><ArrowLeft className="size-4" />Choose another lawyer</button>
-            <div className="grid gap-4 rounded-2xl border border-[#E4E0E7] bg-white p-5 md:grid-cols-2"><div><p className="text-[10px] font-bold uppercase tracking-wider text-[#68646F]">Selected lawyer</p><p className="mt-1 font-bold text-[#121B35]">{selectedLawyer.name}</p><p className="text-xs text-[#DDAA42]">{selectedLawyer.specialty}</p></div><div><p className="text-[10px] font-bold uppercase tracking-wider text-[#68646F]">Property for consultation</p><p className="mt-1 font-bold text-[#121B35]">{propertyTitle}</p><p className="text-xs text-[#68646F]">{propertyLocation} Â· {propertyPrice}</p></div></div>
+            <div className="grid gap-4 rounded-2xl border border-[#E4E0E7] bg-white p-5 md:grid-cols-2"><div><p className="text-[10px] font-bold uppercase tracking-wider text-[#68646F]">Selected lawyer</p><p className="mt-1 font-bold text-[#121B35]">{selectedLawyer.name}</p><p className="text-xs text-[#DDAA42]">{selectedLawyer.specialty}</p></div><div><p className="text-[10px] font-bold uppercase tracking-wider text-[#68646F]">Property for consultation</p><p className="mt-1 font-bold text-[#121B35]">{propertyTitle}</p><p className="text-xs text-[#68646F]">{propertyLocation} - {propertyPrice}</p></div></div>
             <label className="block text-sm font-bold text-[#121B35]">Consultation topic<select value={topic} onChange={(e) => setTopic(e.target.value)} className="mt-2 w-full rounded-xl border border-[#E4E0E7] bg-white px-4 py-3 font-normal outline-none focus:border-[#DDAA42]">{topics.map((item) => <option key={item}>{item}</option>)}</select></label>
             <label className="block text-sm font-bold text-[#121B35]">Describe your request<textarea required value={request} onChange={(e) => setRequest(e.target.value.slice(0, 2000))} rows={6} placeholder="Explain what you want the lawyer to verify about this property title, ownership, deed, RERA registration or agreement..." className="mt-2 w-full rounded-xl border border-[#E4E0E7] bg-white px-4 py-3 font-normal outline-none focus:border-[#DDAA42]" /><span className="mt-1 block text-right text-xs font-normal text-[#68646F]">{request.length}/2000</span></label>
-            <label className="flex items-start gap-3 rounded-xl border border-[#E4E0E7] bg-white p-4 text-xs leading-relaxed text-[#3F3D46]"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 size-4 accent-[#DDAA42]" /><span>I consent to ClearTitle sharing my name, email, verified phone number, this property information and my request with {selectedLawyer.name} through WhatsApp.</span></label>
+            <label className="flex items-start gap-3 rounded-xl border border-[#E4E0E7] bg-white p-4 text-xs leading-relaxed text-[#3F3D46]"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 size-4 accent-[#DDAA42]" /><span>I consent to ClearTitle sharing my name, email, phone number, this property information and my request with {selectedLawyer.name} through WhatsApp.</span></label>
             <button disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#DDAA42] px-5 py-3.5 font-bold text-[#0B1328] disabled:opacity-60">{loading ? <Loader2 className="size-4 animate-spin" /> : <MessageCircle className="size-4" />}Submit & open WhatsApp</button>
             <p className="text-center text-xs text-[#68646F]">The request is recorded in ClearTitle. WhatsApp opens with a prepared message; you press Send to deliver it.</p>
           </form>}

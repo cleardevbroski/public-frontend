@@ -9,6 +9,8 @@ import {
   IndianRupee,
   LayoutDashboard,
   Loader2,
+  LogOut,
+  Mail,
   RefreshCw,
   ShieldAlert,
   UserPlus,
@@ -20,6 +22,11 @@ import {
   fetchChannelPartnerClientHistory,
   fetchChannelPartnerDashboard,
   hasChannelPartnerSession,
+  clearChannelPartnerSession,
+  requestChannelPartnerCodeOtp,
+  resendChannelPartnerCodeOtp,
+  verifyChannelPartnerCode,
+  verifyChannelPartnerRecoveryOtp,
 } from "@/lib/api";
 import { useDocumentTitle } from "@/useDocumentTitle";
 
@@ -115,10 +122,17 @@ export default function ChannelPartnerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [now, setNow] = useState(Date.now());
-  const hasSession = hasChannelPartnerSession();
+  const [sessionReady, setSessionReady] = useState(() => hasChannelPartnerSession());
+  const [registrationReceipt] = useState<{ applicationNumber: string; partnerCode: string; emailSent: boolean } | null>(() => {
+    if (typeof window === "undefined") return null;
+    const stored = sessionStorage.getItem("cleartitle_cp_registration_receipt");
+    sessionStorage.removeItem("cleartitle_cp_registration_receipt");
+    if (!stored) return null;
+    try { return JSON.parse(stored); } catch { return null; }
+  });
 
   const load = useCallback(async () => {
-    if (!hasChannelPartnerSession()) { setLoading(false); return; }
+    if (!sessionReady || !hasChannelPartnerSession()) { setLoading(false); return; }
     setLoading(true);
     setError("");
     try {
@@ -132,11 +146,17 @@ export default function ChannelPartnerDashboard() {
       setClashes(Array.isArray(clashData.clashes) ? clashData.clashes : []);
       setNow(dashboardData.serverNow ? new Date(dashboardData.serverNow).getTime() : Date.now());
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to load the dashboard.");
+      const message = cause instanceof Error ? cause.message : "Unable to load the dashboard.";
+      if (/session expired|invalid channel partner session|code is required|code is not active/i.test(message)) {
+        clearChannelPartnerSession();
+        setSessionReady(false);
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [sessionReady]);
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
@@ -146,12 +166,13 @@ export default function ChannelPartnerDashboard() {
 
   const visibleClients = useMemo(() => filter === "all" ? clients : clients.filter((client) => client.status === filter), [clients, filter]);
 
-  if (!hasSession) return <SessionRequired />;
+  if (!sessionReady) return <SessionRequired onAuthenticated={() => setSessionReady(true)} />;
 
   return <div className="min-h-[100dvh] bg-[#EFF1F4] text-[#3F3D46]">
-    <CPHeader />
+    <CPHeader onLogout={() => { clearChannelPartnerSession(); setDashboard(null); setClients([]); setClashes([]); setSessionReady(false); }} />
     <main className="mx-auto max-w-[1280px] px-4 py-8 md:px-6 md:py-10">
       {loading ? <DashboardSkeleton /> : error ? <ErrorState error={error} retry={load} /> : dashboard ? <>
+        {registrationReceipt && <section role="status" className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-900"><p className="flex items-center gap-2 font-bold"><CheckCircle2 className="size-5" />Channel Partner registration completed</p><p className="mt-2 text-sm">Application <strong>{registrationReceipt.applicationNumber}</strong>. Save your login code: <strong className="font-mono tracking-wider">{registrationReceipt.partnerCode}</strong>.</p><p className="mt-1 text-xs">{registrationReceipt.emailSent ? "The code was also sent to your registered email." : "Email delivery was unavailable, so save this code now."}</p></section>}
         <section className="flex flex-col gap-5 border-b border-[#D9DCE2] pb-7 md:flex-row md:items-end md:justify-between">
           <div><p className="text-xs font-bold uppercase tracking-[.14em] text-[#9A6A13]">Partner workspace</p><h1 className="mt-2 text-3xl font-bold tracking-tight text-[#121B35] md:text-4xl">Welcome, {dashboard.partner.name}</h1><p className="mt-2 text-sm text-[#68646F]">Track every client from registration through settlement.</p></div>
           <div className="flex flex-wrap gap-2"><button onClick={() => void load()} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#CBD0D8] bg-white px-4 text-sm font-bold text-[#121B35] active:translate-y-px"><RefreshCw className="size-4" />Refresh</button><a href="/cp-registration" className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#DDAA42] px-4 text-sm font-bold text-[#0B1328] active:translate-y-px"><UserPlus className="size-4" />Register Client</a></div>
@@ -190,8 +211,8 @@ export default function ChannelPartnerDashboard() {
   </div>;
 }
 
-function CPHeader() {
-  return <header className="border-b border-[#DDAA42]/25 bg-[#0B1328]"><div className="mx-auto flex max-w-[1280px] items-center justify-between px-4 py-4 md:px-6"><a href="/cp-dashboard" className="flex items-center gap-3"><img src="/cleartitleone/logo.png" alt="ClearTitle One" className="size-10 rounded-full ring-2 ring-[#DDAA42]/60" /><div><p className="text-base font-bold text-white">Clear<span className="text-[#F2C052]">Title</span><span className="text-[#DDAA42]">One</span></p><p className="text-[10px] uppercase tracking-[.12em] text-white/55">Channel Partner</p></div></a><nav aria-label="Channel Partner" className="flex items-center gap-2"><a href="/cp-dashboard" aria-current="page" className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/10 px-3 text-xs font-bold text-white"><LayoutDashboard className="size-4" />Dashboard</a><a href="/cp-registration" className="inline-flex h-10 items-center rounded-xl bg-[#DDAA42] px-3 text-xs font-bold text-[#0B1328]">Register Client</a></nav></div></header>;
+function CPHeader({ onLogout }: { onLogout?: () => void }) {
+  return <header className="border-b border-[#DDAA42]/25 bg-[#0B1328]"><div className="mx-auto flex max-w-[1280px] items-center justify-between px-4 py-4 md:px-6"><a href="/cp-dashboard" className="flex items-center gap-3"><img src="/cleartitleone/logo.png" alt="ClearTitle One" className="size-10 rounded-full ring-2 ring-[#DDAA42]/60" /><div><p className="text-base font-bold text-white">Clear<span className="text-[#F2C052]">Title</span><span className="text-[#DDAA42]">One</span></p><p className="text-[10px] uppercase tracking-[.12em] text-white/55">Channel Partner</p></div></a><nav aria-label="Channel Partner" className="flex items-center gap-2"><a href="/cp-dashboard" aria-current="page" className="hidden sm:inline-flex h-10 items-center gap-2 rounded-xl bg-white/10 px-3 text-xs font-bold text-white"><LayoutDashboard className="size-4" />Dashboard</a><a href="/cp-registration" className="inline-flex h-10 items-center rounded-xl bg-[#DDAA42] px-3 text-xs font-bold text-[#0B1328]">CP Clients</a>{onLogout && <button onClick={onLogout} className="inline-flex size-10 items-center justify-center rounded-xl border border-white/20 text-white" title="Logout"><LogOut className="size-4" /></button>}</nav></div></header>;
 }
 
 function Metric({ label, value, icon: Icon }: { label: string; value: number; icon: React.ComponentType<{ className?: string }> }) {
@@ -224,6 +245,40 @@ function ErrorState({ error, retry }: { error: string; retry: () => void }) {
   return <div role="alert" className="rounded-2xl border border-red-200 bg-white p-8 text-center"><AlertTriangle className="mx-auto size-9 text-red-600" /><h1 className="mt-4 text-xl font-bold text-[#121B35]">Dashboard unavailable</h1><p className="mt-2 text-sm text-red-700">{error}</p><div className="mt-5 flex justify-center gap-2"><button onClick={retry} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0B1328] px-4 text-xs font-bold text-white"><RefreshCw className="size-4" />Try Again</button><a href="/cp-registration" className="inline-flex h-10 items-center rounded-xl border border-[#CBD0D8] px-4 text-xs font-bold text-[#121B35]">Verify Code</a></div></div>;
 }
 
-function SessionRequired() {
-  return <div className="min-h-[100dvh] bg-[#EFF1F4]"><CPHeader /><main className="mx-auto flex max-w-[720px] px-4 py-20"><section className="w-full rounded-2xl border border-[#D9DCE2] bg-white p-8 text-center shadow-[0_18px_45px_rgba(18,27,53,.08)]"><ShieldAlert className="mx-auto size-10 text-[#9A6A13]" /><h1 className="mt-5 text-2xl font-bold text-[#121B35]">Verify your Channel Partner code</h1><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#68646F]">Your dashboard uses the secure session created on the client registration page.</p><a href="/cp-registration" className="mt-6 inline-flex h-11 items-center rounded-xl bg-[#DDAA42] px-5 text-sm font-bold text-[#0B1328]">Verify CP Code</a></section></main></div>;
+function SessionRequired({ onAuthenticated }: { onAuthenticated: () => void }) {
+  const [mode, setMode] = useState<"login" | "email" | "otp" | "complete">("login");
+  const [code, setCode] = useState("");
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [unregistered, setUnregistered] = useState(false);
+
+  const login = async (event: React.FormEvent) => {
+    event.preventDefault(); setBusy(true); setError("");
+    try { await verifyChannelPartnerCode(code); onAuthenticated(); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to verify Channel Partner code."); }
+    finally { setBusy(false); }
+  };
+  const requestOtp = async (event: React.FormEvent) => {
+    event.preventDefault(); setBusy(true); setError(""); setMessage(""); setUnregistered(false);
+    try { const data = await requestChannelPartnerCodeOtp(email); setMessage(data.message); setMode("otp"); }
+    catch (cause) { const text = cause instanceof Error ? cause.message : "Unable to send OTP."; setError(text); setUnregistered(text.toLowerCase().includes("not registered")); }
+    finally { setBusy(false); }
+  };
+  const verifyOtp = async (event: React.FormEvent) => {
+    event.preventDefault(); setBusy(true); setError("");
+    try { const data = await verifyChannelPartnerRecoveryOtp(email, otp); setMessage(data.message); setMode("complete"); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to verify OTP."); }
+    finally { setBusy(false); }
+  };
+  const resendOtp = async () => {
+    setBusy(true); setError("");
+    try { const data = await resendChannelPartnerCodeOtp(email); setMessage(data.message); setOtp(""); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to resend OTP."); }
+    finally { setBusy(false); }
+  };
+
+  return <div className="min-h-[100dvh] bg-[#EFF1F4]"><CPHeader /><main className="mx-auto flex max-w-[720px] px-4 py-16"><section className="w-full rounded-2xl border border-[#D9DCE2] bg-white p-7 text-center shadow-[0_18px_45px_rgba(18,27,53,.08)] md:p-9">{mode === "login" ? <><ShieldAlert className="mx-auto size-10 text-[#9A6A13]" /><h1 className="mt-5 text-2xl font-bold text-[#121B35]">Open your CP Dashboard</h1><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#68646F]">Enter your unique Channel Partner code.</p><form onSubmit={login} className="mx-auto mt-6 grid max-w-md gap-3 sm:grid-cols-[1fr_auto]"><input value={code} onChange={(event) => setCode(event.target.value.toUpperCase().replace(/\s/g, "").slice(0, 20))} placeholder="CT-0003" className="h-11 rounded-xl border border-[#D8D4DC] px-4 font-mono text-sm font-bold tracking-wider outline-none focus:border-[#DDAA42]" required /><button disabled={busy || !code} className="h-11 rounded-xl bg-[#DDAA42] px-5 text-sm font-bold text-[#0B1328] disabled:opacity-50">{busy ? "Checking..." : "Open Dashboard"}</button></form><button onClick={() => { setMode("email"); setError(""); }} className="mt-5 text-sm font-bold text-[#273559] underline">Forgot CP Code?</button></> : mode === "email" ? <><Mail className="mx-auto size-10 text-[#9A6A13]" /><h1 className="mt-5 text-2xl font-bold text-[#121B35]">Recover your CP code</h1><p className="mt-2 text-sm text-[#68646F]">Enter the email used for Channel Partner registration.</p><form onSubmit={requestOtp} className="mx-auto mt-6 max-w-md space-y-3"><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Registered email" className="h-11 w-full rounded-xl border border-[#D8D4DC] px-4 text-sm outline-none focus:border-[#DDAA42]" required /><button disabled={busy} className="h-11 w-full rounded-xl bg-[#DDAA42] text-sm font-bold text-[#0B1328] disabled:opacity-50">{busy ? "Sending..." : "Send OTP"}</button></form><button onClick={() => { setMode("login"); setError(""); }} className="mt-4 text-xs font-bold text-[#68646F] underline">Back to code login</button></> : mode === "otp" ? <><Mail className="mx-auto size-10 text-[#9A6A13]" /><h1 className="mt-5 text-2xl font-bold text-[#121B35]">Enter email OTP</h1><p className="mt-2 text-sm text-[#68646F]">We sent a six-digit OTP to {email}.</p><form onSubmit={verifyOtp} className="mx-auto mt-6 max-w-sm space-y-3"><input inputMode="numeric" value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="6-digit OTP" className="h-11 w-full rounded-xl border border-[#D8D4DC] px-4 text-center font-mono text-lg font-bold tracking-[.25em] outline-none focus:border-[#DDAA42]" required /><button disabled={busy || otp.length !== 6} className="h-11 w-full rounded-xl bg-[#DDAA42] text-sm font-bold text-[#0B1328] disabled:opacity-50">{busy ? "Verifying..." : "Verify and Send New Code"}</button></form><button disabled={busy} onClick={() => void resendOtp()} className="mt-4 text-xs font-bold text-[#273559] underline disabled:opacity-50">Resend OTP</button></> : <><CheckCircle2 className="mx-auto size-10 text-emerald-600" /><h1 className="mt-5 text-2xl font-bold text-[#121B35]">New CP code sent</h1><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#68646F]">{message}</p><button onClick={() => { setMode("login"); setCode(""); setOtp(""); setError(""); }} className="mt-6 h-11 rounded-xl bg-[#DDAA42] px-5 text-sm font-bold text-[#0B1328]">Login with New Code</button></>}{message && mode !== "complete" && <p role="status" className="mt-4 rounded-xl bg-emerald-50 p-3 text-xs text-emerald-800">{message}</p>}{error && <div role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-xs text-red-700"><p>{error}</p>{unregistered && <a href="/channel-partner" className="mt-3 inline-flex h-9 items-center rounded-lg bg-[#0B1328] px-4 font-bold text-white">Register as Channel Partner</a>}</div>}</section></main></div>;
 }

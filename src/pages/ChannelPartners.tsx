@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { BadgeCheck, CheckCircle2, Headphones, Loader2, LockKeyhole, Megaphone, Rocket, ShieldCheck, Sparkles } from "lucide-react";
 import DocumentUpload from "@/components/channel-partners/DocumentUpload";
 import SignaturePad from "@/components/channel-partners/SignaturePad";
-import { submitChannelPartner } from "@/lib/api";
+import { setChannelPartnerSession, submitChannelPartner } from "@/lib/api";
 import type { ChannelPartnerApplication, ChannelPartnerType, PartnerDocument } from "@/lib/channelPartnerTypes";
 import { useDocumentTitle } from "@/useDocumentTitle";
 
@@ -111,7 +111,15 @@ export default function ChannelPartners() {
         : form.documents;
       const payload = { ...form, business, documents, company: { ...form.company, reraApplicable: Boolean(form.company.reraNumber.trim()) } };
       const data = await submitChannelPartner(payload as unknown as Record<string, unknown>, idempotencyKey.current);
-      setReceipt({ ...data.application, emailSent: Boolean(data.emailSent) }); setForm(initialForm); window.scrollTo({ top: 0, behavior: "smooth" });
+      setReceipt({ ...data.application, emailSent: Boolean(data.emailSent) });
+      setForm(initialForm);
+      if (data.token) {
+        setChannelPartnerSession(data.token);
+        sessionStorage.setItem("cleartitle_cp_registration_receipt", JSON.stringify({ applicationNumber: data.application.applicationNumber, partnerCode: data.application.partnerCode, emailSent: Boolean(data.emailSent) }));
+        window.location.assign("/cp-dashboard");
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     } catch (cause) { setErrors([cause instanceof Error ? cause.message : "Unable to submit your application."]); window.setTimeout(() => errorRef.current?.focus(), 0); }
     finally { setSubmitting(false); }
   };
@@ -120,7 +128,7 @@ export default function ChannelPartners() {
     <header className="bg-[#0B1328] border-b border-[#DDAA42]/25">
       <div className="max-w-[1120px] mx-auto px-4 py-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3"><img src="/cleartitleone/logo.png" alt="ClearTitle One" className="size-11 rounded-full ring-2 ring-[#DDAA42]/60" /><div><p className="text-white text-[17px] font-bold">Clear<span className="text-[#F2C052]">Title</span><span className="text-[#DDAA42]">One</span></p><p className="text-white/50 text-[10px] uppercase tracking-[.14em]">Channel Partner Portal</p></div></div>
-        <div className="flex items-center gap-3"><div className="hidden sm:block text-right"><p className="text-[10px] uppercase tracking-widest text-white/40">Partner Support</p><p className="text-[11.5px] text-white/80">feedback@cleartitleone.com · 1800 41 99099</p></div><a href="/cp-registration" className="rounded-lg border border-[#DDAA42]/60 px-3 py-2 text-[11px] font-bold text-[#F2C052] hover:bg-white/10">CP Registration</a></div>
+        <div className="flex items-center gap-2 sm:gap-3"><div className="hidden md:block text-right"><p className="text-[10px] uppercase tracking-widest text-white/40">Partner Support</p><p className="text-[11.5px] text-white/80">feedback@cleartitleone.com · 1800 41 99099</p></div><a href="/cp-registration" className="rounded-lg border border-[#DDAA42]/60 px-2.5 sm:px-3 py-2 text-[10px] sm:text-[11px] font-bold text-[#F2C052] hover:bg-white/10">CP Registration</a><a href="/cp-dashboard" className="rounded-lg bg-[#DDAA42] px-2.5 sm:px-3 py-2 text-[10px] sm:text-[11px] font-bold text-[#0B1328] hover:bg-[#F2C052]">CP Dashboard</a></div>
       </div>
     </header>
 

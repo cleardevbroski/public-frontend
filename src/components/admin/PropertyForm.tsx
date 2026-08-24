@@ -66,6 +66,7 @@ import { initialCommercialDetails } from "@/lib/commercialDetails";
 import { initialPgDetails } from "@/lib/pgDetails";
 import { mergeQuickFill, type QuickFillPatch } from "@/lib/propertyQuickFill";
 import { mergeUploadedMedia } from "@/lib/propertyMediaState";
+import type { PropertySubmissionProfileInput } from "@/components/property/PropertyPosterProfileForm";
 
 const steps = [
   { id: 1, label: "Basic Details", icon: Building2 },
@@ -241,6 +242,7 @@ interface PropertyFormProps {
   mode?: "admin" | "public";
   initialData?: Partial<FormData>;
   submissionId?: string;
+  submissionProfile?: PropertySubmissionProfileInput;
 }
 
 /** Keep only information entered in the form. Empty fields must not become
@@ -282,7 +284,7 @@ function mergeInitialData(initialData?: Partial<FormData>): FormData {
   };
 }
 
-export default function PropertyForm({ mode = "admin", initialData, submissionId }: PropertyFormProps) {
+export default function PropertyForm({ mode = "admin", initialData, submissionId, submissionProfile }: PropertyFormProps) {
   const navigate = useNavigate();
   const isPublic = mode === "public";
   const isAdminEdit = !isPublic && Boolean(submissionId);
@@ -309,6 +311,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     heroImages: (formData.heroImages || []).slice(0, 3),
     // Retain the original submitter when an admin edits a customer listing.
     submittedBy: formData.submittedBy || (isPublic ? "user" : "admin"),
+    ...(isPublic && submissionProfile ? { submissionProfile } : {}),
   }) || {};
 
   useEffect(() => {
@@ -671,6 +674,8 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
             id: _id,
             _id: _mongoId,
             postedBy: _postedBy,
+            propertyPoster: _propertyPoster,
+            submissionProfile: _submissionProfile,
             postedDate: _postedDate,
             submittedBy: _submittedBy,
             published: _published,

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, Building2, CheckCircle2, ChevronLeft, ChevronRight, Eye, FileText, Loader2, LockKeyhole, RefreshCw, Search, ShieldCheck, UserRound, XCircle } from "lucide-react";
+import { AlertCircle, Building2, CheckCircle2, ChevronLeft, ChevronRight, Eye, FileText, Loader2, LockKeyhole, RefreshCw, Search, ShieldCheck, Trash2, UserRound, XCircle } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { addChannelPartnerNote, fetchAdminChannelPartnerClients, fetchChannelPartner, fetchChannelPartners, resendChannelPartnerRegistrationEmail, updateChannelPartnerStatus } from "@/lib/api";
+import { addChannelPartnerNote, deleteChannelPartner, fetchAdminChannelPartnerClients, fetchChannelPartner, fetchChannelPartners, resendChannelPartnerRegistrationEmail, updateChannelPartnerStatus } from "@/lib/api";
 import type { ChannelPartnerApplication, ChannelPartnerStatus, ChannelPartnerType, PartnerDocument } from "@/lib/channelPartnerTypes";
 
 type ListPartner = { id: string; applicationNumber: string; partnerType: ChannelPartnerType; companyName: string; businessType: string; panMasked: string; reraNumber: string; contactName: string; mobile: string; email: string; city: string; state: string; accountLast4: string; status: ChannelPartnerStatus; submittedAt: string };
@@ -30,6 +30,7 @@ export default function AdminChannelPartners() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [reason, setReason] = useState("");
 
   const load = async () => {
@@ -61,6 +62,21 @@ export default function AdminChannelPartners() {
     catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to add note"); }
     finally { setBusy(false); }
   };
+  const remove = async () => {
+    if (!selected?.id) return;
+    const partnerName = selected.company.name;
+    const confirmed = window.confirm(`Delete ${partnerName}?\n\nThis permanently deletes the Channel Partner account, its registered client records, and related clash history. The partner can register again afterward.`);
+    if (!confirmed) return;
+    setBusy(true); setError(""); setNotice("");
+    try {
+      const result = await deleteChannelPartner(selected.id);
+      setSelected(null);
+      setReason("");
+      setNotice(result.message || `${partnerName} was deleted and can register again.`);
+      await load();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to delete channel partner"); }
+    finally { setBusy(false); }
+  };
   const total = useMemo(() => Object.values(counts).reduce((sum, count) => sum + count, 0), [counts]);
 
   return <AdminLayout>
@@ -68,18 +84,19 @@ export default function AdminChannelPartners() {
     <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-2 mb-5">{filters.map((item) => <button key={item} onClick={() => { setFilter(item); setPage(1); }} className={`rounded-xl border p-3 text-left ${filter === item ? "border-[#DDAA42] bg-[#FFF8E8]" : "border-[#E4E0E7] bg-white"}`}><span className="block text-[10px] uppercase font-bold text-[#68646F]">{item === "all" ? "All" : statusLabels[item]}</span><strong className="text-xl text-[#121B35]">{item === "all" ? total : counts[item] || 0}</strong></button>)}</div>
     <div className="relative max-w-xl mb-5"><Search className="absolute left-3.5 top-3 size-4 text-[#8A8690]" /><input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="w-full h-10 rounded-xl border border-[#E4E0E7] bg-white pl-10 pr-4 text-[13px] outline-none focus:border-[#DDAA42]" placeholder="Search application, company or partner, contact, email, mobile or RERA..." /></div>
     {error && <div role="alert" className="mb-4 rounded-xl bg-red-50 border border-red-200 p-3 text-[13px] text-red-700 flex gap-2"><AlertCircle className="size-4 mt-0.5" />{error}</div>}
+    {notice && <div role="status" className="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-[13px] text-emerald-700 flex gap-2"><CheckCircle2 className="size-4 mt-0.5" />{notice}</div>}
     <div className="grid xl:grid-cols-[minmax(0,1fr)_470px] gap-5 items-start">
       <div className="bg-white rounded-2xl border border-[#E4E0E7] overflow-hidden">
         {loading ? <div className="p-14 flex justify-center"><Loader2 className="size-7 animate-spin text-[#DDAA42]" /></div> : partners.length === 0 ? <div className="p-14 text-center"><Building2 className="size-9 text-[#D8D4DC] mx-auto" /><p className="text-[13px] text-[#68646F] mt-3">No applications match this view.</p></div> : <div className="overflow-x-auto"><table className="w-full min-w-[820px] text-left"><thead><tr className="bg-[#F8F7FA] text-[10.5px] uppercase tracking-wide text-[#68646F]"><th className="p-4">Application</th><th className="p-4">Partner / Contact</th><th className="p-4">Location</th><th className="p-4">Submitted</th><th className="p-4">Status</th><th className="p-4"></th></tr></thead><tbody className="divide-y divide-[#F3F1F5]">{partners.map((partner) => <tr key={partner.id} className={selected?.id === partner.id ? "bg-[#FFFDF7]" : "hover:bg-[#FAFAFB]"}><td className="p-4"><strong className="block text-[12px] text-[#121B35]">{partner.applicationNumber}</strong><span className="text-[10.5px] text-[#8A8690]">PAN {partner.panMasked}</span></td><td className="p-4"><strong className="block text-[13px] text-[#121B35]">{partner.companyName}</strong><span className="inline-flex mt-1 rounded-md bg-[#F1F4FA] px-1.5 py-0.5 text-[9px] font-bold uppercase text-[#596277]">{partner.partnerType === "individual" ? "Individual" : "Company / Firm"}</span><span className="block mt-1 text-[11px] text-[#68646F]">{partner.contactName} · {partner.mobile}</span></td><td className="p-4 text-[12px] text-[#3F3D46]">{partner.city}, {partner.state}</td><td className="p-4 text-[12px] text-[#3F3D46]">{new Date(partner.submittedAt).toLocaleDateString()}</td><td className="p-4"><StatusBadge status={partner.status} /></td><td className="p-4"><button onClick={() => void open(partner.id)} className="size-8 rounded-lg border border-[#E4E0E7] inline-flex items-center justify-center" title="Review application"><Eye className="size-4" /></button></td></tr>)}</tbody></table></div>}
         <div className="h-14 px-4 border-t border-[#E4E0E7] flex items-center justify-between"><span className="text-[11px] text-[#68646F]">Page {page} of {pages}</span><div className="flex gap-2"><button disabled={page <= 1} onClick={() => setPage((v) => v - 1)} className="size-8 rounded-lg border border-[#E4E0E7] inline-flex items-center justify-center disabled:opacity-40"><ChevronLeft className="size-4" /></button><button disabled={page >= pages} onClick={() => setPage((v) => v + 1)} className="size-8 rounded-lg border border-[#E4E0E7] inline-flex items-center justify-center disabled:opacity-40"><ChevronRight className="size-4" /></button></div></div>
       </div>
-      <aside className="bg-white rounded-2xl border border-[#E4E0E7] p-5 xl:sticky xl:top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">{detailLoading ? <div className="p-12 flex justify-center"><Loader2 className="size-7 animate-spin text-[#DDAA42]" /></div> : selected ? <PartnerDetail partner={selected} reason={reason} setReason={setReason} act={act} addNote={addNote} busy={busy} /> : <div className="py-14 text-center"><Eye className="size-9 mx-auto text-[#D8D4DC]" /><p className="text-[13px] text-[#68646F] mt-3">Select an application to review.</p></div>}</aside>
+      <aside className="bg-white rounded-2xl border border-[#E4E0E7] p-5 xl:sticky xl:top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">{detailLoading ? <div className="p-12 flex justify-center"><Loader2 className="size-7 animate-spin text-[#DDAA42]" /></div> : selected ? <PartnerDetail partner={selected} reason={reason} setReason={setReason} act={act} addNote={addNote} remove={remove} busy={busy} /> : <div className="py-14 text-center"><Eye className="size-9 mx-auto text-[#D8D4DC]" /><p className="text-[13px] text-[#68646F] mt-3">Select an application to review.</p></div>}</aside>
     </div>
   </AdminLayout>;
 }
 
 function StatusBadge({ status }: { status: ChannelPartnerStatus }) { const tone = status === "active" || status === "approved" ? "bg-emerald-50 text-emerald-700" : status === "rejected" || status === "suspended" ? "bg-red-50 text-red-700" : status === "changes_requested" ? "bg-amber-50 text-amber-800" : "bg-[#F1F4FA] text-[#273559]"; return <span className={`inline-flex px-2 py-1 rounded-lg text-[10.5px] font-bold ${tone}`}>{statusLabels[status]}</span>; }
-function PartnerDetail({ partner, reason, setReason, act, addNote, busy }: { partner: ChannelPartnerApplication; reason: string; setReason: (value: string) => void; act: (status: ChannelPartnerStatus) => void; addNote: () => void; busy: boolean }) {
+function PartnerDetail({ partner, reason, setReason, act, addNote, remove, busy }: { partner: ChannelPartnerApplication; reason: string; setReason: (value: string) => void; act: (status: ChannelPartnerStatus) => void; addNote: () => void; remove: () => void; busy: boolean }) {
   const [showBank, setShowBank] = useState(false);
   const [emailBusy, setEmailBusy] = useState(false);
   const [emailMessage, setEmailMessage] = useState("");
@@ -101,6 +118,7 @@ function PartnerDetail({ partner, reason, setReason, act, addNote, busy }: { par
     {!!partner.internalNotes?.length && <Section title="Internal Notes"><div className="space-y-2">{partner.internalNotes.map((entry,index)=><div key={entry._id || index} className="rounded-lg bg-[#F8F7FA] p-2 text-[11.5px] text-[#3F3D46]">{entry.note}<time className="block text-[9.5px] text-[#9A96A0] mt-1">{new Date(entry.createdAt).toLocaleString()}</time></div>)}</div></Section>}
     <div className="mt-5"><label className="text-[11px] uppercase font-bold text-[#68646F]">Review reason or internal note</label><textarea value={reason} onChange={(e)=>setReason(e.target.value)} className="mt-1 w-full h-24 rounded-xl border border-[#E4E0E7] p-3 text-[12px] outline-none focus:border-[#DDAA42] resize-none" placeholder="Required for changes, rejection, or suspension..." /><button disabled={busy || !reason.trim()} onClick={addNote} className="mt-2 h-9 px-3 rounded-lg border border-[#E4E0E7] text-[11px] font-bold disabled:opacity-40">Save as internal note</button></div>
     <div className="grid grid-cols-2 gap-2 mt-4">{(partner.status ? nextActions[partner.status] || [] : []).map((action) => <button key={action.status} disabled={busy} onClick={() => act(action.status)} className={`min-h-10 px-3 rounded-xl text-[11px] font-bold inline-flex items-center justify-center gap-1.5 disabled:opacity-50 ${action.tone}`}>{action.status === "approved" ? <CheckCircle2 className="size-3.5" /> : action.status === "rejected" || action.status === "suspended" ? <XCircle className="size-3.5" /> : <ShieldCheck className="size-3.5" />}{action.label}</button>)}</div>
+    <div className="mt-5 pt-4 border-t border-red-100"><button disabled={busy} onClick={remove} className="w-full min-h-10 px-3 rounded-xl border border-red-200 bg-red-50 text-[11px] font-bold text-red-700 inline-flex items-center justify-center gap-2 disabled:opacity-50"><Trash2 className="size-4" />{busy ? "Please wait..." : "Delete Channel Partner"}</button><p className="mt-2 text-[10.5px] leading-relaxed text-[#8A8690]">Permanently removes this partner and related client records. Their PAN and RERA details can then be used for a new registration.</p></div>
   </div>;
 }
 function PartnerClients({ partnerId }: { partnerId: string }) {

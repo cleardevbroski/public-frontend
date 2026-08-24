@@ -14,23 +14,23 @@ beforeEach(() => {
 describe("api client", () => {
   it("does not duplicate /api when VITE_API_URL includes it", async () => {
     vi.stubEnv("VITE_API_URL", "https://backend.example.com/api/");
-    const fetchMock = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ mode: "sms" }) }) as Response);
+    const fetchMock = vi.fn(async () => ({ ok: true, status: 201, json: async () => ({ token: "guest-token", user: { role: "guest" } }) }) as Response);
     vi.stubGlobal("fetch", fetchMock);
     vi.resetModules();
 
-    const { sendOtp } = await import("@/lib/api");
-    await sendOtp("9876543210");
+    const { createManualSession } = await import("@/lib/api");
+    await createManualSession({ name: "Asha Rao", email: "asha@example.com", phone: "9876543210" });
 
     const callArgs = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    expect(callArgs[0]).toBe("https://backend.example.com/api/auth/send-otp");
+    expect(callArgs[0]).toBe("https://backend.example.com/api/auth/manual-session");
     vi.unstubAllEnvs();
     vi.resetModules();
   });
 
-  it("turns an empty OTP response into a configuration error", async () => {
+  it("turns an empty manual-session response into a configuration error", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 502, json: async () => { throw new SyntaxError("Unexpected end of JSON input"); } }) as unknown as Response));
-    const { sendOtp } = await import("@/lib/api");
-    await expect(sendOtp("9876543210")).rejects.toThrow(/API returned an invalid response/i);
+    const { createManualSession } = await import("@/lib/api");
+    await expect(createManualSession({ name: "Asha Rao", email: "asha@example.com", phone: "9876543210" })).rejects.toThrow(/API returned an invalid response/i);
   });
 
   it("adminLogin stores the returned token", async () => {
@@ -39,6 +39,29 @@ describe("api client", () => {
     const res = await adminLogin("admin", "secret");
     expect(res.token).toBe("jwt-123");
     expect(localStorage.getItem("cleartitle_admin_token")).toBe("jwt-123");
+  });
+
+  it("starts Truecaller verification with a server-generated request", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 201,
+      json: async () => ({ requestId: "secure-request-id", deepLink: "truecallersdk://verify" }),
+    }) as Response);
+    vi.stubGlobal("fetch", fetchMock);
+    const { startTruecallerVerification } = await import("@/lib/api");
+    const result = await startTruecallerVerification("login");
+    const callArgs = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+
+    expect(result.requestId).toBe("secure-request-id");
+    expect(callArgs[0]).toBe("http://localhost:5000/api/auth/truecaller/start");
+    expect(callArgs[1]).toMatchObject({ method: "POST", body: JSON.stringify({ purpose: "login" }) });
+  });
+
+  it("stores a customer token only after Truecaller status is verified", async () => {
+    mockFetchOnce({ status: "verified", token: "truecaller-jwt", user: { phone: "9876543210" } });
+    const { getTruecallerVerificationStatus } = await import("@/lib/api");
+    await getTruecallerVerificationStatus("secure-request-id");
+    expect(localStorage.getItem("cleartitle_token")).toBe("truecaller-jwt");
   });
 
   it("uses the customer token for My Properties while an admin session is active", async () => {
@@ -69,6 +92,18 @@ describe("api client", () => {
     mockFetchOnce({ error: "Slug already in use" }, false, 400);
     const { createDealer } = await import("@/lib/api");
     await expect(createDealer({ name: "X", slug: "dupe" })).rejects.toThrow("Slug already in use");
+  });
+
+  it("preserves a specific backend message for a missing resource", async () => {
+    mockFetchOnce({ error: "Property not found" }, false, 404);
+    const { fetchAdminProperty } = await import("@/lib/api");
+    await expect(fetchAdminProperty("missing-property")).rejects.toThrow("Property not found");
+  });
+
+  it("identifies a missing API route when the backend returns its generic 404", async () => {
+    mockFetchOnce({ error: "Route not found" }, false, 404);
+    const { fetchPropertyIngestionReview } = await import("@/lib/api");
+    await expect(fetchPropertyIngestionReview("property-1")).rejects.toThrow(/API route not found/i);
   });
 
   it("normalizes MongoDB property _id values for frontend selectors and links", async () => {

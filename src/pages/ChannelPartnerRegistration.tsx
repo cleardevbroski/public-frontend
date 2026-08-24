@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle2, Clock3, KeyRound, LayoutDashboard, Loader2, ShieldCheck, UserPlus, UsersRound } from "lucide-react";
-import { fetchChannelPartnerProjects, fetchMyChannelPartnerClients, registerChannelPartnerClient, verifyChannelPartnerCode } from "@/lib/api";
+import { clearChannelPartnerSession, fetchChannelPartnerProfile, fetchChannelPartnerProjects, fetchMyChannelPartnerClients, hasChannelPartnerSession, registerChannelPartnerClient, verifyChannelPartnerCode } from "@/lib/api";
 import { useDocumentTitle } from "@/useDocumentTitle";
 
 type Project = { id: string; title: string; area?: string };
@@ -29,6 +29,22 @@ export default function ChannelPartnerRegistration() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<RegistrationResult | null>(null);
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+
+  useEffect(() => {
+    if (!hasChannelPartnerSession()) return;
+    let current = true;
+    setBusy(true);
+    Promise.all([fetchChannelPartnerProfile(), fetchChannelPartnerProjects(), fetchMyChannelPartnerClients()])
+      .then(([profileData, projectData, clientData]) => {
+        if (!current) return;
+        setPartner(profileData.partner);
+        setProjects(projectData.projects || []);
+        setClients(clientData.clients || []);
+      })
+      .catch(() => { if (current) clearChannelPartnerSession(); })
+      .finally(() => { if (current) setBusy(false); });
+    return () => { current = false; };
+  }, []);
 
   const verify = async (event: React.FormEvent) => {
     event.preventDefault(); setBusy(true); setError(""); setSuccess(null);
@@ -68,7 +84,7 @@ export default function ChannelPartnerRegistration() {
   return <div className="min-h-[100dvh] bg-[#EFF1F4] text-[#3F3D46]">
     <header className="border-b border-[#DDAA42]/25 bg-[#0B1328]"><div className="mx-auto flex max-w-[1100px] items-center justify-between px-4 py-4"><div className="flex items-center gap-3"><img src="/cleartitleone/logo.png" alt="ClearTitle One" className="size-11 rounded-full ring-2 ring-[#DDAA42]/60" /><div><p className="text-[17px] font-bold text-white">Clear<span className="text-[#F2C052]">Title</span><span className="text-[#DDAA42]">One</span></p><p className="text-[10px] uppercase tracking-[.14em] text-white/50">Channel Partner Client Registration</p></div></div><nav className="flex items-center gap-2" aria-label="Channel Partner"><a href="/cp-dashboard" className="rounded-lg border border-white/20 px-3 py-2 text-xs font-bold text-white/80 hover:border-[#DDAA42] hover:text-[#F2C052]">Dashboard</a><a href="/cp-registration" className="rounded-lg bg-[#DDAA42] px-3 py-2 text-xs font-bold text-[#0B1328]">Register Client</a></nav></div></header>
     <main className="mx-auto max-w-[1100px] px-4 py-10">
-      <section className="overflow-hidden rounded-3xl border border-[#E4E0E7] bg-white shadow-xl shadow-[#121B35]/5"><div className="border-b border-[#E4E0E7] bg-[#FFFDF7] p-6 md:p-8"><div className="flex gap-3"><span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[#FFF1C8]"><KeyRound className="size-6 text-[#9A6A13]" /></span><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#B88422]">One-page registration</p><h1 className="mt-1 text-2xl font-bold text-[#121B35]">Register your clients</h1><p className="mt-1 text-sm text-[#68646F]">Enter your code, see your partner details, and add as many clients as needed.</p></div></div><form onSubmit={verify} className="mt-6 grid gap-3 md:grid-cols-[minmax(0,1fr)_160px]"><input value={code} onChange={(event) => updateCode(event.target.value)} placeholder="Enter Channel Partner Code, e.g. CT-0001" className={`${inputClass} font-bold tracking-[.12em]`} required /><button disabled={busy || !code.trim()} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#0B1328] px-5 text-sm font-bold text-white disabled:opacity-50">{busy ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}{partner ? "Verify again" : "Show partner details"}</button></form>{error && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-xs text-red-700">{error}</p>}{partner && <div className="mt-5"><div className="grid gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 sm:grid-cols-2 lg:grid-cols-4"><Detail label="Partner" value={partner.name} /><Detail label="Contact" value={partner.contactName} /><Detail label="Mobile" value={partner.mobile} /><Detail label="Email" value={partner.email} /><Detail label="Location" value={`${partner.city}, ${partner.state}`} /><Detail label="Partner type" value={partner.type === "individual" ? "Individual Partner" : "Company / Firm"} /><Detail label="Partner code" value={partner.code} /></div><a href="/cp-dashboard" className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-[#0B1328] px-4 text-xs font-bold text-white"><LayoutDashboard className="size-4" />View Dashboard</a></div>}</div>
+      <section className="overflow-hidden rounded-3xl border border-[#E4E0E7] bg-white shadow-xl shadow-[#121B35]/5"><div className="border-b border-[#E4E0E7] bg-[#FFFDF7] p-6 md:p-8"><div className="flex gap-3"><span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[#FFF1C8]"><KeyRound className="size-6 text-[#9A6A13]" /></span><div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#B88422]">One-page registration</p><h1 className="mt-1 text-2xl font-bold text-[#121B35]">Register your clients</h1><p className="mt-1 text-sm text-[#68646F]">{partner ? "Your authenticated Channel Partner account is ready." : "Enter your code, see your partner details, and add as many clients as needed."}</p></div></div>{!partner && <form onSubmit={verify} className="mt-6 grid gap-3 md:grid-cols-[minmax(0,1fr)_160px]"><input value={code} onChange={(event) => updateCode(event.target.value)} placeholder="Enter Channel Partner Code, e.g. CT-0001" className={`${inputClass} font-bold tracking-[.12em]`} required /><button disabled={busy || !code.trim()} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#0B1328] px-5 text-sm font-bold text-white disabled:opacity-50">{busy ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}Show partner details</button></form>}{error && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-xs text-red-700">{error}</p>}{partner && <div className="mt-5"><div className="grid gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 sm:grid-cols-2 lg:grid-cols-4"><Detail label="Partner" value={partner.name} /><Detail label="Contact" value={partner.contactName} /><Detail label="Mobile" value={partner.mobile} /><Detail label="Email" value={partner.email} /><Detail label="Location" value={`${partner.city}, ${partner.state}`} /><Detail label="Partner type" value={partner.type === "individual" ? "Individual Partner" : "Company / Firm"} /><Detail label="Partner code" value={partner.code} /></div><div className="mt-3 flex flex-wrap gap-2"><a href="/cp-dashboard" className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0B1328] px-4 text-xs font-bold text-white"><LayoutDashboard className="size-4" />View Dashboard</a><button onClick={() => { clearChannelPartnerSession(); setPartner(null); setClients([]); setProjects([]); }} className="inline-flex h-10 items-center rounded-xl border border-[#D8D4DC] px-4 text-xs font-bold text-[#68646F]">Use another CP code</button></div></div>}</div>
         <div className="grid items-start gap-6 p-6 md:p-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <form onSubmit={submit} className="grid gap-5 md:grid-cols-2">
             <div className="md:col-span-2"><h2 className="text-xl font-bold text-[#121B35]">Client details</h2><p className="mt-1 text-sm text-[#68646F]">{partner ? "Register one client now. After success, use the same form again for the next client." : "Verify the Channel Partner code above to unlock this form."}</p></div>

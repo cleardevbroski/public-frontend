@@ -17,6 +17,7 @@ const FavoritesContext = createContext<FavoritesContextValue | undefined>(undefi
 
 export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const { user, setIsAuthModalOpen } = useAuth();
+  const canUseFavorites = Boolean(user && !["guest", "property_submitter"].includes(user.role || "user") && user.isVerified !== false);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
   const [pendingAfterLogin, setPendingAfterLogin] = useState<string | null>(null);
@@ -24,7 +25,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState("");
 
   const refreshFavorites = useCallback(async () => {
-    if (!user) {
+    if (!canUseFavorites) {
       setFavoriteIds(new Set());
       return;
     }
@@ -38,7 +39,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [canUseFavorites]);
 
   useEffect(() => { void refreshFavorites(); }, [refreshFavorites]);
 
@@ -65,14 +66,14 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!user || !pendingAfterLogin) return;
+    if (!canUseFavorites || !pendingAfterLogin) return;
     const propertyId = pendingAfterLogin;
     setPendingAfterLogin(null);
     void save(propertyId).then(refreshFavorites).catch(() => undefined);
-  }, [pendingAfterLogin, refreshFavorites, save, user]);
+  }, [canUseFavorites, pendingAfterLogin, refreshFavorites, save]);
 
   const toggleFavorite = async (propertyId: string) => {
-    if (!user) {
+    if (!canUseFavorites) {
       setPendingAfterLogin(propertyId);
       setIsAuthModalOpen(true);
       return "login_required" as const;

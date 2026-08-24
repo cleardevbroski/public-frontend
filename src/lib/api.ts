@@ -2,7 +2,7 @@
  * API URLs are configured per frontend deployment.  People commonly paste the
  * backend URL from Render with `/api` on the end; every endpoint below already
  * includes that segment, so normalize it here to avoid requests such as
- * `/api/api/auth/send-otp` (which Render correctly returns as a 404).
+ * duplicate `/api/api/...` paths (which Render correctly returns as a 404).
  */
 function getApiBase() {
   const configured = import.meta.env.VITE_API_URL?.trim();
@@ -161,6 +161,10 @@ export async function addChannelPartnerNote(id: string, note: string) {
   return readJson(await apiFetch(`/api/channel-partners/${encodeURIComponent(id)}/notes`, { method: "POST", body: JSON.stringify({ note }) }), "Failed to add internal note");
 }
 
+export async function deleteChannelPartner(id: string) {
+  return readJson(await apiFetch(`/api/channel-partners/${encodeURIComponent(id)}`, { method: "DELETE" }), "Failed to delete channel partner");
+}
+
 export async function verifyChannelPartnerCode(partnerCode: string) {
   const data = await readJson(await apiFetch("/api/channel-partner-leads/session", {
     method: "POST",
@@ -168,6 +172,31 @@ export async function verifyChannelPartnerCode(partnerCode: string) {
   }), "Unable to verify Channel Partner code");
   if (data.token && typeof window !== "undefined") sessionStorage.setItem(CHANNEL_PARTNER_TOKEN_KEY, data.token);
   return data;
+}
+
+export function setChannelPartnerSession(token: string) {
+  if (typeof window !== "undefined" && token) sessionStorage.setItem(CHANNEL_PARTNER_TOKEN_KEY, token);
+}
+
+export async function requestChannelPartnerCodeOtp(email: string) {
+  return readJson(await apiFetch("/api/channel-partner-auth/forgot-code", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  }), "Unable to send the recovery OTP");
+}
+
+export async function resendChannelPartnerCodeOtp(email: string) {
+  return readJson(await apiFetch("/api/channel-partner-auth/resend-otp", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  }), "Unable to resend the recovery OTP");
+}
+
+export async function verifyChannelPartnerRecoveryOtp(email: string, otp: string) {
+  return readJson(await apiFetch("/api/channel-partner-auth/verify-otp", {
+    method: "POST",
+    body: JSON.stringify({ email, otp }),
+  }), "Unable to verify the recovery OTP");
 }
 
 function channelPartnerFetch(endpoint: string, options: RequestInit = {}) {
@@ -185,6 +214,10 @@ export function clearChannelPartnerSession() {
 
 export async function fetchChannelPartnerProjects() {
   return readJson(await channelPartnerFetch("/api/channel-partner-leads/projects"), "Unable to load projects");
+}
+
+export async function fetchChannelPartnerProfile() {
+  return readJson(await channelPartnerFetch("/api/channel-partner-leads/mine/profile"), "Unable to load Channel Partner profile");
 }
 
 export async function fetchMyChannelPartnerClients() {
@@ -229,28 +262,46 @@ export async function updateAdminCPClientStatus(clientId: string, data: Record<s
 
 // ─── Auth API ───────────────────────────────────────────────────
 
-export async function sendOtp(phone: string) {
-  return readJson(await apiFetch("/api/auth/send-otp", {
+export async function createManualSession(details: { name: string; email: string; phone: string }) {
+  const data = await readJson(await apiFetch("/api/auth/manual-session", {
     method: "POST",
-    body: JSON.stringify({ phone }),
-  }), "Failed to send OTP");
+    body: JSON.stringify({ ...details, consent: true }),
+  }), "Unable to save your details");
+  if (data.token) setToken(data.token);
+  return data;
 }
 
-export async function verifyOtp(phone: string, otp: string) {
-  const data = await readJson(await apiFetch("/api/auth/verify-otp", {
-    method: "POST",
-    body: JSON.stringify({ phone, otp }),
-  }), "Failed to verify OTP");
+export type TruecallerPurpose = "login" | "enquiry" | "brochure" | "site_visit" | "contact";
 
-  // Store the JWT token
-  if (data.token) {
-    setToken(data.token);
-  }
+export async function startTruecallerVerification(purpose: TruecallerPurpose = "login") {
+  return readJson(await apiFetch("/api/auth/truecaller/start", {
+    method: "POST",
+    body: JSON.stringify({ purpose }),
+  }), "Unable to start Truecaller verification");
+}
+
+export async function getTruecallerVerificationStatus(requestId: string) {
+  const data = await readJson(await apiFetch(`/api/auth/truecaller/status/${encodeURIComponent(requestId)}`), "Unable to complete Truecaller verification");
+  if (data.token) setToken(data.token);
   return data;
 }
 
 export async function getMe() {
   return readJson(await customerApiFetch("/api/auth/me"), "Failed to get profile");
+}
+
+export async function requestPropertyEmailOtp(email: string) {
+  return readJson(await apiFetch("/api/property-auth/request-otp", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  }), "Unable to send the email verification code");
+}
+
+export async function verifyPropertyEmailOtp(email: string, otp: string) {
+  return readJson(await apiFetch("/api/property-auth/verify-otp", {
+    method: "POST",
+    body: JSON.stringify({ email, otp }),
+  }), "Unable to verify the email code");
 }
 
 export async function updateProfile(updates: { name?: string; email?: string }) {
@@ -479,6 +530,36 @@ export async function uploadPropertyMedia(file: File, kind: "image" | "brochure"
   return data.url;
 }
 
+export type PropertyVerificationPurpose = "company-pan" | "company-rera" | "company-registration" | "individual-pan" | "individual-aadhaar" | "individual-ownership";
+export type PropertyVerificationDocument = { id: string; purpose: PropertyVerificationPurpose; fileName: string; mimeType: string; bytes: number };
+
+export async function uploadPropertyVerificationDocument(file: File, purpose: PropertyVerificationPurpose): Promise<PropertyVerificationDocument> {
+  const res = await customerApiFetch(`/api/property-media?kind=property-verification-document&purpose=${encodeURIComponent(purpose)}`, {
+    method: "POST",
+    headers: { "Content-Type": file.type, "X-File-Name": encodeURIComponent(file.name) },
+    body: file,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Verification document upload failed");
+  return data.document;
+}
+
+export async function downloadPropertyVerificationDocument(documentId: string, fileName: string) {
+  const res = await apiFetch(`/api/property-media/poster-documents/${encodeURIComponent(documentId)}/download`, { method: "GET" });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Verification document download failed");
+  }
+  const url = URL.createObjectURL(await res.blob());
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 export async function downloadProjectFile(propertyId: string, documentId: string, fileName: string) {
   const res = await customerApiFetch(`/api/properties/${encodeURIComponent(propertyId)}/project-downloads/${encodeURIComponent(documentId)}/download`, { method: "GET" });
   if (!res.ok) {
@@ -567,7 +648,7 @@ async function readJson<T = any>(res: Response, fallback: string): Promise<T> {
   } catch {
     throw new Error("The API returned an invalid response. Check VITE_API_URL is your Render backend URL, not the website URL.");
   }
-  if (res.status === 404) {
+  if (res.status === 404 && (!data.error || data.error === "Route not found")) {
     throw new Error("API route not found. Check VITE_API_URL points to the Render backend service.");
   }
   if (!res.ok) throw new Error(data.error || fallback);

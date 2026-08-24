@@ -4,7 +4,7 @@ import LawyerConsultationModal from "@/components/acres/LawyerConsultationModal"
 import { AuthProvider } from "@/components/acres/AuthContext";
 
 describe("property lawyer consultation", () => {
-  it("requires customer identity and OTP before showing the lawyer workflow", () => {
+  it("collects manual customer details before showing the lawyer workflow", () => {
     const html = renderToStaticMarkup(
       <AuthProvider>
         <LawyerConsultationModal
@@ -23,7 +23,8 @@ describe("property lawyer consultation", () => {
     expect(html).toContain("Full name");
     expect(html).toContain("Email / Gmail");
     expect(html).toContain("Mobile number");
-    expect(html).toContain("Get OTP");
+    expect(html).toContain("Save details and view lawyers");
+    expect(html).not.toContain("OTP");
     expect(html).not.toContain("Choose your lawyer");
   });
 });
