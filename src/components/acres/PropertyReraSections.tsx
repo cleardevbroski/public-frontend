@@ -105,8 +105,9 @@ export default function PropertyReraSections({
   onViewChange?: (view: WorkspaceView) => void;
 }) {
   const phases = property.reraPhases || [];
+  const hasProjectDocuments = phases.some((phase) => Boolean(phase.projectDocuments?.length));
   const { user } = useAuth();
-  const [view, setView] = useState<WorkspaceView>(activeView || "rera");
+  const [view, setView] = useState<WorkspaceView>(activeView === "project" && hasProjectDocuments ? "project" : "rera");
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [pending, setPending] = useState<PendingDocument>(null);
   const [downloading, setDownloading] = useState("");
@@ -114,8 +115,8 @@ export default function PropertyReraSections({
   const [expandedPanels, setExpandedPanels] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (activeView) setView(activeView);
-  }, [activeView]);
+    if (activeView) setView(activeView === "project" && !hasProjectDocuments ? "rera" : activeView);
+  }, [activeView, hasProjectDocuments]);
 
   useEffect(() => {
     setPhaseIndex((current) => Math.min(current, Math.max(0, phases.length - 1)));
@@ -163,9 +164,9 @@ export default function PropertyReraSections({
       <div className="flex flex-col gap-3 border-b border-[#E2E5EB] px-4 py-4 md:flex-row md:items-center md:justify-between md:px-5">
         <div><p className="text-[9px] font-bold uppercase tracking-[.12em] text-[#A36B00]">Official project records</p><h2 id="verification-workspace-heading" className="mt-1 text-[19px] font-extrabold tracking-[-.02em] text-[#172039]">RERA &amp; Project Details</h2><p className="mt-1 text-[10px] text-[#687080]">Phase-wise registration and approved project documents.</p></div>
         <div className="flex min-w-0 flex-col gap-2 md:items-end">
-          <nav className="grid grid-cols-2 overflow-hidden rounded-lg border border-[#D8DCE4] bg-[#F7F8FA] p-1" aria-label="Verification details">
+          <nav className={`grid overflow-hidden rounded-lg border border-[#D8DCE4] bg-[#F7F8FA] p-1 ${hasProjectDocuments ? "grid-cols-2" : "grid-cols-1"}`} aria-label="Verification details">
             <button type="button" aria-pressed={view === "rera"} onClick={() => selectView("rera")} className={`inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-3 text-[11px] font-bold transition active:translate-y-px focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#DDAA42] ${view === "rera" ? "bg-[#DDAA42] text-[#121B35] shadow-sm" : "text-[#626A78] hover:bg-white"}`}><FileCheck2 className="size-4" />RERA Details</button>
-            <button type="button" aria-pressed={view === "project"} onClick={() => selectView("project")} className={`inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-3 text-[11px] font-bold transition active:translate-y-px focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#DDAA42] ${view === "project" ? "bg-[#DDAA42] text-[#121B35] shadow-sm" : "text-[#626A78] hover:bg-white"}`}><Building2 className="size-4" />Project Details</button>
+            {hasProjectDocuments && <button type="button" aria-pressed={view === "project"} onClick={() => selectView("project")} className={`inline-flex min-h-9 items-center justify-center gap-2 rounded-md px-3 text-[11px] font-bold transition active:translate-y-px focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#DDAA42] ${view === "project" ? "bg-[#DDAA42] text-[#121B35] shadow-sm" : "text-[#626A78] hover:bg-white"}`}><Building2 className="size-4" />Project Details</button>}
           </nav>
           <div className="flex max-w-full gap-2 overflow-x-auto pb-0.5" aria-label="Project phase">{phases.map((phase, index) => <button key={phase._id || `${phase.name}-${index}`} type="button" aria-pressed={phaseIndex === index} onClick={() => setPhaseIndex(index)} className={`min-h-8 shrink-0 rounded-md px-3 text-[10px] font-bold transition active:translate-y-px focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#DDAA42] ${phaseIndex === index ? "bg-[#172039] text-white" : "border border-[#DFE2E8] bg-white text-[#626A78] hover:border-[#DDAA42]"}`}>{phase.name}</button>)}</div>
         </div>
@@ -188,7 +189,7 @@ export default function PropertyReraSections({
               </div>
             </div>
           </div>
-          <div className="mt-2 flex justify-end" data-testid="download-disclosure">
+          {visibleDocuments.length > 0 && <div className="mt-2 flex justify-end" data-testid="download-disclosure">
             <button
               type="button"
               aria-expanded={downloadsExpanded}
@@ -200,8 +201,8 @@ export default function PropertyReraSections({
               {downloadsExpanded ? "Hide downloads" : "View downloads"}
               <ChevronDown aria-hidden="true" className={`size-3.5 transition-transform ${downloadsExpanded ? "rotate-180" : ""}`} />
             </button>
-          </div>
-          {downloadsExpanded && <div id={panelId} data-testid="phase-downloads" className="mt-4 border-t border-[#E2E5EB] pt-4">
+          </div>}
+          {visibleDocuments.length > 0 && downloadsExpanded && <div id={panelId} data-testid="phase-downloads" className="mt-4 border-t border-[#E2E5EB] pt-4">
             <div className="mb-2.5 flex items-center justify-between gap-3">
               <h3 className="text-[13px] font-extrabold text-[#172039]">{view === "rera" ? "RERA documents" : "Project documents"}</h3>
               <p className="hidden items-center gap-1.5 text-[9px] text-[#687080] sm:flex"><ShieldCheck className="size-3.5 text-[#A36B00]" />Verified access required</p>

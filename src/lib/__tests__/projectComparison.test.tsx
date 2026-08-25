@@ -32,4 +32,15 @@ describe("ProjectComparison", () => {
     expect(html).toContain("PRM/KA/RERA/0002");
     expect(html.match(/<article/g)).toHaveLength(2);
   });
+
+  it("omits comparison rows that are missing from either property", () => {
+    const current = property("current", "Century Jakkur", "PRM/KA/RERA/0001");
+    const candidate = { ...property("candidate", "Jakkur Heights", "PRM/KA/RERA/0002"), price: "", configs: [], area: "", possession: "", projectArea: undefined, totalUnits: undefined };
+    const html = renderToStaticMarkup(<ProjectComparison current={current} matches={[{ property: candidate, score: 70, reasons: ["same locality"] }]} />);
+
+    expect(html).toContain("RERA No.");
+    expect(html).not.toContain(">Price</dt>");
+    expect(html).not.toContain(">Configuration</dt>");
+    expect(html).not.toContain("Not provided");
+  });
 });

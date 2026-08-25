@@ -97,14 +97,13 @@ export default function FloorPlanExplorer({
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C19A3C]">Unit plans</p>
             <h2 id="floor-plan-heading" className="mt-0.5 text-[20px] font-bold text-[#12172B]">Floor Plans &amp; Pricing</h2>
           </div>
-          <button
+          {hasAny3dPlan && <button
             type="button"
             onClick={openFirst3dPlan}
-            disabled={!hasAny3dPlan}
-            className="inline-flex items-center gap-2 rounded-lg border border-[#121B35] px-4 py-2.5 text-[12px] font-bold text-[#121B35] transition-colors hover:bg-[#121B35] hover:text-white disabled:cursor-not-allowed disabled:border-[#C8D1E1] disabled:text-[#9AA5B8] disabled:hover:bg-white"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#121B35] px-4 py-2.5 text-[12px] font-bold text-[#121B35] transition-colors hover:bg-[#121B35] hover:text-white"
           >
             <Sparkles className="size-4" /> View Homes in 3D
-          </button>
+          </button>}
         </div>
 
         <div className="mt-3 flex gap-1 overflow-x-auto border-b border-[#E7E3EA]" role="tablist" aria-label="Apartment configurations">

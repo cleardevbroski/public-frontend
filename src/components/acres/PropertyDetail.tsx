@@ -26,7 +26,6 @@ import {
   School,
   Hospital,
   ShoppingBag,
-  Navigation,
   Scale,
   ShieldCheck,
   Download,
@@ -34,8 +33,6 @@ import {
   FileText,
   Sparkles,
   Compass,
-  Star,
-  TrendingUp,
   BarChart3,
   Play,
   Tag,
@@ -45,7 +42,6 @@ import Footer from "./Footer";
 import PropertyCard from "./PropertyCard";
 import PopularBuilders from "./PopularBuilders";
 import type { Property } from "./mock-data";
-import { localityInsights } from "./mock-data";
 import {
   getPublishedProperties,
   getFeaturedProperties,
@@ -71,10 +67,10 @@ import PropertyReraSections from "./PropertyReraSections";
 import ProjectAbout from "./ProjectAbout";
 import ProjectMasterPlan from "./ProjectMasterPlan";
 import ProjectDownloadHub from "./ProjectDownloadHub";
-import ProjectComparison from "./ProjectComparison";
+import ProjectComparison, { hasProjectComparisonContent } from "./ProjectComparison";
 import ProjectFaqs from "./ProjectFaqs";
 import ProjectBuilderProfile from "./ProjectBuilderProfile";
-import { formatAreaRange, formatPossessionDateOnly, propertyAreaRange, rankComparableProperties, type AreaUnit } from "@/lib/projectEnhancements";
+import { formatAreaRange, formatPossessionDateOnly, projectFaqs, propertyAreaRange, rankComparableProperties, type AreaUnit } from "@/lib/projectEnhancements";
 import { submitPropertyActivity, type PropertyActivity } from "@/lib/clientActivity";
 import { usePropertyActivity } from "@/lib/usePropertyActivity";
 import FavoriteButton from "./FavoriteButton";
@@ -441,12 +437,6 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const pools = useLiveProperties<Pools>(() => buildPools(property), EMPTY_POOLS);
   const comparisonMatches = rankComparableProperties(property, getPublishedProperties(), 2);
 
-  // Nearest matching locality insight for the price-trend strip.
-  const localityKey = (property.subtitle?.split(",")[0] || "").toLowerCase();
-  const insight = localityKey
-    ? localityInsights.find((l) => localityKey.includes(l.name.toLowerCase())) || localityInsights.find((l) => l.name.toLowerCase().includes(localityKey))
-    : undefined;
-
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const setSectionRef = (id: string) => (el: HTMLDivElement | null) => {
     sectionRefs.current[id] = el;
@@ -512,25 +502,35 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const hasBrochure = Boolean(property.brochure || property.projectDownloads?.length);
   const hasMasterPlan = Boolean(property.masterPlan?.imageUrl || property.masterPlan?.summary || property.masterPlan?.sections?.length || property.plotDetails?.layoutMapUrl);
   const hasReraPhases = Boolean(property.reraRegistered && property.reraPhases?.length);
+  const hasProjectDocuments = Boolean(property.reraPhases?.some((phase) => phase.projectDocuments?.length));
   const hasFacilities = amenities.length > 0 || Boolean(property.facilities?.length);
-  const hasLocalityContent = Boolean(
-    property.localityMapImageUrl ||
-    property.locality?.address ||
-    insight ||
+  const hasNearbyPlaces = Boolean(
     (property.nearbyAmenities && Object.values(property.nearbyAmenities).some(Boolean)) ||
     (property.nearbyDetails && Object.values(property.nearbyDetails).some((item) => item && (item.places?.length || item.count !== undefined || item.distance)))
   );
+  const hasDetailedNearbyPlaces = Boolean(property.nearbyDetails && Object.values(property.nearbyDetails).some((item) => item?.places?.length));
+  const hasLocalityContent = Boolean(
+    property.localityMapImageUrl ||
+    property.locality?.address ||
+    hasNearbyPlaces
+  );
+  const hasComparison = hasProjectComparisonContent(property, comparisonMatches);
+  const hasSimilarProjects = pools.similar.length > 0;
+  const hasFaqs = projectFaqs(property).length > 0;
   const visibleSections = PROPERTY_HERO_SECTION_ORDER.filter((section) =>
     (section.id !== "price-list" || hasPriceList) &&
     (section.id !== "floor-plans" || hasFloorPlans) &&
     (section.id !== "master-plan" || hasMasterPlan) &&
     (section.id !== "photos-videos" || hasPhotosOrVideos) &&
-    (!["rera-details", "project-details"].includes(section.id) || hasReraPhases) &&
+    (section.id !== "rera-details" || hasReraPhases) &&
+    (section.id !== "project-details" || hasProjectDocuments) &&
     (section.id !== "facilities" || hasFacilities) &&
     (section.id !== "dealer" || Boolean(property.builder || property.developerLogoUrl)) &&
-    (section.id !== "comparison" || comparisonMatches.length > 0) &&
+    (section.id !== "comparison" || hasComparison) &&
     (section.id !== "brochure" || hasBrochure) &&
-    (section.id !== "locality" || hasLocalityContent)
+    (section.id !== "locality" || hasLocalityContent) &&
+    (section.id !== "explore" || hasSimilarProjects) &&
+    (section.id !== "faq" || hasFaqs)
   );
 
   useEffect(() => {
@@ -552,7 +552,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [hasBrochure, hasFacilities, hasFloorPlans, hasLocalityContent, hasMasterPlan, hasPhotosOrVideos, hasPriceList, hasReraPhases, reraWorkspaceView]);
+  }, [hasBrochure, hasComparison, hasFacilities, hasFaqs, hasFloorPlans, hasLocalityContent, hasMasterPlan, hasPhotosOrVideos, hasPriceList, hasProjectDocuments, hasReraPhases, hasSimilarProjects, reraWorkspaceView]);
 
   const scrollToSection = (sectionId: string) => {
     const element = sectionRefs.current[sectionId] || (sectionId === "project-details" ? sectionRefs.current["rera-details"] : null);
@@ -794,6 +794,13 @@ const whyHighlights = (property.description || "")
   if (whyHighlights.length < 2 && property.configs?.length) {
     whyHighlights.push(`${property.configs.join(", ")} configurations are available in this project.`);
   }
+  const projectStatus = property.possessionDetails?.status || property.possession || "";
+  const possessionDateValue = possessionDate === "—" ? "" : possessionDate;
+  const areaBreakdownRows = [
+    property.projectArea?.openSpaceAcres !== undefined ? { label: "Open Space Area", value: `${property.projectArea.openSpaceAcres} acres` } : null,
+    property.projectArea?.builtUpAcres !== undefined ? { label: "Built-up Footprint Area", value: `${property.projectArea.builtUpAcres} acres` } : null,
+  ].filter((item): item is { label: string; value: string } => Boolean(item));
+  const hasAreaBreakdown = areaBreakdownRows.length > 0;
 
   return (
     <div className="property-detail-page min-h-screen">
@@ -921,7 +928,7 @@ const whyHighlights = (property.description || "")
             }}
           />
           <VillaLocationPriceComparison property={property} />
-        </div> : <div className="property-reference-summary mt-3 grid overflow-hidden rounded-xl border border-[#DDE2EA] bg-white lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.9fr)]">
+        </div> : <div className={`property-reference-summary mt-3 grid overflow-hidden rounded-xl border border-[#DDE2EA] bg-white ${whyHighlights.length ? "lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.9fr)]" : ""}`}>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E8EE] px-4 py-4 md:px-5">
               <div className="flex flex-wrap items-center gap-2">
@@ -933,22 +940,22 @@ const whyHighlights = (property.description || "")
               </div>
               {hasPriceList && <button type="button" onClick={() => scrollToSection("price-list")} className="inline-flex items-center gap-2 rounded-lg border border-[#E7D4A7] bg-[#FFF7E6] px-3 py-2 text-[12px] font-bold text-[#303A50]"><BarChart3 className="size-4" /> Price Insights <ChevronRight className="size-4" /></button>}
             </div>
-            <div className="grid border-b border-[#E5E8EE] sm:grid-cols-2">
-              <div className="flex items-center gap-3 px-4 py-4 md:px-5"><Building2 className="size-7 shrink-0 text-[#56627A]" strokeWidth={1.6} /><div><p className="text-[11px] text-[#667085]">Project Status</p><p className="text-[14px] font-extrabold text-[#172039]">{property.possessionDetails?.status || property.possession || "Available"}</p></div></div>
-              <div className="flex items-center gap-3 border-t border-[#E5E8EE] px-4 py-4 sm:border-l sm:border-t-0 md:px-5"><Clock className="size-7 shrink-0 text-[#56627A]" strokeWidth={1.6} /><div><p className="text-[11px] text-[#667085]">Possession Starting From</p><p className="text-[14px] font-extrabold text-[#172039]">{possessionDate}</p></div>{hasReraPhases && <button type="button" onClick={() => scrollToSection("rera-details")} className="ml-auto rounded-lg border border-[#E7D4A7] bg-[#FFF7E6] px-2.5 py-1.5 text-[10px] font-bold text-[#4C566A]">RERA Updates</button>}</div>
-            </div>
+            {(projectStatus || possessionDateValue) && <div className={`grid border-b border-[#E5E8EE] ${projectStatus && possessionDateValue ? "sm:grid-cols-2" : ""}`}>
+              {projectStatus && <div className="flex items-center gap-3 px-4 py-4 md:px-5"><Building2 className="size-7 shrink-0 text-[#56627A]" strokeWidth={1.6} /><div><p className="text-[11px] text-[#667085]">Project Status</p><p className="text-[14px] font-extrabold text-[#172039]">{projectStatus}</p></div></div>}
+              {possessionDateValue && <div className={`flex items-center gap-3 px-4 py-4 md:px-5 ${projectStatus ? "border-t border-[#E5E8EE] sm:border-l sm:border-t-0" : ""}`}><Clock className="size-7 shrink-0 text-[#56627A]" strokeWidth={1.6} /><div><p className="text-[11px] text-[#667085]">Possession Starting From</p><p className="text-[14px] font-extrabold text-[#172039]">{possessionDateValue}</p></div>{hasReraPhases && <button type="button" onClick={() => scrollToSection("rera-details")} className="ml-auto rounded-lg border border-[#E7D4A7] bg-[#FFF7E6] px-2.5 py-1.5 text-[10px] font-bold text-[#4C566A]">RERA Updates</button>}</div>}
+            </div>}
             <div className="grid grid-cols-2 divide-x divide-y divide-[#E5E8EE] sm:grid-cols-4 sm:divide-y-0">
               {keySpecFacts.filter((item) => item.val !== undefined && item.val !== "").map(({ icon: Icon, label, val }) => (
-                <button key={label} type="button" aria-expanded={(label === "Size" && overviewPopover === "size") || (label === "Total area" && overviewPopover === "area")} onClick={() => label === "Size" ? setOverviewPopover((value) => value === "size" ? null : "size") : label === "Total area" ? setOverviewPopover((value) => value === "area" ? null : "area") : label === "Unit config" ? scrollToSection("price-list") : undefined} className="flex min-h-[92px] items-center gap-3 px-4 py-3 text-left hover:bg-[#FFF9E9]"><Icon className="size-7 shrink-0 text-[#56627A]" strokeWidth={1.6} /><span><span className="flex items-center gap-1 text-[11px] text-[#667085]">{label}{["Size", "Total area"].includes(label) && <ChevronDown className="size-3" />}</span><span className="mt-0.5 block text-[13px] font-extrabold leading-4 text-[#172039]">{val}</span></span></button>
+                <button key={label} type="button" aria-expanded={(label === "Size" && overviewPopover === "size") || (label === "Total area" && hasAreaBreakdown && overviewPopover === "area")} onClick={() => label === "Size" ? setOverviewPopover((value) => value === "size" ? null : "size") : label === "Total area" && hasAreaBreakdown ? setOverviewPopover((value) => value === "area" ? null : "area") : label === "Unit config" ? scrollToSection("price-list") : undefined} className="flex min-h-[92px] items-center gap-3 px-4 py-3 text-left hover:bg-[#FFF9E9]"><Icon className="size-7 shrink-0 text-[#56627A]" strokeWidth={1.6} /><span><span className="flex items-center gap-1 text-[11px] text-[#667085]">{label}{(label === "Size" || (label === "Total area" && hasAreaBreakdown)) && <ChevronDown className="size-3" />}</span><span className="mt-0.5 block text-[13px] font-extrabold leading-4 text-[#172039]">{val}</span></span></button>
               ))}
             </div>
             {overviewPopover === "size" && <div className="flex flex-wrap items-center gap-2 border-t border-[#E5E8EE] bg-[#FCFCFD] px-4 py-3"><span className="mr-1 text-[11px] font-bold text-[#667085]">Display size in</span>{([["sqft", "Sq. Ft."], ["sqm", "Sq. Metre"], ["sqyd", "Sq. Yard"]] as const).map(([unit, label]) => <button key={unit} type="button" onClick={() => setAreaUnit(unit)} className={`rounded-lg px-3 py-1.5 text-[11px] font-bold ${areaUnit === unit ? "bg-[#172039] text-white" : "border border-[#DDE2EA] text-[#596277]"}`}>{label}</button>)}</div>}
-            {overviewPopover === "area" && <div className="grid grid-cols-2 gap-3 border-t border-[#E5E8EE] bg-[#FCFCFD] px-4 py-3"><div><p className="text-[10px] font-bold uppercase text-[#667085]">Open Space Area</p><p className="mt-1 text-[13px] font-extrabold text-[#172039]">{property.projectArea?.openSpaceAcres !== undefined ? `${property.projectArea.openSpaceAcres} acres` : "Not provided"}</p></div><div><p className="text-[10px] font-bold uppercase text-[#667085]">Built-up Footprint Area</p><p className="mt-1 text-[13px] font-extrabold text-[#172039]">{property.projectArea?.builtUpAcres !== undefined ? `${property.projectArea.builtUpAcres} acres` : "Not provided"}</p></div></div>}
+            {overviewPopover === "area" && hasAreaBreakdown && <div className={`grid gap-3 border-t border-[#E5E8EE] bg-[#FCFCFD] px-4 py-3 ${areaBreakdownRows.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>{areaBreakdownRows.map((item) => <div key={item.label}><p className="text-[10px] font-bold uppercase text-[#667085]">{item.label}</p><p className="mt-1 text-[13px] font-extrabold text-[#172039]">{item.value}</p></div>)}</div>}
           </div>
-          <aside className="flex flex-col border-t border-[#DDE2EA] bg-[#FCFCFD] lg:border-l lg:border-t-0">
-            <div className="flex-1 px-5 py-4"><h2 className="text-[17px] font-extrabold text-[#172039]">Why you should consider {property.title}?</h2>{whyHighlights.length ? <ul className="mt-3 space-y-2.5">{whyHighlights.map((highlight) => <li key={highlight} className="flex gap-2 text-[12px] leading-5 text-[#4C566A]"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#172039]" />{highlight}</li>)}</ul> : <p className="mt-3 text-[12px] leading-5 text-[#4C566A]">Explore the project details, configurations and location information available for this property.</p>}<button type="button" onClick={() => scrollToSection("overview")} className="mt-3 text-[12px] font-bold text-[#172039] underline underline-offset-4">View More</button></div>
+          {whyHighlights.length > 0 && <aside className="flex flex-col border-t border-[#DDE2EA] bg-[#FCFCFD] lg:border-l lg:border-t-0">
+            <div className="flex-1 px-5 py-4"><h2 className="text-[17px] font-extrabold text-[#172039]">Why you should consider {property.title}?</h2><ul className="mt-3 space-y-2.5">{whyHighlights.map((highlight) => <li key={highlight} className="flex gap-2 text-[12px] leading-5 text-[#4C566A]"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#172039]" />{highlight}</li>)}</ul><button type="button" onClick={() => scrollToSection("overview")} className="mt-3 text-[12px] font-bold text-[#172039] underline underline-offset-4">View More</button></div>
             <button type="button" onClick={() => setVerifiedAction("enquiry")} className="m-3 inline-flex items-center justify-center gap-2 rounded-lg bg-[#E3A815] px-4 py-3 text-[13px] font-extrabold text-[#241B09]"><Phone className="size-4" /> Request More Information or a Callback</button>
-          </aside>
+          </aside>}
         </div>}
       </section>
 
@@ -1300,30 +1307,19 @@ const whyHighlights = (property.description || "")
             {/* Locality Guide */}
             {hasLocalityContent && <div ref={setSectionRef("locality")} className="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-[#E4E0E7]/30 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-[20px] font-bold text-[#121B35] flex items-center gap-2"><div className="w-1.5 h-6 bg-[#DDAA42] rounded-full" /> Map &amp; Nearby Landmarks</h2><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.locality?.address || property.subtitle)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#172039] px-4 py-2.5 text-[12px] font-bold text-white"><MapPin className="size-4" /> View on Map</a></div>
-              <div className="grid gap-5 md:grid-cols-[1.2fr_0.8fr]">
-              <div>
-              <div className="relative aspect-[16/9] w-full bg-gradient-to-br from-[#F8F7FA] to-[#F3F1F5]/40 rounded-2xl overflow-hidden border border-[#E4E0E7]/50 flex items-center justify-center">
-                {property.localityMapImageUrl ? (
-                  <img src={property.localityMapImageUrl} alt={`${property.subtitle} locality map`} className="h-full w-full object-contain bg-white" />
-                ) : (
-                  <>
-                    <div className="absolute inset-0 opacity-15 pointer-events-none" style={{ backgroundImage: "radial-gradient(#DDAA42 1.5px, transparent 1.5px), radial-gradient(#DDAA42 1.5px, transparent 1.5px)", backgroundSize: "24px 24px", backgroundPosition: "0 0, 12px 12px" }} />
-                    <div className="text-center z-10 p-4">
-                      <Navigation className="w-12 h-12 text-[#DDAA42] mx-auto mb-3" />
-                      {property.subtitle && <p className="text-[15px] font-extrabold text-[#121B35] uppercase tracking-wider">{property.subtitle.split(",")[0]}</p>}
-                      <p className="text-[12px] text-[#68646F] font-semibold mt-1">Prime connectivity & infrastructure</p>
-                    </div>
-                  </>
-                )}
-              </div>
+              <div className={`grid gap-5 ${hasNearbyPlaces && (property.localityMapImageUrl || property.locality?.address) ? "md:grid-cols-[1.2fr_0.8fr]" : "grid-cols-1"}`}>
+              {(property.localityMapImageUrl || property.locality?.address) && <div>
+              {property.localityMapImageUrl && <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden border border-[#E4E0E7]/50 bg-white">
+                <img src={property.localityMapImageUrl} alt={`${property.subtitle} locality map`} className="h-full w-full object-contain bg-white" />
+              </div>}
               {property.locality?.address && (
                 <div className="flex items-start gap-3 rounded-2xl border border-[#E4E0E7]/50 bg-[#F8F7FA]/60 p-4">
                   <MapPin className="mt-0.5 size-5 shrink-0 text-[#DDAA42]" />
                   <div><p className="text-[10px] font-bold uppercase tracking-wider text-[#68646F]">Locality address</p><p className="mt-1 text-[13px] font-semibold text-[#121B35]">{property.locality.address}</p></div>
                 </div>
               )}
-              </div>
-              <aside className="min-w-0 px-1 md:pl-2">
+              </div>}
+              {hasNearbyPlaces && <aside className="min-w-0 px-1 md:pl-2">
                 <h3 className="mb-2 text-[13px] font-extrabold uppercase tracking-wider text-[#30394E]">Nearby Places</h3>
                 <div>
                   <NearbyPlaceSummary property={property} category="schools" label="Schools" Icon={School} legacy={property.nearbyAmenities?.schools} showPlaces={showAllNearby} />
@@ -1332,40 +1328,16 @@ const whyHighlights = (property.description || "")
                   <NearbyPlaceSummary property={property} category="shopping" label="Shopping" Icon={ShoppingBag} legacy={property.nearbyAmenities?.shopping} showPlaces={showAllNearby} />
                   <NearbyPlaceSummary property={property} category="metro" label="Metro / Train" Icon={Train} legacy={property.nearbyAmenities?.metro} showPlaces={showAllNearby} />
                 </div>
-                <button type="button" onClick={() => setShowAllNearby((value) => !value)} className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-[#795A18] underline underline-offset-4">
+                {hasDetailedNearbyPlaces && <button type="button" onClick={() => setShowAllNearby((value) => !value)} className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-[#795A18] underline underline-offset-4">
                   {showAllNearby ? "Show less" : "Show more nearby places"}
                   <ChevronDown className={`size-3.5 transition-transform ${showAllNearby ? "rotate-180" : ""}`} />
-                </button>
-              </aside>
+                </button>}
+              </aside>}
               </div>
-
-              {/* Price-trend insight strip */}
-              {insight && <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-gradient-to-r from-[#F8F7FA] to-[#FFF8E8] border border-[#E4E0E7]/60 rounded-2xl">
-                <div className="flex items-center gap-3">
-                  <img src={insight.image} alt={insight.name} className="size-14 rounded-full object-cover border border-[#E4E0E7]" />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-[15px] font-bold text-[#121B35]">{insight.name}</p>
-                      <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-[#1E7A46] bg-[#E6F2EA] px-1.5 py-0.5 rounded">
-                        {insight.rating} <Star className="size-3 fill-current" />
-                      </span>
-                    </div>
-                    <p className="text-[12px] text-[#68646F]">Avg. <span className="font-semibold text-[#3F3D46]">{insight.pricePerSqft}</span></p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="inline-flex items-center gap-1 text-[14px] font-bold text-[#1E7A46]">
-                    <TrendingUp className="size-4" /> {insight.yoy}
-                  </span>
-                  <Link href={insight.href} className="text-[13px] font-bold text-[#DDAA42] border border-[#DDAA42]/40 hover:bg-white px-4 py-2 rounded-xl transition-colors whitespace-nowrap">
-                    View Insights
-                  </Link>
-                </div>
-              </div>}
             </div>}
             {hasReraPhases && <div data-testid="rera-workspace-column"><PropertyReraSections property={property} setSectionRef={setSectionRef} activeView={reraWorkspaceView} onViewChange={(view) => { setReraWorkspaceView(view); setActiveSection(view === "rera" ? "rera-details" : "project-details"); }} /></div>}
             {(property.builder || property.developerLogoUrl) && <div ref={setSectionRef("dealer")}><ProjectBuilderProfile property={property} projects={pools.builderMore} /></div>}
-            {comparisonMatches.length > 0 && <div ref={setSectionRef("comparison")}><ProjectComparison current={property} matches={comparisonMatches} /></div>}
+            {hasComparison && <div ref={setSectionRef("comparison")}><ProjectComparison current={property} matches={comparisonMatches} /></div>}
           </div>
 
           {/* Right Sticky Contact Card */}
@@ -1419,7 +1391,7 @@ const whyHighlights = (property.description || "")
                 {property.verified && <div className="flex items-center gap-2.5 text-[12.5px] text-[#F2C052]">
                   <Scale className="w-4 h-4 shrink-0" /> <span className="font-extrabold">Title deed audited by Legal Panel</span>
                 </div>}
-                {hasReraPhases && <div className="rounded-lg border border-[#F2C052]/25 bg-white/[.06] p-3"><div className="flex items-center justify-between gap-2"><span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#F2C052]"><Shield className="size-3.5" />RERA record</span><span className="text-[9px] text-white/45">{property.reraPhases?.length} phase{property.reraPhases?.length === 1 ? "" : "s"}</span></div><p className="mt-2 truncate text-[11px] font-bold tabular-nums text-white">{property.reraPhases?.[0]?.reraNumber || property.reraNumber}</p><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => scrollToSection("rera-details")} className="min-h-8 rounded-md bg-[#DDAA42] px-2 text-[9px] font-bold text-[#121B35]">RERA details</button><button type="button" onClick={() => scrollToSection("project-details")} className="min-h-8 rounded-md border border-white/15 px-2 text-[9px] font-bold text-white">Project details</button></div></div>}
+                {hasReraPhases && <div className="rounded-lg border border-[#F2C052]/25 bg-white/[.06] p-3"><div className="flex items-center justify-between gap-2"><span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#F2C052]"><Shield className="size-3.5" />RERA record</span><span className="text-[9px] text-white/45">{property.reraPhases?.length} phase{property.reraPhases?.length === 1 ? "" : "s"}</span></div><p className="mt-2 truncate text-[11px] font-bold tabular-nums text-white">{property.reraPhases?.[0]?.reraNumber || property.reraNumber}</p><div className={`mt-3 grid gap-2 ${hasProjectDocuments ? "grid-cols-2" : "grid-cols-1"}`}><button type="button" onClick={() => scrollToSection("rera-details")} className="min-h-8 rounded-md bg-[#DDAA42] px-2 text-[9px] font-bold text-[#121B35]">RERA details</button>{hasProjectDocuments && <button type="button" onClick={() => scrollToSection("project-details")} className="min-h-8 rounded-md border border-white/15 px-2 text-[9px] font-bold text-white">Project details</button>}</div></div>}
               </div>}
             </div>
 
@@ -1430,12 +1402,12 @@ const whyHighlights = (property.description || "")
       </div>
 
       {/* Ã¢â€â‚¬Ã¢â€â‚¬ EXPLORE MORE: multiple property rails Ã¢â€â‚¬Ã¢â€â‚¬ */}
-      <div ref={setSectionRef("explore")} className="bg-[#F3F1F5] border-t border-[#E4E0E7]/50">
+      {hasSimilarProjects && <div ref={setSectionRef("explore")} className="bg-[#F3F1F5] border-t border-[#E4E0E7]/50">
         <div className="max-w-[1200px] mx-auto px-4 py-6 space-y-8">
           <PropertyRail title={`Similar Alternate Projects you can consider in ${property.locality?.city || property.subtitle?.split(",").slice(-1)[0]?.trim() || "this area"}`} subtitle="Comparable Homes" Icon={Layers} items={pools.similar} />
         </div>
-      </div>
-      <div ref={setSectionRef("faq")} className="bg-[#F3F1F5] px-4 pb-8"><div className="mx-auto max-w-[1200px]"><ProjectFaqs property={property} /></div></div>
+      </div>}
+      {hasFaqs && <div ref={setSectionRef("faq")} className="bg-[#F3F1F5] px-4 pb-8"><div className="mx-auto max-w-[1200px]"><ProjectFaqs property={property} /></div></div>}
 
       {/* Popular builders */}
       <PopularBuilders />

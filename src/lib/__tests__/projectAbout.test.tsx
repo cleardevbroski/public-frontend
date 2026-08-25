@@ -42,4 +42,12 @@ describe("ProjectAbout", () => {
     expect(host.textContent).toContain("PRM/123");
     await act(async () => root.unmount());
   });
+
+  it("renders no section when neither narrative nor facts were provided", async () => {
+    const host = document.createElement("div");
+    const root = createRoot(host);
+    await act(async () => root.render(<ProjectAbout property={{ ...property, description: "" }} title="Apartment overview" facts={[]} />));
+    expect(host.innerHTML).toBe("");
+    await act(async () => root.unmount());
+  });
 });

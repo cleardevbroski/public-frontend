@@ -61,6 +61,7 @@ export default function ProjectAbout({ property, title, facts }: { property: Pro
     narrative?.locationAdvantage?.length || narrative?.investmentReasons?.length || introductions.length > 1,
   );
   const canExpand = validFacts.length > 6 || hasExtendedNarrative;
+  if (!introductions.length && !validFacts.length && !hasExtendedNarrative) return null;
 
   return (
     <section className="overflow-hidden rounded-[14px] border border-[#E1E3E6] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.025)]" aria-labelledby="about-project-heading">

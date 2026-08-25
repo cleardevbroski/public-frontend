@@ -1,32 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { FileText, Loader2, Plus, Save, Trash2, Upload } from "lucide-react";
 import { uploadPropertyMedia } from "@/lib/api";
 import type { ReraDocument, ReraPhase } from "@/components/acres/mock-data";
+import BulkReraDocumentUploader from "./BulkReraDocumentUploader";
+import { PROJECT_DOCUMENT_DEFINITIONS, RERA_DOCUMENT_DEFINITIONS, type ReraDocumentDefinition } from "@/lib/reraBulkUpload";
 
-type DocumentDefinition = { key: string; label: string; annexure?: string };
 export const KARNATAKA_RERA_URL = "https://rera.karnataka.gov.in/viewAllProjects";
-
-export const RERA_DOCUMENT_DEFINITIONS: DocumentDefinition[] = [
-  { key: "registration-certificate", label: "Registration Certificate", annexure: "Annexure 1" },
-  { key: "certificate-of-incorporation", label: "Certificate of Incorporation" },
-  { key: "memorandum-of-association", label: "Memorandum of Association", annexure: "Annexure 15" },
-  { key: "articles-of-association", label: "Articles of Association", annexure: "Annexure 16" },
-  { key: "pan-card", label: "PAN Card", annexure: "Annexure 2" },
-];
-
-export const PROJECT_DOCUMENT_DEFINITIONS: DocumentDefinition[] = [
-  { key: "commencement-certificate", label: "Commencement Certificate", annexure: "Annexure 80" },
-  { key: "approved-building-plan", label: "Approved Building Plan", annexure: "Annexure 81" },
-  { key: "sectional-drawing", label: "Sectional Drawing of the Apartments", annexure: "Annexure 82" },
-  { key: "structural-safety-certificate", label: "Structural Safety Certificate from Registered Engineer", annexure: "Annexure 83" },
-  { key: "project-specifications", label: "Project Specifications", annexure: "Annexure 84" },
-  { key: "brochure", label: "Brochure", annexure: "Annexure 85" },
-  { key: "relinquishment-deed", label: "Relinquishment Deed", annexure: "Annexure 86" },
-  { key: "agreement-for-sale", label: "Proforma of Agreement for Sale", annexure: "Annexure 87" },
-  { key: "allotment-letter", label: "Proforma of Allotment Letter", annexure: "Annexure 88" },
-];
 
 const emptyPhase = (number: number): ReraPhase => ({
   name: `Phase ${number}`,
@@ -40,6 +21,7 @@ type Props = {
   phases: ReraPhase[];
   onChange: (phases: ReraPhase[]) => void;
   error?: string;
+  onUploadingChange?: (uploading: boolean) => void;
 };
 
 function DocumentRows({
@@ -48,7 +30,7 @@ function DocumentRows({
   onChange,
   group,
 }: {
-  definitions: DocumentDefinition[];
+  definitions: ReraDocumentDefinition[];
   documents: ReraDocument[];
   onChange: (documents: ReraDocument[]) => void;
   group: "rera" | "project";
@@ -56,7 +38,7 @@ function DocumentRows({
   const [uploading, setUploading] = useState("");
   const [error, setError] = useState("");
 
-  const upload = async (definition: DocumentDefinition, file?: File) => {
+  const upload = async (definition: ReraDocumentDefinition, file?: File) => {
     if (!file) return;
     if (!["application/pdf", "image/jpeg", "image/png"].includes(file.type)) {
       setError("Documents must be PDF, JPG, or PNG files.");
@@ -134,8 +116,13 @@ function DocumentRows({
   );
 }
 
-export default function ReraPhasesEditor({ phases, onChange, error }: Props) {
+export default function ReraPhasesEditor({ phases, onChange, error, onUploadingChange }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [bulkUploading, setBulkUploading] = useState(false);
+  const handleBulkUploading = useCallback((uploading: boolean) => {
+    setBulkUploading(uploading);
+    onUploadingChange?.(uploading);
+  }, [onUploadingChange]);
   const safePhases = (phases.length ? phases : [emptyPhase(1)]).map((phase) => ({ ...phase, reraSiteUrl: phase.reraSiteUrl || KARNATAKA_RERA_URL }));
   const active = safePhases[Math.min(activeIndex, safePhases.length - 1)];
 
@@ -165,11 +152,11 @@ export default function ReraPhasesEditor({ phases, onChange, error }: Props) {
     <div className="rounded-2xl border border-[#E4E0E7] bg-[#F8F7FA] p-4 md:p-5">
       <div className="flex flex-wrap items-center gap-2">
         {safePhases.map((phase, index) => (
-          <button key={phase._id || `${phase.name}-${index}`} type="button" onClick={() => setActiveIndex(index)} className={`rounded-lg px-3 py-2 text-[11px] font-bold ${index === activeIndex ? "bg-[#DDAA42] text-[#0B1328]" : "bg-white text-[#68646F]"}`}>
+          <button key={phase._id || `${phase.name}-${index}`} type="button" disabled={bulkUploading} onClick={() => setActiveIndex(index)} className={`rounded-lg px-3 py-2 text-[11px] font-bold disabled:cursor-wait disabled:opacity-50 ${index === activeIndex ? "bg-[#DDAA42] text-[#0B1328]" : "bg-white text-[#68646F]"}`}>
             {phase.name || `Phase ${index + 1}`}
           </button>
         ))}
-        <button type="button" onClick={addPhase} className="inline-flex items-center gap-1 rounded-lg border border-[#DDAA42] px-3 py-2 text-[11px] font-bold text-[#9A6B00]"><Plus className="size-3.5" />Add phase</button>
+        <button type="button" disabled={bulkUploading} onClick={addPhase} className="inline-flex items-center gap-1 rounded-lg border border-[#DDAA42] px-3 py-2 text-[11px] font-bold text-[#9A6B00] disabled:cursor-wait disabled:opacity-50"><Plus className="size-3.5" />Add phase</button>
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -185,6 +172,15 @@ export default function ReraPhasesEditor({ phases, onChange, error }: Props) {
         </label>
       </div>
 
+      <BulkReraDocumentUploader
+        key={active._id || `phase-${activeIndex}`}
+        phaseName={active.name}
+        reraDocuments={active.reraDocuments || []}
+        projectDocuments={active.projectDocuments || []}
+        onBusyChange={handleBulkUploading}
+        onChange={(reraDocuments, projectDocuments) => updateActive({ reraDocuments, projectDocuments })}
+      />
+
       <div className="mt-6">
         <h4 className="mb-3 flex items-center gap-2 text-[13px] font-bold text-[#121B35]"><FileText className="size-4 text-[#DDAA42]" />RERA Details</h4>
         <DocumentRows group="rera" definitions={RERA_DOCUMENT_DEFINITIONS} documents={active.reraDocuments || []} onChange={(reraDocuments) => updateActive({ reraDocuments })} />
@@ -196,7 +192,7 @@ export default function ReraPhasesEditor({ phases, onChange, error }: Props) {
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <p className="inline-flex items-center gap-1 text-[10px] text-green-700"><Save className="size-3.5" />Phase details are saved with the property.</p>
-        <button type="button" onClick={removePhase} className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-3 py-2 text-[11px] font-bold text-red-600"><Trash2 className="size-3.5" />Remove phase</button>
+        <button type="button" disabled={bulkUploading} onClick={removePhase} className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-3 py-2 text-[11px] font-bold text-red-600 disabled:cursor-wait disabled:opacity-50"><Trash2 className="size-3.5" />Remove phase</button>
       </div>
       {error && <p className="mt-3 text-[11px] text-red-600">{error}</p>}
     </div>

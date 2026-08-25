@@ -42,6 +42,7 @@ import CommercialDetailsFields from "./CommercialDetailsFields";
 import PgDetailsFields from "./PgDetailsFields";
 import PropertyQuickFill from "./PropertyQuickFill";
 import ReraPhasesEditor, { KARNATAKA_RERA_URL } from "./ReraPhasesEditor";
+import BulkPropertyMediaImporter from "./BulkPropertyMediaImporter";
 import { addProperty, updateProperty } from "@/lib/propertyStore";
 import { createPropertyDraft, createPublicProperty, fetchBuilders, resubmitProperty, uploadPropertyMedia } from "@/lib/api";
 import { trackAnalytics } from "@/lib/analytics";
@@ -298,6 +299,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
   const [validationErrors, setValidationErrors] = useState<ApartmentErrors>({});
   const [configError, setConfigError] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const [uploadInProgress, setUploadInProgress] = useState(false);
 
   const buildPropertyPayload = () => compactPropertyPayload({
     ...formData,
@@ -629,13 +631,27 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
 
   const nextStep = () => {
     if (currentStep === 1 && !formData.propertyType) return;
+    if (uploadInProgress) {
+      setSubmitError("Wait for all file uploads to finish before continuing.");
+      return;
+    }
     setValidationErrors({});
     setCurrentStep((s) => Math.min(s + 1, 5));
   };
-  const prevStep = () => setCurrentStep((s) => Math.max(s - 1, 1));
+  const prevStep = () => {
+    if (uploadInProgress) {
+      setSubmitError("Wait for all file uploads to finish before leaving this step.");
+      return;
+    }
+    setCurrentStep((s) => Math.max(s - 1, 1));
+  };
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
+    if (uploadInProgress) {
+      setSubmitError("Wait for all file uploads to finish before publishing.");
+      return;
+    }
     if (formData.propertyType === "Plot") {
       const plotErrors = validatePlotDraft(formData);
       if (Object.keys(plotErrors).length) {
@@ -777,7 +793,14 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
             return (
               <div key={step.id} className="flex items-center flex-1 last:flex-none">
                 <button
-                  onClick={() => step.id < currentStep && setCurrentStep(step.id)}
+                  onClick={() => {
+                    if (step.id >= currentStep) return;
+                    if (uploadInProgress) {
+                      setSubmitError("Wait for all file uploads to finish before leaving this step.");
+                      return;
+                    }
+                    setCurrentStep(step.id);
+                  }}
                   className={`flex flex-col items-center gap-1.5 transition-all duration-300 ${
                     step.id < currentStep ? "cursor-pointer" : "cursor-default"
                   }`}
@@ -845,6 +868,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                     <button
                       key={type}
                       type="button"
+                      disabled={uploadInProgress}
                       onClick={() => changePropertyType(type)}
                       className={`px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 border ${
                         formData.propertyType === type
@@ -1220,6 +1244,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
               <div className="flex items-center gap-3 p-4 bg-[#F8F7FA] rounded-xl border border-[#E4E0E7]/30">
                 <button
                   type="button"
+                  disabled={uploadInProgress}
                   onClick={() => setFormData((prev) => ({
                     ...prev,
                     reraRegistered: !prev.reraRegistered,
@@ -1240,7 +1265,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 </div>
               </div>
               {isStructuredType(formData.propertyType) && formData.reraRegistered && (
-                <ReraPhasesEditor phases={formData.reraPhases || []} onChange={(reraPhases) => setFormData((prev) => ({ ...prev, reraPhases: reraPhases.map((phase) => ({ ...phase, reraSiteUrl: phase.reraSiteUrl || KARNATAKA_RERA_URL })), reraNumber: reraPhases[0]?.reraNumber || "" }))} error={validationErrors.reraPhases || validationErrors.reraNumber} />
+                <ReraPhasesEditor phases={formData.reraPhases || []} onUploadingChange={setUploadInProgress} onChange={(reraPhases) => setFormData((prev) => ({ ...prev, reraPhases: reraPhases.map((phase) => ({ ...phase, reraSiteUrl: phase.reraSiteUrl || KARNATAKA_RERA_URL })), reraNumber: reraPhases[0]?.reraNumber || "" }))} error={validationErrors.reraPhases || validationErrors.reraNumber} />
               )}
 
               {/* Description */}
@@ -1279,6 +1304,18 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
               <h2 className="text-[20px] font-bold text-[#121B35] mb-6" style={{ fontFamily: "var(--font-outfit)" }}>
                 Property Photos
               </h2>
+              <BulkPropertyMediaImporter
+                heroImages={formData.heroImages || []}
+                galleryImages={formData.images || []}
+                walkthrough={formData.projectDownloads?.find((download) => download.kind === "walkthrough")}
+                onBusyChange={setUploadInProgress}
+                onHeroImagesChange={(heroImages) => updateField("heroImages", heroImages)}
+                onGalleryImagesChange={(images) => updateField("images", images)}
+                onWalkthroughChange={(walkthrough) => setFormData((previous) => ({
+                  ...previous,
+                  projectDownloads: [...(previous.projectDownloads || []).filter((download) => download.kind !== "walkthrough"), walkthrough],
+                }))}
+              />
               <HeroImageUploader
                 images={formData.heroImages || []}
                 onChange={(imgs) => updateField("heroImages", imgs)}

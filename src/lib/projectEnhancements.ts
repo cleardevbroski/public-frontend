@@ -228,7 +228,7 @@ export function rankComparableProperties(current: Property, candidates: Property
 export function propertyDensity(property: Property): string {
   const units = property.totalUnits;
   const acres = property.projectArea?.totalAcres;
-  if (!units || !acres) return "Not provided";
+  if (!units || !acres) return "";
   return `${Math.round(units / acres)} Units/Acre`;
 }
 

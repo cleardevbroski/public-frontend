@@ -97,7 +97,7 @@ describe("project enhancements", () => {
   it("calculates density only with complete data and builds grounded fallback FAQs", () => {
     const complete = property({ totalUnits: 638, projectArea: { totalAcres: 12.7, openSpaceAcres: 5, builtUpAcres: 7.7 }, builder: "Example Builder", reraRegistered: true, reraNumber: "PRM/KA/12345678" });
     expect(propertyDensity(complete)).toBe("50 Units/Acre");
-    expect(propertyDensity(property())).toBe("Not provided");
+    expect(propertyDensity(property())).toBe("");
     const answers = projectFaqs(complete).map((faq) => faq.answer).join(" ");
     expect(answers).toContain("Example Builder");
     expect(answers).toContain("PRM/KA/12345678");

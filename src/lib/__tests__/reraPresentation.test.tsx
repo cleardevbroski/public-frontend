@@ -122,4 +122,17 @@ describe("phase-wise RERA presentation", () => {
 
     await act(async () => root.unmount());
   });
+
+  it("hides project-document controls and empty download states when no files were supplied", () => {
+    const withoutDocuments = {
+      ...property,
+      reraPhases: property.reraPhases?.map((phase) => ({ ...phase, reraDocuments: [], projectDocuments: [] })),
+    };
+    const html = renderToStaticMarkup(<AuthProvider><PropertyReraSections property={withoutDocuments} setSectionRef={() => () => {}} /></AuthProvider>);
+
+    expect(html).toContain("RERA Details");
+    expect(html).not.toContain(">Project Details</button>");
+    expect(html).not.toContain("View downloads");
+    expect(html).not.toContain("No documents uploaded");
+  });
 });

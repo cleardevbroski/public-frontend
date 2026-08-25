@@ -1,22 +1,34 @@
 import type { Property } from "./mock-data";
 import { formatAreaRange, formatPossessionDateOnly, propertyAreaRange, propertyDensity, type ComparisonMatch } from "@/lib/projectEnhancements";
 
-const value = (text: unknown) => text === undefined || text === null || text === "" ? "Not provided" : String(text);
+const value = (text: unknown) => {
+  if (text === undefined || text === null) return "";
+  const result = String(text).trim();
+  return result && result !== "—" && result.toLowerCase() !== "not provided" ? result : "";
+};
+
+const candidateRows: Array<{ label: string; getter: (property: Property) => unknown }> = [
+  { label: "Price", getter: (property) => property.price },
+  { label: "Configuration", getter: (property) => property.configs?.join(", ") },
+  { label: "Unit Size", getter: (property) => propertyAreaRange(property) ? formatAreaRange(propertyAreaRange(property), "sqft") : property.area },
+  { label: "Possession", getter: (property) => formatPossessionDateOnly(property) },
+  { label: "Status", getter: (property) => property.possessionDetails?.status || property.possession },
+  { label: "RERA No.", getter: (property) => property.reraNumber || property.reraPhases?.[0]?.reraNumber },
+  { label: "Land Area", getter: (property) => property.projectArea?.totalAcres !== undefined ? `${property.projectArea.totalAcres} Acres` : undefined },
+  { label: "Total Units", getter: (property) => property.totalUnits?.toLocaleString("en-IN") },
+  { label: "Density", getter: propertyDensity },
+];
+
+export function hasProjectComparisonContent(current: Property, matches: ComparisonMatch[]): boolean {
+  const properties = [current, ...matches.slice(0, 2).map((match) => match.property)];
+  return properties.length >= 2 && candidateRows.some(({ getter }) => properties.every((property) => Boolean(value(getter(property)))));
+}
 
 export default function ProjectComparison({ current, matches }: { current: Property; matches: ComparisonMatch[] }) {
   const properties = [current, ...matches.slice(0, 2).map((match) => match.property)];
   if (properties.length < 2) return null;
-  const rows: Array<{ label: string; getter: (property: Property) => unknown }> = [
-    { label: "Price", getter: (property) => property.price },
-    { label: "Configuration", getter: (property) => property.configs?.join(", ") },
-    { label: "Unit Size", getter: (property) => propertyAreaRange(property) ? formatAreaRange(propertyAreaRange(property), "sqft") : property.area },
-    { label: "Possession", getter: (property) => formatPossessionDateOnly(property) },
-    { label: "Status", getter: (property) => property.possessionDetails?.status || property.possession },
-    { label: "RERA No.", getter: (property) => property.reraNumber || property.reraPhases?.[0]?.reraNumber },
-    { label: "Land Area", getter: (property) => property.projectArea?.totalAcres !== undefined ? `${property.projectArea.totalAcres} Acres` : undefined },
-    { label: "Total Units", getter: (property) => property.totalUnits?.toLocaleString("en-IN") },
-    { label: "Density", getter: propertyDensity },
-  ];
+  const rows = candidateRows.filter(({ getter }) => properties.every((property) => Boolean(value(getter(property)))));
+  if (!rows.length) return null;
   return <section className="rounded-2xl border border-[#DDE2EA] bg-white p-5 shadow-sm md:p-7" aria-labelledby="comparison-heading">
     <h2 id="comparison-heading" className="text-[22px] font-extrabold text-[#172039]">How does {current.title} compare with other top projects?</h2>
     <p className="mt-2 text-[13px] text-[#596277]">Compared using locality, property type, configurations, size, pricing, and possession data.</p>
@@ -26,9 +38,7 @@ export default function ProjectComparison({ current, matches }: { current: Prope
         const image = property.heroImages?.find(Boolean) || property.images?.find(Boolean) || property.image;
         return <article key={property.id} className={`min-w-0 overflow-hidden rounded-xl border ${index === 0 ? "border-[#DDAA42] bg-[#FFF9E9]" : "border-[#E1E5EC] bg-[#F8F9FB]"}`}>
           <div className="p-3.5">
-            <div className="aspect-[16/9] overflow-hidden rounded-lg bg-[#E5E8EE]">
-            {image ? <img src={image} alt={`${property.title} project`} loading={index === 0 ? "eager" : "lazy"} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-[10px] font-semibold text-[#667085]">Project image unavailable</div>}
-            </div>
+            {image && <div className="aspect-[16/9] overflow-hidden rounded-lg bg-[#E5E8EE]"><img src={image} alt={`${property.title} project`} loading={index === 0 ? "eager" : "lazy"} className="h-full w-full object-cover" /></div>}
             <div className="min-h-[76px] pt-3">
               <p className="text-[13px] font-extrabold leading-5 text-[#172039]">{property.title}</p>
               <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-[#667085]">{property.subtitle}</p>
