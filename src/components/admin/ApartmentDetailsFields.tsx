@@ -84,7 +84,7 @@ export default function ApartmentDetailsFields(props: Props) {
           <div className="overflow-x-auto border border-[#E4E0E7] rounded-xl">
             <table className="w-full min-w-[980px] text-left">
               <thead className="bg-[#121B35] text-white text-[11px] uppercase tracking-wide">
-                <tr>{["Config", "Price", "Built-up area", "Carpet area", "Bedrooms", "Bathrooms", "Balconies", "Facing"].map((label) => <th key={label} className="px-3 py-3">{label}</th>)}</tr>
+                <tr>{["Config", "Price", "Built-up area", "Carpet area", "Bedrooms", "Bathrooms", "Balconies", "Facing (optional)"].map((label) => <th key={label} className="px-3 py-3">{label}</th>)}</tr>
               </thead>
               <tbody>
                 {props.details.map((row, index) => {

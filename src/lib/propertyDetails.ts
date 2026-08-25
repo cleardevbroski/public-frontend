@@ -78,7 +78,7 @@ export function preparePropertyPayload<T extends Partial<Property>>(property: T)
     area: displayRange(rows, "builtUpArea") || displayRange(rows, "superBuiltUpArea") || displayRange(rows, "carpetArea") || property.area,
     bedrooms: Math.min(...rows.map((row) => row.bedrooms)),
     bathrooms: Math.min(...rows.map((row) => row.bathrooms)),
-    facing: rows[0]?.facings.join(", ") || property.facing,
+    facing: rows.find((row) => row.facings.length)?.facings.join(", ") || "",
     possession: property.possessionDetails?.status || property.possession,
     ageOfProperty: property.possessionDetails?.status === "Under Construction" ? "Under Construction" : "",
     nearbyDetails,
@@ -162,7 +162,9 @@ export function validateApartmentDraft(property: Partial<Property>): ApartmentEr
     if (!Number.isInteger(row.bedrooms) || row.bedrooms < 1) errors[`${prefix}.bedrooms`] = "Enter at least 1 bedroom.";
     if (!Number.isInteger(row.bathrooms) || row.bathrooms < 1) errors[`${prefix}.bathrooms`] = "Enter at least 1 bathroom.";
     if (!Number.isInteger(row.balconies) || row.balconies < 0) errors[`${prefix}.balconies`] = "Balconies cannot be negative.";
-    if (!row.facings.length) errors[`${prefix}.facings`] = "Select at least one facing.";
+    if (row.facings.some((facing) => !facingOptions.some((option) => option === facing))) {
+      errors[`${prefix}.facings`] = "Select only valid facing options.";
+    }
     if (!validImageUrl(row.floorPlan2dUrl)) errors[`${prefix}.floorPlan2dUrl`] = "Enter a valid HTTP(S) 2D plan image URL.";
     if (!validImageUrl(row.floorPlan3dUrl)) errors[`${prefix}.floorPlan3dUrl`] = "Enter a valid HTTP(S) 3D plan image URL.";
     row.rooms?.forEach((room, roomIndex) => {

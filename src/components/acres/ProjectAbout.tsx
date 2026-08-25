@@ -55,12 +55,15 @@ export default function ProjectAbout({ property, title, facts }: { property: Pro
     .map((paragraph) => cleanDescription(paragraph))
     .filter(Boolean);
   const validFacts = facts.filter(({ val }) => hasValue(val));
-  const visibleFacts = expanded ? validFacts : validFacts.slice(0, 6);
+  const closingFactLabels = new Set(["property type", "transaction", "facing", "rera number", "total project area", "number of units", "security", "water supply", "power backup", "elevators", "visitor parking", "maintenance staff"]);
+  const closingFacts = validFacts.filter(({ label }) => closingFactLabels.has(label.trim().toLowerCase()));
+  const visibleFacts = (expanded ? validFacts : validFacts.slice(0, 6)).filter(({ label }) => !closingFactLabels.has(label.trim().toLowerCase()));
+  const hasLongIntroduction = introductions.some((paragraph) => paragraph.length > 240 || paragraph.split(/\s+/).length > 42);
   const hasExtendedNarrative = Boolean(
     narrative?.usps?.length || narrative?.keyDetails?.length || narrative?.featureGroups?.length ||
     narrative?.locationAdvantage?.length || narrative?.investmentReasons?.length || introductions.length > 1,
   );
-  const canExpand = validFacts.length > 6 || hasExtendedNarrative;
+  const canExpand = validFacts.length > 6 || hasExtendedNarrative || hasLongIntroduction;
   if (!introductions.length && !validFacts.length && !hasExtendedNarrative) return null;
 
   return (
@@ -72,9 +75,9 @@ export default function ProjectAbout({ property, title, facts }: { property: Pro
 
       {introductions.length > 0 && (
         <div className="border-b border-[#E6E8EB] px-5 py-3.5">
-          {(expanded ? introductions : introductions.slice(0, 1)).map((paragraph, index) => (
-            <p key={index} className={`${index ? "mt-3" : ""} whitespace-pre-line text-[13px] leading-6 text-[#59616F]`}>{paragraph}</p>
-          ))}
+          <p className={`whitespace-pre-line text-[13px] leading-6 text-[#59616F] ${expanded ? "" : "line-clamp-3"}`}>{introductions[0]}</p>
+          {expanded && introductions.slice(1).map((paragraph, index) => <p key={index} className="mt-3 whitespace-pre-line text-[13px] leading-6 text-[#59616F]">{paragraph}</p>)}
+          {!expanded && canExpand && <button type="button" onClick={() => setExpanded(true)} className="mt-1 inline-flex items-center text-[12px] font-bold text-[#1D2433] underline underline-offset-4">View More</button>}
         </div>
       )}
 
@@ -101,8 +104,10 @@ export default function ProjectAbout({ property, title, facts }: { property: Pro
       {expanded && narrative?.featureGroups?.map((group) => <section key={group.title} className="border-t border-[#E6E8EB] px-5 py-4"><h3 className="text-[16px] font-bold text-[#1D2433]">{group.title}</h3><ul className="mt-2 grid gap-2 sm:grid-cols-2">{group.items.map((item) => <li key={item} className="text-[12px] leading-5 text-[#59616F]">• {item}</li>)}</ul></section>)}
       {expanded && narrative?.locationAdvantage?.length ? <section className="border-t border-[#E6E8EB] px-5 py-4"><h3 className="text-[16px] font-bold text-[#1D2433]">Location Advantage and Connectivity</h3>{narrative.locationAdvantage.map((item) => <p key={item} className="mt-2 text-[12px] leading-5 text-[#59616F]">{item}</p>)}</section> : null}
       {expanded && narrative?.investmentReasons?.length ? <section className="border-t border-[#E6E8EB] px-5 py-4"><h3 className="text-[16px] font-bold text-[#1D2433]">Why Invest in {property.title}?</h3>{narrative.investmentReasons.map((item) => <p key={item} className="mt-2 text-[12px] leading-5 text-[#59616F]">{item}</p>)}</section> : null}
+      {expanded && closingFacts.length > 0 ? <section className="border-t border-[#E6E8EB] px-5 py-4"><div className="rounded-xl border border-[#DDE2EA] bg-[#F8FAFC] px-4 py-3.5"><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#596277]">Project details at a glance</p><div className="mt-3 grid gap-x-4 gap-y-3 sm:grid-cols-2">{closingFacts.map(({ label, val }) => <div key={label} className="rounded-lg border border-[#E6E8EB] bg-white px-3 py-2"><p className="text-[11px] font-semibold text-[#667085]">{label === "Maintenance staff" ? "Maintenance Staff" : label}</p><p className="mt-0.5 break-words text-[13px] font-bold leading-5 text-[#202633]">{String(val)}</p></div>)}</div></div></section> : null}
 
-      {canExpand && <div className="border-t border-[#E6E8EB] px-5 py-3"><button type="button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)} className="inline-flex items-center gap-1.5 text-[12px] font-bold text-[#1D2433] underline underline-offset-4">{expanded ? "Show Less" : "View All Details"}<ChevronDown className={`size-4 transition ${expanded ? "rotate-180" : ""}`} /></button></div>}
+      {canExpand && !expanded && !introductions.length && <div className="border-t border-[#E6E8EB] px-5 py-3"><button type="button" aria-expanded={false} onClick={() => setExpanded(true)} className="inline-flex items-center gap-1.5 text-[12px] font-bold text-[#1D2433] underline underline-offset-4">View More<ChevronDown className="size-4" /></button></div>}
+      {canExpand && expanded && <div className="border-t border-[#E6E8EB] px-5 py-3"><button type="button" aria-expanded={expanded} onClick={() => setExpanded(false)} className="inline-flex items-center gap-1.5 text-[12px] font-bold text-[#1D2433] underline underline-offset-4">Show Less<ChevronDown className="size-4 rotate-180" /></button></div>}
     </section>
   );
 }

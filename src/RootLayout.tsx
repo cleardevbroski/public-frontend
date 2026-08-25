@@ -5,6 +5,7 @@ import AnalyticsPageTracker from "@/components/AnalyticsPageTracker";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import GlobalErrorReporter from "@/components/GlobalErrorReporter";
 import { FavoritesProvider } from "@/components/acres/FavoritesContext";
+import RefreshPageButton from "@/components/RefreshPageButton";
 
 /**
  * Root layout — replaces the `<body>` of the Next `app/layout.tsx`. The
@@ -23,6 +24,7 @@ export default function RootLayout() {
             <Outlet />
           </SectionErrorBoundary>
         </Suspense>
+        {!location.pathname.startsWith("/admin") && <RefreshPageButton />}
       </FavoritesProvider>
     </AuthProvider>
   );

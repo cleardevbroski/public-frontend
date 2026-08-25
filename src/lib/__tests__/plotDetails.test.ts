@@ -23,4 +23,18 @@ describe("plot details", () => {
     expect(errors.layoutMapUrl).toBeTruthy();
     expect(errors.inventory).toBeTruthy();
   });
+
+  it("allows plot sizes and inventory without facing information", () => {
+    const details = initialPlotDetails();
+    details.plotSizeDetails = [{ ...createPlotSizeDetail("30 × 40"), pricePerSqft: 6500 }];
+    details.totalPlots = 1;
+    details.layoutMapUrl = "https://example.com/map.png";
+    details.layoutPossession = { status: "Layout Ready", readyDate: "2025-01-15" };
+    details.inventory = [{ ...createPlotInventoryItem("30 × 40"), plotNumber: "A-1" }];
+    const draft = { propertyType: "Plot" as const, configs: ["30 × 40"], plotDetails: details, builder: "Builder", transactionType: "New Property", listingType: "For Sale", facing: "East" };
+    const errors = validatePlotDraft(draft);
+    expect(errors["plotSize.30 × 40.facings"]).toBeUndefined();
+    expect(errors["inventory.0.facing"]).toBeUndefined();
+    expect(preparePlotPropertyPayload(draft).facing).toBe("");
+  });
 });

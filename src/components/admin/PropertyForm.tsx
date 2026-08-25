@@ -182,6 +182,7 @@ const initialFormData: FormData = {
   possessionDetails: undefined,
   builder: "",
   developerLogoUrl: "",
+  developerDescription: "",
   localityMapImageUrl: "",
   image: "",
   badges: [],
@@ -1159,12 +1160,13 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   </select>
                 </div>
                 {!isStructuredType(formData.propertyType) && <div>
-                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Facing</label>
+                  <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Facing <span className="font-normal text-[#68646F]">(optional)</span></label>
                   <select
                     value={formData.facing || ""}
                     onChange={(e) => updateField("facing", e.target.value)}
                     className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] bg-white focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                   >
+                    <option value="">Not specified</option>
                     {facingOptions.map((o) => (
                       <option key={o} value={o}>{o}</option>
                     ))}
@@ -1358,6 +1360,25 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                     onChange={(value) => updateField("developerLogoUrl", value)}
                     description="Displayed in the Developer Profile section when provided."
                   />
+                  <div className="rounded-xl border border-[#E4E0E7] bg-white p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <label htmlFor="developer-description" className="text-[12px] font-bold text-[#3F3D46]">About Developer</label>
+                        <span className="ml-2 rounded-full bg-[#F3F1F5] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#68646F]">Optional</span>
+                        <p className="mt-1 text-[10px] leading-4 text-[#68646F]">Shown beside the logo in the public Developer Profile section.</p>
+                      </div>
+                      <span className="shrink-0 text-[9px] text-[#8A8690]">{(formData.developerDescription || "").length}/3000</span>
+                    </div>
+                    <textarea
+                      id="developer-description"
+                      value={formData.developerDescription || ""}
+                      onChange={(event) => updateField("developerDescription", event.target.value)}
+                      maxLength={3000}
+                      rows={6}
+                      placeholder="Enter a verified introduction, history, expertise, and notable achievements of the developer."
+                      className="mt-3 min-h-28 w-full resize-y rounded-lg border border-[#E4E0E7] bg-[#F8F7FA] px-3 py-2.5 text-[11px] leading-5 text-[#121B35] outline-none focus:border-[#DDAA42] focus:bg-white"
+                    />
+                  </div>
                   <OptionalMediaField
                     label="Locality map image"
                     value={formData.localityMapImageUrl}
@@ -1677,8 +1698,8 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 {formData.propertyType === "Apartment" && (formData.configurationDetails?.length || 0) > 0 && (
                   <div className="overflow-x-auto rounded-xl border border-[#E4E0E7] bg-white">
                     <table className="w-full min-w-[850px] text-left text-[12px]">
-                      <thead className="bg-[#121B35] text-white"><tr>{["Config", "Price", "Built-up area", "Carpet area", "Bedrooms", "Bathrooms", "Balconies", "Facing"].map((label) => <th key={label} className="px-3 py-2.5">{label}</th>)}</tr></thead>
-                      <tbody>{formData.configurationDetails!.map((row) => <tr key={row.configuration} className="border-t border-[#F3F1F5]"><td className="px-3 py-2 font-bold">{row.configuration}</td><td className="px-3 py-2">{row.price}</td><td className="px-3 py-2">{row.builtUpArea}</td><td className="px-3 py-2">{row.carpetArea}</td><td className="px-3 py-2">{row.bedrooms}</td><td className="px-3 py-2">{row.bathrooms}</td><td className="px-3 py-2">{row.balconies}</td><td className="px-3 py-2">{row.facings.join(", ")}</td></tr>)}</tbody>
+                      <thead className="bg-[#121B35] text-white"><tr>{["Config", "Price", "Built-up area", "Carpet area", "Bedrooms", "Bathrooms", "Balconies", "Facing (optional)"].map((label) => <th key={label} className="px-3 py-2.5">{label}</th>)}</tr></thead>
+                      <tbody>{formData.configurationDetails!.map((row) => <tr key={row.configuration} className="border-t border-[#F3F1F5]"><td className="px-3 py-2 font-bold">{row.configuration}</td><td className="px-3 py-2">{row.price}</td><td className="px-3 py-2">{row.builtUpArea}</td><td className="px-3 py-2">{row.carpetArea}</td><td className="px-3 py-2">{row.bedrooms}</td><td className="px-3 py-2">{row.bathrooms}</td><td className="px-3 py-2">{row.balconies}</td><td className="px-3 py-2">{row.facings.join(", ") || "Not specified"}</td></tr>)}</tbody>
                     </table>
                   </div>
                 )}

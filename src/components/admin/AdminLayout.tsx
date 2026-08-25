@@ -34,6 +34,7 @@ import {
 import { isAdminAuthed, adminLogin, adminLogout, getAdminLoginError } from "@/lib/adminAuth";
 import { fetchSystemNotifications, markAllSystemNotificationsRead, markSystemNotificationRead } from "@/lib/api";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
+import RefreshPageButton from "@/components/RefreshPageButton";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -336,6 +337,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
 
           <div className="relative flex items-center gap-3 ml-auto">
+            <RefreshPageButton variant="toolbar" />
             <button onClick={() => { setNotificationsOpen((open) => !open); if (!notificationsOpen) void loadNotifications(); }} aria-label={`System notifications${unreadCount ? `, ${unreadCount} unread` : ""}`} aria-expanded={notificationsOpen} className="relative w-10 h-10 rounded-xl bg-[#F8F7FA] flex items-center justify-center hover:bg-[#F3F1F5] transition-colors border border-[#E4E0E7]/30">
               <Bell className="w-5 h-5 text-[#68646F]" />
               {unreadCount > 0 && <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-[#F2C052] rounded-full text-[#0B1328] text-[10px] font-bold flex items-center justify-center">{unreadCount > 99 ? "99+" : unreadCount}</span>}

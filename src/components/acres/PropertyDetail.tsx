@@ -525,7 +525,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     (section.id !== "rera-details" || hasReraPhases) &&
     (section.id !== "project-details" || hasProjectDocuments) &&
     (section.id !== "facilities" || hasFacilities) &&
-    (section.id !== "dealer" || Boolean(property.builder || property.developerLogoUrl)) &&
+    (section.id !== "dealer" || Boolean(property.builder || property.developerLogoUrl || property.developerDescription)) &&
     (section.id !== "comparison" || hasComparison) &&
     (section.id !== "brochure" || hasBrochure) &&
     (section.id !== "locality" || hasLocalityContent) &&
@@ -1336,7 +1336,7 @@ const whyHighlights = (property.description || "")
               </div>
             </div>}
             {hasReraPhases && <div data-testid="rera-workspace-column"><PropertyReraSections property={property} setSectionRef={setSectionRef} activeView={reraWorkspaceView} onViewChange={(view) => { setReraWorkspaceView(view); setActiveSection(view === "rera" ? "rera-details" : "project-details"); }} /></div>}
-            {(property.builder || property.developerLogoUrl) && <div ref={setSectionRef("dealer")}><ProjectBuilderProfile property={property} projects={pools.builderMore} /></div>}
+            {(property.builder || property.developerLogoUrl || property.developerDescription) && <div ref={setSectionRef("dealer")}><ProjectBuilderProfile property={property} projects={pools.builderMore} /></div>}
             {hasComparison && <div ref={setSectionRef("comparison")}><ProjectComparison current={property} matches={comparisonMatches} /></div>}
           </div>
 

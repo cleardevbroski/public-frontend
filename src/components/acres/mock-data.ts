@@ -74,7 +74,7 @@ export type VillaDetails = {
   configurationDetails: VillaConfigurationDetail[];
   plotDimensions?: string;
   numberOfFloors?: string;
-  plotFacing: PlotFacing;
+  plotFacing?: PlotFacing;
   cornerPlot: boolean;
   roadWidthFacing?: string;
   privateGarden: boolean;
@@ -98,7 +98,7 @@ export type PlotSizeDetail = {
 export type PlotInventoryItem = {
   plotNumber: string;
   plotSize: string;
-  facing: PlotFacing;
+  facing?: PlotFacing;
   status: "Available" | "Booked" | "Sold";
   isCorner: boolean;
 };
@@ -259,6 +259,7 @@ export type Property = {
   builder?: string;
   builderId?: string | null;
   developerLogoUrl?: string;
+  developerDescription?: string;
   localityMapImageUrl?: string;
   image: string;
   badges?: string[];

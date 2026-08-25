@@ -30,7 +30,7 @@ export function createPlotSizeDetail(value: string): PlotSizeDetail {
 }
 
 export function createPlotInventoryItem(plotSize = ""): PlotInventoryItem {
-  return { plotNumber: "", plotSize, facing: "East", status: "Available", isCorner: false };
+  return { plotNumber: "", plotSize, status: "Available", isCorner: false };
 }
 
 function validDate(value?: string) {
@@ -59,7 +59,7 @@ export function validatePlotDraft(property: Partial<Property>): PlotErrors {
     else if (seen.has(normalized.plotSize)) errors.configurations = `Duplicate plot size: ${normalized.plotSize}.`;
     else seen.add(normalized.plotSize);
     if (!Number.isFinite(row.pricePerSqft) || row.pricePerSqft <= 0) errors[`${prefix}.pricePerSqft`] = "Enter a positive price per sqft.";
-    if (!row.facings.length || row.facings.some((facing) => !facings.includes(facing))) errors[`${prefix}.facings`] = "Select at least one valid facing.";
+    if (row.facings.some((facing) => !facings.includes(facing))) errors[`${prefix}.facings`] = "Select only valid facing options.";
   });
   const tags = property.configs || [];
   if (tags.length !== rows.length || tags.some((tag, index) => tag !== normalizePlotSize(rows[index]?.plotSize || "")?.plotSize)) errors.configurations = "Plot-size tags and detail rows must match.";
@@ -72,7 +72,7 @@ export function validatePlotDraft(property: Partial<Property>): PlotErrors {
     else if (plotNumbers.has(item.plotNumber.trim().toLowerCase())) errors.inventory = `Duplicate plot number: ${item.plotNumber}.`;
     else plotNumbers.add(item.plotNumber.trim().toLowerCase());
     if (!rows.some((row) => row.plotSize === item.plotSize)) errors[`inventory.${index}.plotSize`] = "Select a listed plot size.";
-    if (!facings.includes(item.facing)) errors[`inventory.${index}.facing`] = "Select a valid facing.";
+    if (item.facing && !facings.includes(item.facing)) errors[`inventory.${index}.facing`] = "Select a valid facing.";
   });
   if (!details?.layoutMapUrl) errors.layoutMapUrl = "Upload the required master plan / layout map.";
   if (details?.layoutPossession.status === "Layout Ready" && !validDate(details.layoutPossession.readyDate)) errors.layoutPossession = "Layout Ready requires a ready date.";
@@ -113,6 +113,7 @@ export function preparePlotPropertyPayload<T extends Partial<Property>>(property
     possessionDetails: undefined,
     bedrooms: undefined,
     bathrooms: undefined,
+    facing: values.find((row) => row.facings.length)?.facings.join(", ") || "",
     furnishing: undefined,
     parking: undefined,
     floorLabel: undefined,

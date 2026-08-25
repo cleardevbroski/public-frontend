@@ -53,6 +53,14 @@ describe("Villa property helpers", () => {
     expect(validateVillaDraft(draft).configurations).toBeUndefined();
   });
 
+  it("allows a Villa draft without project or configuration facing", () => {
+    const draft = villa();
+    draft.villaDetails!.plotFacing = undefined;
+    draft.villaDetails!.configurationDetails.forEach((row) => { row.plotFacing = undefined; });
+    expect(validateVillaDraft(draft).plotFacing).toBeUndefined();
+    expect(prepareVillaPropertyPayload(draft).facing).toBe("");
+  });
+
   it("orders mixed lakh/crore prices and derives compatibility summaries", () => {
     const draft = villa();
     expect(villaDisplayRange(draft.villaDetails?.configurationDetails, "price")).toBe("₹95 L - ₹2.80 Cr");

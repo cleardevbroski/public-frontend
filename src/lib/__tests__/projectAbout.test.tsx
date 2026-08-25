@@ -37,9 +37,11 @@ describe("ProjectAbout", () => {
     expect(host.textContent).not.toContain("Empty detail");
     expect(host.textContent).not.toContain("PRM/123");
 
-    const expand = [...host.querySelectorAll("button")].find((button) => button.textContent?.includes("View All Details"));
+    const expand = [...host.querySelectorAll("button")].find((button) => button.textContent?.includes("View More"));
     await act(async () => expand?.click());
     expect(host.textContent).toContain("PRM/123");
+    expect(host.textContent).toContain("Project details at a glance");
+    expect(host.textContent).toContain("Property type");
     await act(async () => root.unmount());
   });
 
@@ -48,6 +50,18 @@ describe("ProjectAbout", () => {
     const root = createRoot(host);
     await act(async () => root.render(<ProjectAbout property={{ ...property, description: "" }} title="Apartment overview" facts={[]} />));
     expect(host.innerHTML).toBe("");
+    await act(async () => root.unmount());
+  });
+
+  it("shows View More when a long description is clamped without extra narrative", async () => {
+    const host = document.createElement("div");
+    const root = createRoot(host);
+    const longDescription = "Sobha Altair is a residential project by Sobha located in Chikkakannalli near Sarjapur Main Road, East Bangalore. The project spans 3.37 acres and includes 1 tower with around 207 homes. It offers spacious 3 and 4 BHK apartments ranging from 1894 Sq.Ft. to 2570 Sq.Ft., with landscaped surroundings and a low-density planning approach. The project is currently in the New Launch stage, with possession expected around May 2031.";
+    await act(async () => root.render(<ProjectAbout property={{ ...property, description: longDescription }} title="Apartment overview" facts={[]} />));
+    expect(host.textContent).toContain("View More");
+    const expand = [...host.querySelectorAll("button")].find((button) => button.textContent?.includes("View More"));
+    await act(async () => expand?.click());
+    expect(host.textContent).toContain("possession expected around May 2031");
     await act(async () => root.unmount());
   });
 });

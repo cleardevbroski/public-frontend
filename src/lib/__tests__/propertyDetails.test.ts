@@ -47,6 +47,15 @@ describe("Apartment property helpers", () => {
     expect(validateApartmentDraft(draft).floorLabel).toBeUndefined();
   });
 
+  it("allows Apartment configurations without facing information", () => {
+    const draft = apartment();
+    draft.configurationDetails!.forEach((row) => { row.facings = []; });
+    const errors = validateApartmentDraft(draft);
+    expect(errors["configuration.0.facings"]).toBeUndefined();
+    expect(errors["configuration.1.facings"]).toBeUndefined();
+    expect(preparePropertyPayload(draft).facing).toBe("");
+  });
+
   it("allows repeated BHK rows", () => {
     const draft = apartment();
     draft.configs = ["3 BHK", "3 BHK", "3 BHK"];
