@@ -294,6 +294,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(() => mergeInitialData(initialData));
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitAction, setSubmitAction] = useState<"pending" | "publish" | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [configInput, setConfigInput] = useState("");
   const [builders, setBuilders] = useState<{ id: string; name: string }[]>([]);
@@ -647,13 +648,13 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     setCurrentStep((s) => Math.max(s - 1, 1));
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (action: "pending" | "publish" = "publish") => {
     if (isSubmitting) return;
     if (uploadInProgress) {
       setSubmitError("Wait for all file uploads to finish before publishing.");
       return;
     }
-    if (formData.propertyType === "Plot") {
+    if (action === "publish" && formData.propertyType === "Plot") {
       const plotErrors = validatePlotDraft(formData);
       if (Object.keys(plotErrors).length) {
         const rowCount = formData.plotDetails?.inventory.length || 0;
@@ -666,12 +667,13 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
         return;
       }
     }
-    if (formData.reraRegistered && (!formData.reraPhases?.length || formData.reraPhases.some((phase) => !phase.name.trim() || !/^[A-Za-z0-9/._-]{8,50}$/.test(phase.reraNumber.trim())))) {
+    if (action === "publish" && formData.reraRegistered && (!formData.reraPhases?.length || formData.reraPhases.some((phase) => !phase.name.trim() || !/^[A-Za-z0-9/._-]{8,50}$/.test(phase.reraNumber.trim())))) {
       setValidationErrors((previous) => ({ ...previous, reraPhases: "Every phase needs a name and a valid 8–50 character RERA registration number." }));
       setCurrentStep(1);
       return;
     }
     setIsSubmitting(true);
+    setSubmitAction(action);
     setSubmitError("");
     try {
       const propertyPayload = buildPropertyPayload();
@@ -711,10 +713,9 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
             __v: _version,
             ...editablePayload
           } = propertyPayload as Record<string, unknown>;
-          property = await updateProperty(submissionId!, editablePayload as any);
+          property = await updateProperty(submissionId!, { ...editablePayload, status: action === "pending" ? "pending" : "approved", published: action === "publish" });
         } else {
-          // New admin posts go live immediately.
-          property = await addProperty({ ...propertyPayload, published: true } as any);
+          property = await addProperty({ ...propertyPayload, status: action === "pending" ? "pending" : "approved", published: action === "publish" } as any);
         }
         if (property) {
           navigate(`/admin?${isAdminEdit ? "updated" : "posted"}=${property.id}`);
@@ -724,6 +725,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
       console.error(error);
       setSubmitError(error instanceof Error ? error.message : "Unable to submit the property. Please try again.");
       setIsSubmitting(false);
+      setSubmitAction(null);
     }
   };
 
@@ -1908,15 +1910,16 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
             ) : (
               <>
                 {isPublic && !submissionId && <button onClick={handleSaveDraft} disabled={isSubmitting} className="px-5 py-3 rounded-xl border border-[#E4E0E7] bg-white text-[#121B35] text-[14px] font-bold disabled:opacity-60">Save Draft</button>}
+                {!isPublic && <button onClick={() => void handleSubmit("pending")} disabled={isSubmitting} className="flex items-center gap-2 rounded-xl border border-[#D8DEE8] bg-white px-5 py-3 text-[14px] font-bold text-[#172039] transition-all duration-200 hover:bg-[#F8FAFC] disabled:opacity-60">{isSubmitting && submitAction === "pending" ? <><Loader2 className="h-5 w-5 animate-spin" />Saving Pending...</> : "Move to Pending"}</button>}
                 <button
-                  onClick={handleSubmit}
+                  onClick={() => void handleSubmit("publish")}
                   disabled={isSubmitting}
                   className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-[#F2C052] to-[#FBBF24] text-white rounded-xl text-[14px] font-bold shadow-lg hover:shadow-xl hover:from-[#B98428] hover:to-[#F2C052] transition-all duration-200 disabled:opacity-60"
                 >
-                  {isSubmitting ? (
-                    <><Loader2 className="w-5 h-5 animate-spin" />{isPublic ? "Submitting..." : isAdminEdit ? "Updating..." : "Publishing..."}</>
+                  {isSubmitting && submitAction === "publish" ? (
+                    <><Loader2 className="w-5 h-5 animate-spin" />{isPublic ? "Submitting..." : "Publishing..."}</>
                   ) : (
-                    <><Sparkles className="w-5 h-5" />{isPublic ? (isResubmission ? "Resubmit Property" : "Submit for Review") : isAdminEdit ? "Update Property" : "Publish Property"}</>
+                    <><Sparkles className="w-5 h-5" />{isPublic ? (isResubmission ? "Resubmit Property" : "Submit for Review") : "Publish Property"}</>
                   )}
                 </button>
               </>
