@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { AlertCircle, Eye, GripVertical, ImagePlus, X } from "lucide-react";
 import { uploadPropertyMedia } from "@/lib/api";
+import { PROPERTY_IMAGE_MAX_BYTES, PROPERTY_IMAGE_MAX_MB } from "@/lib/propertyMediaLimits";
 
 interface MediaUploaderProps {
   images: string[];
@@ -10,7 +11,6 @@ interface MediaUploaderProps {
   onImagesAdd?: (images: string[]) => void;
 }
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 export default function MediaUploader({ images, onImagesChange, onImagesAdd }: MediaUploaderProps) {
@@ -29,8 +29,8 @@ export default function MediaUploader({ images, onImagesChange, onImagesAdd }: M
         newErrors.push(`${file.name}: Invalid type. Use JPG, PNG, or WebP.`);
         continue;
       }
-      if (file.size > MAX_IMAGE_SIZE) {
-        newErrors.push(`${file.name}: Too large. Max 5MB per image.`);
+      if (file.size > PROPERTY_IMAGE_MAX_BYTES) {
+        newErrors.push(`${file.name}: Too large. Max ${PROPERTY_IMAGE_MAX_MB} MB per image.`);
         continue;
       }
       try {
@@ -83,7 +83,7 @@ export default function MediaUploader({ images, onImagesChange, onImagesAdd }: M
           <input ref={imageInputRef} type="file" multiple accept=".jpg,.jpeg,.png,.webp" className="hidden" onChange={(event) => event.target.files && void handleImageFiles(event.target.files)} />
           <div className={`mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl ${dragOver ? "bg-[#DDAA42]/10 shadow-lg" : "bg-gradient-to-br from-[#F3F1F5] to-[#E4E0E7]"}`}><ImagePlus className="size-7 text-[#DDAA42]" /></div>
           <p className="mb-1 text-[15px] font-semibold text-[#121B35]">{dragOver ? "Drop your photos here" : "Drag & drop photos here"}</p>
-          <p className="text-[13px] text-[#68646F]">or <span className="font-medium text-[#DDAA42]">browse files</span> — JPG, PNG, WebP up to 5MB each</p>
+          <p className="text-[13px] text-[#68646F]">or <span className="font-medium text-[#DDAA42]">browse files</span> — JPG, PNG, WebP up to {PROPERTY_IMAGE_MAX_MB} MB each</p>
         </div>
 
         {images.length > 0 && (

@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { AlertCircle, ChevronLeft, ChevronRight, ImagePlus, Loader2, X } from "lucide-react";
 import { uploadPropertyMedia } from "@/lib/api";
+import { PROPERTY_IMAGE_MAX_BYTES, PROPERTY_IMAGE_MAX_MB } from "@/lib/propertyMediaLimits";
 
 interface HeroImageUploaderProps {
   images: string[];
@@ -11,7 +12,6 @@ interface HeroImageUploaderProps {
 }
 
 const MAX_HERO_IMAGES = 3;
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 export default function HeroImageUploader({ images, onChange, onImagesAdd }: HeroImageUploaderProps) {
@@ -44,8 +44,8 @@ export default function HeroImageUploader({ images, onChange, onImagesAdd }: Her
         failures.push(`${file.name}: use JPG, PNG, or WebP.`);
         continue;
       }
-      if (file.size > MAX_IMAGE_SIZE) {
-        failures.push(`${file.name}: maximum size is 5 MB.`);
+      if (file.size > PROPERTY_IMAGE_MAX_BYTES) {
+        failures.push(`${file.name}: maximum size is ${PROPERTY_IMAGE_MAX_MB} MB.`);
         continue;
       }
       try {
@@ -146,7 +146,7 @@ export default function HeroImageUploader({ images, onChange, onImagesAdd }: Her
           <AlertCircle className="mt-0.5 size-4 shrink-0" /> {error}
         </p>
       )}
-      <p className="mt-3 text-[11px] text-[#68646F]">Recommended: landscape 16:9, JPG/PNG/WebP, maximum 5 MB each.</p>
+      <p className="mt-3 text-[11px] text-[#68646F]">Recommended: landscape 16:9, JPG/PNG/WebP, maximum {PROPERTY_IMAGE_MAX_MB} MB each.</p>
     </section>
   );
 }

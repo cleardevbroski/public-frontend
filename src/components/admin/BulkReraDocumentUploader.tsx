@@ -6,6 +6,7 @@ import { uploadPropertyMedia } from "@/lib/api";
 import { mapWithConcurrency } from "@/lib/uploadConcurrency";
 import { ALL_RERA_DOCUMENT_DEFINITIONS, classifyReraFileName, documentDefinitionByKey, type ReraDocumentDefinition } from "@/lib/reraBulkUpload";
 import type { ReraDocument } from "@/components/acres/mock-data";
+import { PROPERTY_DOCUMENT_MAX_BYTES, PROPERTY_DOCUMENT_MAX_MB } from "@/lib/propertyMediaLimits";
 
 type QueueStatus = "needs-review" | "ready" | "uploading" | "uploaded" | "error";
 type QueueItem = { id: string; file: File; definition?: ReraDocumentDefinition; confidence: "high" | "medium" | "none"; status: QueueStatus; message: string };
@@ -18,7 +19,6 @@ type Props = {
 };
 
 const allowedTypes = new Set(["application/pdf", "image/jpeg", "image/png"]);
-const maxBytes = 15 * 1024 * 1024;
 const selectionValue = (definition?: ReraDocumentDefinition) => definition ? `${definition.group}:${definition.key}` : "";
 const queueId = (file: File, index: number) => `${file.name}-${file.size}-${file.lastModified}-${Date.now()}-${index}`;
 
@@ -93,7 +93,7 @@ export default function BulkReraDocumentUploader({ phaseName, reraDocuments, pro
   const addFiles = (files: FileList | File[]) => {
     const classified = Array.from(files).map((file, index): QueueItem => {
       if (!allowedTypes.has(file.type)) return { id: queueId(file, index), file, confidence: "none", status: "error", message: "Use PDF, JPG, or PNG." };
-      if (file.size > maxBytes) return { id: queueId(file, index), file, confidence: "none", status: "error", message: "File exceeds the 15 MB limit." };
+      if (file.size > PROPERTY_DOCUMENT_MAX_BYTES) return { id: queueId(file, index), file, confidence: "none", status: "error", message: `File exceeds the ${PROPERTY_DOCUMENT_MAX_MB} MB limit.` };
       const match = classifyReraFileName(file.name);
       return { id: queueId(file, index), file, definition: match.definition, confidence: match.confidence, status: match.confidence === "high" ? "ready" : "needs-review", message: match.reason };
     });
@@ -138,7 +138,7 @@ export default function BulkReraDocumentUploader({ phaseName, reraDocuments, pro
   return <section className="mt-5 rounded-2xl border border-[#D8C88F] bg-[#FFFDF7] p-4 md:p-5">
     <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2"><UploadCloud className="size-5 text-[#A87519]" /><h4 className="text-[14px] font-bold text-[#121B35]">Smart bulk document import</h4></div><p className="mt-1 text-[11px] leading-5 text-[#68646F]">Drop all files for <strong>{phaseName || "this phase"}</strong>. Recognized names and annexure numbers upload automatically.</p></div>{items.length > 0 && <button type="button" disabled={busy} onClick={() => setItems((current) => current.filter((item) => item.status === "uploading"))} className="text-[10px] font-bold text-[#68646F] disabled:opacity-40">Clear queue</button>}</div>
     <button type="button" disabled={busy} onClick={() => inputRef.current?.click()} onDragOver={(event) => { event.preventDefault(); if (!busy) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={(event) => { event.preventDefault(); setDragging(false); if (!busy) addFiles(event.dataTransfer.files); }} className={`mt-4 flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed px-5 py-7 text-center transition-colors ${dragging ? "border-[#DDAA42] bg-[#FFF7DF]" : "border-[#D9D2BF] bg-white hover:border-[#DDAA42]"} disabled:cursor-wait disabled:opacity-60`}>
-      {busy ? <Loader2 className="size-7 animate-spin text-[#DDAA42]" /> : <UploadCloud className="size-7 text-[#DDAA42]" />}<span className="mt-2 text-[13px] font-bold text-[#121B35]">{busy ? "Uploading files…" : "Drop all RERA and project documents here"}</span><span className="mt-1 text-[10px] text-[#68646F]">PDF, JPG or PNG · 15 MB each · 3 concurrent uploads</span>
+      {busy ? <Loader2 className="size-7 animate-spin text-[#DDAA42]" /> : <UploadCloud className="size-7 text-[#DDAA42]" />}<span className="mt-2 text-[13px] font-bold text-[#121B35]">{busy ? "Uploading files…" : "Drop all RERA and project documents here"}</span><span className="mt-1 text-[10px] text-[#68646F]">PDF, JPG or PNG · {PROPERTY_DOCUMENT_MAX_MB} MB each · 3 concurrent uploads</span>
     </button>
     <input ref={inputRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" className="hidden" onChange={(event) => event.target.files && addFiles(event.target.files)} />
     {items.length > 0 && <div className="mt-4 space-y-2">{items.map((item) => <div key={item.id} className="grid gap-2 rounded-xl border border-[#E5E0D2] bg-white p-3 md:grid-cols-[minmax(0,1fr)_minmax(210px,.75fr)_auto] md:items-center">

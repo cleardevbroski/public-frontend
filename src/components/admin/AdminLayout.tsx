@@ -2,7 +2,7 @@
 
 import Link from "@/components/Link";
 import Image from "@/components/Image";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -35,6 +35,7 @@ import { isAdminAuthed, adminLogin, adminLogout, getAdminLoginError } from "@/li
 import { fetchSystemNotifications, markAllSystemNotificationsRead, markSystemNotificationRead } from "@/lib/api";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
 import RefreshPageButton from "@/components/RefreshPageButton";
+import { buildAdminPropertySearchHref } from "@/lib/adminSearch";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -138,7 +139,9 @@ function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const pathname = useLocation().pathname;
+  const location = useLocation();
+  const navigate = useNavigate();
+  const pathname = location.pathname;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [authed, setAuthed] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -146,6 +149,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [headerSearch, setHeaderSearch] = useState("");
+
+  useEffect(() => {
+    const query = pathname === "/admin" ? new URLSearchParams(location.search).get("q") || "" : "";
+    setHeaderSearch(query);
+  }, [location.search, pathname]);
+
+  const submitHeaderSearch = (event: React.FormEvent) => {
+    event.preventDefault();
+    navigate(buildAdminPropertySearchHref(headerSearch));
+  };
 
   useEffect(() => {
     setAuthed(isAdminAuthed());
@@ -327,14 +341,20 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </button>
 
           {/* Search */}
-          <div className="hidden md:flex flex-1 max-w-md items-center gap-2 bg-[#F8F7FA] rounded-xl px-4 py-2.5 border border-[#E4E0E7]/30 focus-within:border-[#DDAA42]/40 focus-within:ring-2 focus-within:ring-[#DDAA42]/10 transition-all">
-            <Search className="w-4 h-4 text-[#68646F]" />
+          <form onSubmit={submitHeaderSearch} role="search" className="hidden md:flex flex-1 max-w-md items-center gap-2 bg-[#F8F7FA] rounded-xl px-3 py-2 border border-[#E4E0E7]/30 focus-within:border-[#DDAA42]/40 focus-within:ring-2 focus-within:ring-[#DDAA42]/10 transition-all">
+            <button type="submit" aria-label="Search properties" className="rounded-md p-1 text-[#68646F] transition-colors hover:bg-white hover:text-[#9A741E]">
+              <Search className="w-4 h-4" />
+            </button>
             <input
-              type="text"
-              placeholder="Search admin records..."
+              type="search"
+              value={headerSearch}
+              onChange={(event) => setHeaderSearch(event.target.value)}
+              onKeyDown={(event) => { if (event.key === "Escape") setHeaderSearch(""); }}
+              placeholder="Search properties by name, builder or location..."
+              aria-label="Search admin properties"
               className="flex-1 bg-transparent text-[14px] text-[#121B35] placeholder-[#68646F] outline-none"
             />
-          </div>
+          </form>
 
           <div className="relative flex items-center gap-3 ml-auto">
             <RefreshPageButton variant="toolbar" />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import Link from "@/components/Link";
 import {
   PlusCircle,
@@ -12,11 +13,13 @@ import {
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PropertyTable from "@/components/admin/PropertyTable";
-import { fetchAdminProperties } from "@/lib/api";
+import { fetchAllAdminProperties } from "@/lib/api";
 import { isAdminAuthed } from "@/lib/adminAuth";
 import type { Property } from "@/components/acres/mock-data";
 
 export default function AdminDashboard() {
+  const [searchParams] = useSearchParams();
+  const initialSearch = searchParams.get("q") || "";
   const [allProperties, setAllProperties] = useState<Property[]>([]);
   const [adminProperties, setAdminProperties] = useState<Property[]>([]);
   const [counts, setCounts] = useState({ total: 0, admin: 0, mock: 0, published: 0, pending: 0 });
@@ -28,8 +31,7 @@ export default function AdminDashboard() {
     setLoading(true);
     setLoadError("");
     try {
-      const data = await fetchAdminProperties({ limit: 1000 });
-      const properties: Property[] = Array.isArray(data.properties) ? data.properties : [];
+      const properties = await fetchAllAdminProperties() as Property[];
       setAllProperties(properties);
       
       const adminProps = properties.filter((p) => p.postedBy?.role === "admin" || (!p.postedBy && p.source === "admin"));
@@ -161,6 +163,7 @@ export default function AdminDashboard() {
         <PropertyTable
           properties={allProperties}
           adminProperties={adminProperties}
+          initialSearch={initialSearch}
           onPropertyDeleted={loadData}
         />
       </div>

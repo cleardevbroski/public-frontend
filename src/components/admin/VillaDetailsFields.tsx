@@ -4,10 +4,12 @@ import type {
   VillaConfigurationDetail,
   VillaDetails,
   VillaType,
+  VillaUnitVariant,
 } from "@/components/acres/mock-data";
 import { useState } from "react";
 import { facingOptions } from "@/lib/propertyDetails";
 import type { VillaErrors } from "@/lib/villaDetails";
+import { villaTypeOptions, villaUnitVariantOptions } from "@/lib/villaDetails";
 
 type Props = {
   configInput: string;
@@ -47,7 +49,7 @@ export default function VillaDetailsFields(props: Props) {
       <div>
         <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Villa Type <span className="text-[#F2C052]">*</span></label>
         <select value={props.details.villaType} onChange={(event) => updateVilla({ villaType: event.target.value as VillaType })} className={inputClass}>
-          <option>Independent</option><option>Row Villa</option><option>Twin Villa</option>
+          {villaTypeOptions.map((type) => <option key={type}>{type}</option>)}
         </select>
         {props.errors.villaType && <p className="text-[12px] text-red-600 mt-1">{props.errors.villaType}</p>}
       </div>
@@ -55,7 +57,7 @@ export default function VillaDetailsFields(props: Props) {
       <div>
         <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Configurations <span className="text-[#F2C052]">*</span></label>
         <div className="flex gap-2">
-          <input value={props.configInput} onChange={(event) => props.setConfigInput(event.target.value)} onKeyDown={(event) => event.key === "Enter" && (event.preventDefault(), props.addConfig())} placeholder="e.g. 3 BHK or 4 BHK" className="flex-1 px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42]" />
+          <input value={props.configInput} onChange={(event) => props.setConfigInput(event.target.value)} onKeyDown={(event) => event.key === "Enter" && (event.preventDefault(), props.addConfig())} placeholder="e.g. 4 BHK Duplex (G+1), Villament, or Penthouse" className="flex-1 px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42]" />
           <button type="button" onClick={props.addConfig} className="px-5 py-3 bg-[#DDAA42] text-[#0B1328] rounded-xl text-[13px] font-semibold">Add</button>
         </div>
         {(props.configError || props.errors.configurations) && <p className="text-[12px] text-red-600 mt-1.5">{props.configError || props.errors.configurations}</p>}
@@ -73,9 +75,9 @@ export default function VillaDetailsFields(props: Props) {
         <div>
           <h3 className="text-[14px] font-bold text-[#121B35] mb-2">Per-configuration Villa details</h3>
           <div className="overflow-x-auto border border-[#E4E0E7] rounded-xl">
-            <table className="w-full min-w-[980px] text-left">
+            <table className="w-full min-w-[1380px] text-left">
               <thead className="bg-[#121B35] text-white text-[11px] uppercase tracking-wide">
-                <tr>{["Config", "Price", "Plot area", "Built-up area", "Super area", "Bedrooms", "Bathrooms"].map((label) => <th key={label} className="px-3 py-3">{label}</th>)}</tr>
+                <tr>{["Config", "Variant", "Price", "Plot area", "Built-up area", "Carpet area", "Super area", "Bedrooms", "Bathrooms", "Balconies"].map((label) => <th key={label} className="px-3 py-3">{label}</th>)}</tr>
               </thead>
               <tbody>
                 {props.details.configurationDetails.map((row, index) => {
@@ -84,15 +86,16 @@ export default function VillaDetailsFields(props: Props) {
                   return (
                     <tr key={`${row.configuration}-${index}`} className="border-t border-[#F3F1F5] align-top">
                       <td className="px-3 py-3 font-bold text-[#121B35] whitespace-nowrap">{row.configuration}</td>
-                      {(["price", "plotArea", "builtUpArea", "superArea"] as const).map((key) => (
+                      <td className="px-2 py-2"><select className={inputClass} value={row.unitVariant || ""} onChange={(event) => props.updateDetail(index, { unitVariant: (event.target.value || undefined) as VillaUnitVariant | undefined })}><option value="">Not specified</option>{villaUnitVariantOptions.map((variant) => <option key={variant}>{variant}</option>)}</select></td>
+                      {(["price", "plotArea", "builtUpArea", "carpetArea", "superArea"] as const).map((key) => (
                         <td key={key} className="px-2 py-2">
-                          <input className={inputClass} value={row[key]} placeholder={key === "price" ? "₹2.80 Cr" : "2400 sqft"} onChange={(event) => props.updateDetail(index, { [key]: event.target.value })} />
+                          <input className={inputClass} value={row[key] || ""} placeholder={key === "price" ? "₹2.80 Cr" : "2400 sqft"} onChange={(event) => props.updateDetail(index, { [key]: event.target.value })} />
                           {field(key) && <p className="text-[10px] text-red-600 mt-1">{field(key)}</p>}
                         </td>
                       ))}
-                      {(["bedrooms", "bathrooms"] as const).map((key) => (
+                      {(["bedrooms", "bathrooms", "balconies"] as const).map((key) => (
                         <td key={key} className="px-2 py-2">
-                          <input type="number" min={1} step={1} className={`${inputClass} min-w-[72px]`} value={row[key]} onChange={(event) => props.updateDetail(index, { [key]: Number(event.target.value) })} />
+                          <input type="number" min={key === "balconies" ? 0 : 1} step={1} className={`${inputClass} min-w-[72px]`} value={row[key] ?? ""} onChange={(event) => props.updateDetail(index, { [key]: event.target.value === "" ? undefined : Number(event.target.value) })} />
                           {field(key) && <p className="text-[10px] text-red-600 mt-1">{field(key)}</p>}
                         </td>
                       ))}
@@ -118,6 +121,7 @@ export default function VillaDetailsFields(props: Props) {
           <div key={`villa-options-${row.configuration}-${index}`} className="rounded-2xl border border-[#E4E0E7]/70 bg-[#F8F7FA]/40 p-5">
             <div className="mb-4"><h3 className="text-[14px] font-bold text-[#121B35]">{row.configuration} villa-specific details</h3><p className="text-[11px] text-[#68646F]">Optional. Fill any fields that apply, then save this configuration.</p></div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div><label className="mb-2 block text-[13px] font-semibold">BHK</label><input value={row.bhk || ""} onChange={(event) => props.updateDetail(index, { bhk: event.target.value })} placeholder="e.g. 4 BHK" className={inputClass} />{field("bhk") && <p className="mt-1 text-[11px] text-red-600">{field("bhk")}</p>}</div>
               <div><label className="mb-2 block text-[13px] font-semibold">Plot Dimensions</label><input value={row.plotDimensions || ""} onChange={(event) => props.updateDetail(index, { plotDimensions: event.target.value })} placeholder="e.g. 40 ft × 60 ft" className={inputClass} />{field("plotDimensions") && <p className="mt-1 text-[11px] text-red-600">{field("plotDimensions")}</p>}</div>
               <div><label className="mb-2 block text-[13px] font-semibold">Number of Floors</label><input value={row.numberOfFloors || ""} onChange={(event) => props.updateDetail(index, { numberOfFloors: event.target.value })} placeholder="e.g. G+2" className={inputClass} />{field("numberOfFloors") && <p className="mt-1 text-[11px] text-red-600">{field("numberOfFloors")}</p>}</div>
               <div><label className="mb-2 block text-[13px] font-semibold">Plot Facing <span className="font-normal text-[#68646F]">(optional)</span></label><select value={row.plotFacing || ""} onChange={(event) => props.updateDetail(index, { plotFacing: (event.target.value || undefined) as PlotFacing | undefined })} className={inputClass}><option value="">Not specified</option>{facingOptions.map((facing) => <option key={facing}>{facing}</option>)}</select></div>

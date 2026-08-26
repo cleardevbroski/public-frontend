@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, X, Search, ShieldCheck, Star } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import StatusControls from "@/components/admin/StatusControls";
-import { fetchBuilders, createBuilder, updateBuilder, deleteBuilder } from "@/lib/api";
+import { fetchAllBuilders, createBuilder, updateBuilder, deleteBuilder } from "@/lib/api";
+import { matchesAdminSearch } from "@/lib/adminSearch";
 
 type Builder = {
   _id: string;
@@ -55,8 +56,8 @@ export default function AdminBuilders() {
 
   const load = async () => {
     try {
-      const res = await fetchBuilders();
-      setBuilders(res.builders || []);
+      const records = await fetchAllBuilders();
+      setBuilders(records as Builder[]);
     } catch {
       // Ignore
     } finally {
@@ -116,7 +117,7 @@ export default function AdminBuilders() {
     load();
   };
 
-  const filtered = builders.filter((b) => b.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = builders.filter((builder) => matchesAdminSearch(search, [builder.name, builder.city, builder.headquarters]));
 
   const input = "w-full h-11 px-3.5 rounded-xl border border-[#E4E0E7] focus:border-[#DDAA42] outline-none text-[14px] text-[#121B35] bg-white";
   const label = "block text-[12px] font-bold text-[#68646F] mb-1.5";
@@ -146,7 +147,7 @@ export default function AdminBuilders() {
             <Search className="size-4 text-[#68646F]" />
             <input
               type="text"
-              placeholder="Search by builder name..."
+              placeholder="Search builder name, city or headquarters..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="flex-1 bg-transparent text-[14px] text-[#121B35] placeholder-[#68646F] outline-none"

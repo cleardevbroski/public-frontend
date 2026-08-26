@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, LayoutGrid, MapPin, Search, Sparkles } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import type { Property } from "@/components/acres/mock-data";
-import { fetchAdminProperties } from "@/lib/api";
+import { fetchAllAdminProperties } from "@/lib/api";
+import { matchesPropertyAdminSearch } from "@/lib/adminSearch";
 import {
   getHomepageSections,
   getBangaloreZone,
@@ -23,8 +24,8 @@ export default function AdminHomepagePlacements() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchAdminProperties({ limit: 1000, sort: "-createdAt" })
-      .then((data) => setProperties(data.properties as Property[]))
+    fetchAllAdminProperties({ sort: "-createdAt" })
+      .then((data) => setProperties(data as Property[]))
       .catch((loadError) =>
         setError(loadError instanceof Error ? loadError.message : "Unable to load properties")
       )
@@ -34,11 +35,7 @@ export default function AdminHomepagePlacements() {
   const visibleProperties = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return properties;
-    return properties.filter((property) =>
-      [property.title, property.subtitle, property.builder, property.propertyType, property.locality?.zone]
-        .filter(Boolean)
-        .some((value) => value!.toLowerCase().includes(query))
-    );
+    return properties.filter((property) => matchesPropertyAdminSearch(property, query));
   }, [properties, search]);
 
   const placementCounts = useMemo(

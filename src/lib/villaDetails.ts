@@ -2,10 +2,73 @@ import type {
   Property,
   VillaConfigurationDetail,
   VillaDetails,
+  VillaType,
+  VillaUnitVariant,
 } from "@/components/acres/mock-data";
 import { normalizeBhkLabel } from "@/lib/propertyDetails";
 
 export type VillaErrors = Record<string, string>;
+
+export const villaTypeOptions: VillaType[] = [
+  "Independent", "Row Villa", "Twin Villa", "Villament", "Penthouse",
+  "Duplex Villa", "Triplex Villa", "Mixed Villa Development",
+];
+
+export const villaUnitVariantOptions: VillaUnitVariant[] = [
+  "Simplex", "Duplex", "Triplex", "Villament", "Penthouse", "Row House",
+  "Independent Villa", "Twin Villa", "Sky Villa", "Custom",
+];
+
+export function normalizeVillaType(value: string): VillaType | undefined {
+  const normalized = String(value || "").trim().toLowerCase().replace(/[\s_-]+/g, " ");
+  if (!normalized) return undefined;
+  if (normalized.includes("mixed")) return "Mixed Villa Development";
+  if (normalized.includes("villament")) return "Villament";
+  if (normalized.includes("penthouse") || normalized.includes("pent house")) return "Penthouse";
+  if (normalized.includes("row") || normalized.includes("townhouse") || normalized.includes("town house")) return "Row Villa";
+  if (normalized.includes("triplex")) return "Triplex Villa";
+  if (normalized.includes("duplex")) return "Duplex Villa";
+  if (normalized.includes("twin")) return "Twin Villa";
+  if (normalized.includes("independent") || normalized === "villa") return "Independent";
+  return villaTypeOptions.find((option) => option.toLowerCase() === normalized);
+}
+
+function inferVillaUnitVariant(value: string): VillaUnitVariant | undefined {
+  const normalized = value.toLowerCase();
+  if (/\btriplex\b/.test(normalized)) return "Triplex";
+  if (/\bduplex\b/.test(normalized)) return "Duplex";
+  if (/\bsimplex\b/.test(normalized)) return "Simplex";
+  if (/\bvillament\b/.test(normalized)) return "Villament";
+  if (/\bpent\s*house\b/.test(normalized)) return "Penthouse";
+  if (/\bsky\s*villa\b/.test(normalized)) return "Sky Villa";
+  if (/\b(row\s*(?:house|villa)|town\s*house)\b/.test(normalized)) return "Row House";
+  if (/\btwin\s*villa\b/.test(normalized)) return "Twin Villa";
+  if (/\bindependent\s*villa\b/.test(normalized)) return "Independent Villa";
+  return undefined;
+}
+
+export type ParsedVillaConfiguration = {
+  configuration: string;
+  bhk?: string;
+  unitVariant?: VillaUnitVariant;
+  numberOfFloors?: string;
+};
+
+/** Accepts canonical BHK labels as well as Villa labels such as 4 BHK Duplex (G+1), Villament, or Penthouse. */
+export function parseVillaConfigurationLabel(value: string): ParsedVillaConfiguration | null {
+  let configuration = String(value || "").trim().replace(/\s+/g, " ");
+  if (!configuration || configuration.length > 120 || /[\r\n]/.test(configuration)) return null;
+  const bhkMatch = configuration.match(/(\d+(?:\.5)?)\s*bhk\b/i);
+  const bhk = bhkMatch ? normalizeBhkLabel(`${bhkMatch[1]} BHK`) || undefined : undefined;
+  const inferredVariant = inferVillaUnitVariant(configuration);
+  if (!bhk && !inferredVariant) return null;
+  if (bhkMatch && bhk) configuration = configuration.replace(bhkMatch[0], bhk);
+  configuration = configuration
+    .replace(/pent\s*house/gi, "Penthouse")
+    .replace(/\(\s*(G\s*\+\s*\d+|\d+)\s*\)/gi, (_, structure: string) => `(${structure.replace(/\s+/g, "").toUpperCase()})`);
+  const structure = configuration.match(/\((G\+\d+|\d+)\)/i)?.[1]?.toUpperCase();
+  return { configuration, bhk, unitVariant: inferredVariant, numberOfFloors: structure };
+}
 
 export const initialVillaDetails = (): VillaDetails => ({
   villaType: "Independent",
@@ -23,15 +86,22 @@ export const initialVillaDetails = (): VillaDetails => ({
 });
 
 export function createVillaConfigurationDetail(configuration: string): VillaConfigurationDetail {
-  const bedrooms = Math.floor(Number(configuration.match(/^\d+(?:\.5)?/)?.[0] || 1));
+  const parsed = parseVillaConfigurationLabel(configuration);
+  const normalizedConfiguration = parsed?.configuration || configuration.trim();
+  const bedrooms = parsed?.bhk ? Math.floor(Number(parsed.bhk.match(/^\d+(?:\.5)?/)?.[0])) : undefined;
   return {
-    configuration,
+    configuration: normalizedConfiguration,
+    bhk: parsed?.bhk,
+    unitVariant: parsed?.unitVariant,
     price: "",
     plotArea: "",
     builtUpArea: "",
+    carpetArea: "",
     superArea: "",
     bedrooms,
     bathrooms: bedrooms,
+    balconies: undefined,
+    numberOfFloors: parsed?.numberOfFloors,
     cornerPlot: false,
     privateGarden: false,
     privatePool: false,
@@ -58,10 +128,10 @@ function positiveDisplay(value: string | undefined, price = false): boolean {
 
 export function villaDisplayRange(
   rows: VillaConfigurationDetail[] | undefined,
-  field: "price" | "superArea"
+  field: "price" | "plotArea" | "builtUpArea" | "carpetArea" | "superArea"
 ): string {
   const values = (rows || [])
-    .map((row) => ({ display: row[field], value: parseDisplayNumber(row[field], field === "price") }))
+    .map((row) => ({ display: row[field] || "", value: parseDisplayNumber(row[field], field === "price") }))
     .filter((item) => Number.isFinite(item.value))
     .sort((a, b) => a.value - b.value);
   if (!values.length) return "";
@@ -80,20 +150,22 @@ export function validateVillaDraft(property: Partial<Property>): VillaErrors {
   const details = property.villaDetails;
   const rows = details?.configurationDetails || [];
   if (!rows.length) errors.configurations = "Add at least one Villa BHK configuration.";
-  if (!details || !["Independent", "Row Villa", "Twin Villa"].includes(details.villaType)) errors.villaType = "Select a valid Villa type.";
+  if (!details || !villaTypeOptions.includes(details.villaType)) errors.villaType = "Select a valid Villa type.";
   rows.forEach((row, index) => {
     const prefix = `villaConfiguration.${index}`;
-    const normalized = normalizeBhkLabel(row.configuration);
-    if (!normalized) errors[`${prefix}.configuration`] = "Use a positive BHK label, for example 3 BHK or 3.5 BHK.";
-    if (!positiveDisplay(row.price, true)) errors[`${prefix}.price`] = "Enter a positive price.";
-    if (!positiveDisplay(row.plotArea)) errors[`${prefix}.plotArea`] = "Enter a positive plot area.";
-    if (!positiveDisplay(row.builtUpArea)) errors[`${prefix}.builtUpArea`] = "Enter a positive built-up area.";
-    if (!positiveDisplay(row.superArea)) errors[`${prefix}.superArea`] = "Enter a positive super area.";
-    const expectedBedrooms = Math.floor(Number(normalizeBhkLabel(row.configuration)?.match(/^\d+(?:\.5)?/)?.[0]));
-    if (!Number.isInteger(row.bedrooms) || row.bedrooms !== expectedBedrooms) {
+    const parsed = parseVillaConfigurationLabel(row.configuration);
+    if (!parsed) errors[`${prefix}.configuration`] = "Use a Villa configuration such as 4 BHK Duplex (G+1), Villament, or Penthouse.";
+    if (row.bhk && !normalizeBhkLabel(row.bhk)) errors[`${prefix}.bhk`] = "Use a positive BHK label, for example 4 BHK.";
+    if (row.price && !positiveDisplay(row.price, true)) errors[`${prefix}.price`] = "Enter a positive price.";
+    for (const areaField of ["plotArea", "builtUpArea", "carpetArea", "superArea"] as const) {
+      if (row[areaField] && !positiveDisplay(row[areaField])) errors[`${prefix}.${areaField}`] = `Enter a positive ${areaField.replace(/([A-Z])/g, " $1").toLowerCase()}.`;
+    }
+    const expectedBedrooms = Math.floor(Number((row.bhk || parsed?.bhk)?.match(/^\d+(?:\.5)?/)?.[0]));
+    if (row.bedrooms !== undefined && (!Number.isInteger(row.bedrooms) || row.bedrooms < 1 || (expectedBedrooms > 0 && row.bedrooms !== expectedBedrooms))) {
       errors[`${prefix}.bedrooms`] = `Bedrooms must equal ${expectedBedrooms || "the BHK value"}.`;
     }
-    if (!Number.isInteger(row.bathrooms) || row.bathrooms < 1) errors[`${prefix}.bathrooms`] = "Enter at least 1 bathroom.";
+    if (row.bathrooms !== undefined && (!Number.isInteger(row.bathrooms) || row.bathrooms < 1)) errors[`${prefix}.bathrooms`] = "Enter at least 1 bathroom.";
+    if (row.balconies !== undefined && (!Number.isInteger(row.balconies) || row.balconies < 0)) errors[`${prefix}.balconies`] = "Enter zero or more balconies.";
     if (row.plotDimensions?.trim()) {
       const dimensions = row.plotDimensions.trim().match(/^(\d+(?:\.\d+)?)\s*(?:ft|feet|')?\s*[x×*]\s*(\d+(?:\.\d+)?)\s*(?:ft|feet|')?$/i);
       if (!dimensions || Number(dimensions[1]) <= 0 || Number(dimensions[2]) <= 0) errors[`${prefix}.plotDimensions`] = "Use positive width × length values.";
@@ -103,11 +175,11 @@ export function validateVillaDraft(property: Partial<Property>): VillaErrors {
     if (row.privateGarden && row.privateGardenArea && !positiveDisplay(row.privateGardenArea)) errors[`${prefix}.privateGardenArea`] = "Enter a positive garden area.";
   });
   // Validate the legacy project-wide garden fields when editing an older Villa.
-  if (details?.privateGarden && !positiveDisplay(details.privateGardenArea)) {
-    errors.privateGardenArea = "Garden area is required when a private garden is available.";
+  if (details?.privateGardenArea && !positiveDisplay(details.privateGardenArea)) {
+    errors.privateGardenArea = "Enter a positive private garden area.";
   }
-  const tags = (property.configs || []).map(normalizeBhkLabel);
-  if (tags.some((tag) => !tag) || tags.length !== rows.length || tags.some((tag, index) => tag !== normalizeBhkLabel(rows[index]?.configuration || ""))) {
+  const tags = (property.configs || []).map((tag) => parseVillaConfigurationLabel(tag)?.configuration);
+  if (tags.some((tag) => !tag) || tags.length !== rows.length || tags.some((tag, index) => tag !== parseVillaConfigurationLabel(rows[index]?.configuration || "")?.configuration)) {
     errors.configurations = "Configuration tags and Villa rows must match in the same order.";
   }
   const possession = property.possessionDetails;
@@ -150,9 +222,9 @@ export function prepareVillaPropertyPayload<T extends Partial<Property>>(propert
     ...property,
     configs: rows.map((row) => row.configuration),
     price: villaDisplayRange(rows, "price") || property.price,
-    area: villaDisplayRange(rows, "superArea") || property.area,
-    bedrooms: Math.min(...rows.map((row) => row.bedrooms)),
-    bathrooms: Math.min(...rows.map((row) => row.bathrooms)),
+    area: villaDisplayRange(rows, "superArea") || villaDisplayRange(rows, "builtUpArea") || villaDisplayRange(rows, "carpetArea") || villaDisplayRange(rows, "plotArea") || property.area,
+    bedrooms: rows.some((row) => row.bedrooms !== undefined) ? Math.min(...rows.flatMap((row) => row.bedrooms === undefined ? [] : [row.bedrooms])) : property.bedrooms,
+    bathrooms: rows.some((row) => row.bathrooms !== undefined) ? Math.min(...rows.flatMap((row) => row.bathrooms === undefined ? [] : [row.bathrooms])) : property.bathrooms,
     facing: rows.find((row) => row.plotFacing)?.plotFacing || property.villaDetails?.plotFacing || "",
     possession: property.possessionDetails?.status || property.possession,
     ageOfProperty: property.possessionDetails?.status === "Under Construction" ? "Under Construction" : "",

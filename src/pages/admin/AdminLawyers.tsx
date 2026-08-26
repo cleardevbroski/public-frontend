@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, X, Search, Star, FileCheck2, Loader2 } from "luci
 import AdminLayout from "@/components/admin/AdminLayout";
 import StatusControls from "@/components/admin/StatusControls";
 import { fetchAdminLawyers, createLawyer, updateLawyer, deleteLawyer, uploadPropertyMedia } from "@/lib/api";
+import { matchesAdminSearch } from "@/lib/adminSearch";
 
 type Lawyer = {
   _id: string;
@@ -110,9 +111,7 @@ export default function AdminLawyers() {
     load();
   };
 
-  const filtered = items.filter(
-    (l) => l.name.toLowerCase().includes(search.toLowerCase()) || l.specialty.toLowerCase().includes(search.toLowerCase()) || l.college?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = items.filter((lawyer) => matchesAdminSearch(search, [lawyer.name, lawyer.specialty, lawyer.college, lawyer.qualification, lawyer.city, lawyer.barCouncil]));
 
   const uploadLegalDocument = async (file?: File) => {
     if (!file) return;
@@ -160,7 +159,7 @@ export default function AdminLawyers() {
             <Search className="size-4 text-[#68646F]" />
             <input
               type="text"
-              placeholder="Search by name, specialty or college..."
+              placeholder="Search name, specialty, college, city or Bar Council..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="flex-1 bg-transparent text-[14px] text-[#121B35] placeholder-[#68646F] outline-none"

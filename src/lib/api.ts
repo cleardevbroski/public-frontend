@@ -436,6 +436,33 @@ export async function fetchAdminProperties(filters: PropertyFilters = {}) {
   return normalizePropertyResponse(data);
 }
 
+async function fetchAllPages<T>(
+  fetchPage: (params: Record<string, unknown>) => Promise<Record<string, any>>,
+  collectionKey: string,
+  params: Record<string, unknown> = {},
+): Promise<T[]> {
+  const pageSize = 100;
+  const first = await fetchPage({ ...params, page: 1, limit: pageSize });
+  const records = Array.isArray(first[collectionKey]) ? [...first[collectionKey]] : [];
+  const pages = Math.max(1, Number(first.pagination?.pages) || 1);
+  for (let page = 2; page <= pages; page += 1) {
+    const response = await fetchPage({ ...params, page, limit: pageSize });
+    if (Array.isArray(response[collectionKey])) records.push(...response[collectionKey]);
+  }
+  const seen = new Set<string>();
+  return records.filter((record: Record<string, unknown>) => {
+    const id = String(record?.id || record?._id || "");
+    if (!id || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  }) as T[];
+}
+
+/** Fetch every lightweight admin property page so local dashboard search is complete. */
+export function fetchAllAdminProperties(filters: Omit<PropertyFilters, "page" | "limit"> = {}) {
+  return fetchAllPages<any>((params) => fetchAdminProperties(params), "properties", filters);
+}
+
 /** Fetch one listing with its complete media and workflow data for admin editing. */
 export async function fetchAdminProperty(id: string) {
   const data = await readJson(
@@ -670,6 +697,9 @@ export async function adminLogin(username: string, password: string) {
 export async function fetchDealers(params: Record<string, unknown> = {}) {
   return readJson(await apiFetch(`/api/dealers${toQuery(params)}`), "Failed to fetch dealers");
 }
+export function fetchAllDealers(params: Record<string, unknown> = {}) {
+  return fetchAllPages<any>((pageParams) => fetchDealers(pageParams), "dealers", params);
+}
 export async function createDealer(data: Record<string, unknown>) {
   return readJson(await apiFetch("/api/dealers", { method: "POST", body: JSON.stringify(data) }), "Failed to create dealer");
 }
@@ -683,6 +713,9 @@ export async function deleteDealer(id: string) {
 // ─── Builders ───────────────────────────────────────────────────
 export async function fetchBuilders(params: Record<string, unknown> = {}) {
   return readJson(await apiFetch(`/api/builders${toQuery(params)}`), "Failed to fetch builders");
+}
+export function fetchAllBuilders(params: Record<string, unknown> = {}) {
+  return fetchAllPages<any>((pageParams) => fetchBuilders(pageParams), "builders", params);
 }
 export async function fetchBuilder(slug: string) {
   return readJson(await apiFetch(`/api/builders/${encodeURIComponent(slug)}`), "Failed to fetch builder");

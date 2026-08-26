@@ -6,6 +6,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import StatusControls from "@/components/admin/StatusControls";
 import { getDealers, registerDealer, editDealer, removeDealer, type Dealer } from "@/lib/dealerStore";
 import { useLiveData } from "@/lib/useLiveProperties";
+import { matchesAdminSearch } from "@/lib/adminSearch";
 
 type FormState = Omit<Dealer, "id" | "slug" | "source" | "buyersThisWeek" | "memberSince">;
 
@@ -78,10 +79,7 @@ export default function AdminDealers() {
     await editDealer(id, { status });
   };
 
-  const filtered = dealers.filter((d) => {
-    const q = search.toLowerCase();
-    return d.name.toLowerCase().includes(q) || d.agency.toLowerCase().includes(q);
-  });
+  const filtered = dealers.filter((dealer) => matchesAdminSearch(search, [dealer.name, dealer.agency, dealer.email, dealer.phone, dealer.localities]));
 
   const input = "w-full h-11 px-3.5 rounded-xl border border-[#E4E0E7] focus:border-[#DDAA42] outline-none text-[14px] text-[#121B35] bg-white";
   const label = "block text-[12px] font-bold text-[#68646F] mb-1.5";
@@ -111,7 +109,7 @@ export default function AdminDealers() {
             <Search className="size-4 text-[#68646F]" />
             <input
               type="text"
-              placeholder="Search by name or agency..."
+              placeholder="Search name, agency, contact or locality..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="flex-1 bg-transparent text-[14px] text-[#121B35] placeholder-[#68646F] outline-none"

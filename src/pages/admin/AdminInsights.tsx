@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, X, Search, Star, TrendingUp } from "lucide-react"
 import AdminLayout from "@/components/admin/AdminLayout";
 import StatusControls from "@/components/admin/StatusControls";
 import { fetchInsights, createInsight, updateInsight, deleteInsight } from "@/lib/api";
+import { matchesAdminSearch } from "@/lib/adminSearch";
 
 type Insight = {
   _id: string;
@@ -94,7 +95,7 @@ export default function AdminInsights() {
     load();
   };
 
-  const filtered = items.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = items.filter((insight) => matchesAdminSearch(search, [insight.name, insight.href, insight.pricePerSqft]));
 
   const input = "w-full h-11 px-3.5 rounded-xl border border-[#E4E0E7] focus:border-[#DDAA42] outline-none text-[14px] text-[#121B35] bg-white";
   const label = "block text-[12px] font-bold text-[#68646F] mb-1.5";
@@ -124,7 +125,7 @@ export default function AdminInsights() {
             <Search className="size-4 text-[#68646F]" />
             <input
               type="text"
-              placeholder="Search by locality name..."
+              placeholder="Search locality, URL or price..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="flex-1 bg-transparent text-[14px] text-[#121B35] placeholder-[#68646F] outline-none"

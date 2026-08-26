@@ -19,7 +19,7 @@ describe("VillaDetailsFields", () => {
       setPossession={vi.fn()}
       errors={{}}
     />);
-    for (const label of ["Villa Type", "Plot area", "Built-up area", "Plot Dimensions", "Corner Plot", "Private Garden / Lawn", "Private Pool", "Terrace", "Gated Community", "Ready Since"]) {
+    for (const label of ["Villa Type", "Variant", "Plot area", "Built-up area", "Carpet area", "Super area", "Bedrooms", "Bathrooms", "Balconies", "Plot Dimensions", "Corner Plot", "Private Garden / Lawn", "Private Pool", "Terrace", "Gated Community", "Ready Since"]) {
       expect(html).toContain(label);
     }
   });

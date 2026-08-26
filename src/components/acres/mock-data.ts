@@ -45,17 +45,30 @@ export type FacilityDetail = {
   hours?: string;
 };
 
-export type VillaType = "Independent" | "Row Villa" | "Twin Villa";
+export type VillaType =
+  | "Independent"
+  | "Row Villa"
+  | "Twin Villa"
+  | "Villament"
+  | "Penthouse"
+  | "Duplex Villa"
+  | "Triplex Villa"
+  | "Mixed Villa Development";
+export type VillaUnitVariant = "Simplex" | "Duplex" | "Triplex" | "Villament" | "Penthouse" | "Row House" | "Independent Villa" | "Twin Villa" | "Sky Villa" | "Custom";
 export type PlotFacing = "East" | "West" | "North" | "South" | "North-East" | "North-West" | "South-East" | "South-West";
 
 export type VillaConfigurationDetail = {
   configuration: string;
+  bhk?: string;
+  unitVariant?: VillaUnitVariant;
   price: string;
   plotArea: string;
   builtUpArea: string;
+  carpetArea?: string;
   superArea: string;
-  bedrooms: number;
-  bathrooms: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  balconies?: number;
   plotDimensions?: string;
   numberOfFloors?: string;
   plotFacing?: PlotFacing;

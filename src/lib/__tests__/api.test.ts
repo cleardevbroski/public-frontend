@@ -156,6 +156,29 @@ describe("api client", () => {
     });
   });
 
+  it("loads every paginated admin property page for complete dashboard searches", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input));
+      const page = Number(url.searchParams.get("page") || 1);
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          properties: [{ _id: `property-${page}`, title: `Property ${page}` }],
+          pagination: { page, limit: 100, total: 3, pages: 3 },
+        }),
+      } as Response;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const { fetchAllAdminProperties } = await import("@/lib/api");
+
+    const properties = await fetchAllAdminProperties({ sort: "-createdAt" });
+
+    expect(properties.map((property: { id: string }) => property.id)).toEqual(["property-1", "property-2", "property-3"]);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock.mock.calls.map(([input]) => new URL(String(input)).searchParams.get("limit"))).toEqual(["100", "100", "100"]);
+  });
+
   it("loads and updates customer saved properties with the customer token", async () => {
     localStorage.setItem("cleartitle_customer_token", "jwt-customer");
     const fetchMock = vi.fn(async (input: RequestInfo | URL, options?: RequestInit) => ({

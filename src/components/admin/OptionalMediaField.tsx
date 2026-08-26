@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { AlertCircle, ImagePlus, Link2, Loader2, Upload, X } from "lucide-react";
 import { uploadPropertyMedia } from "@/lib/api";
+import { PROPERTY_IMAGE_MAX_BYTES, PROPERTY_IMAGE_MAX_MB } from "@/lib/propertyMediaLimits";
 
 type Props = {
   label: string;
@@ -24,16 +25,14 @@ export default function OptionalMediaField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
-  const maxBytes = 5 * 1024 * 1024;
-
   const upload = async (file?: File) => {
     if (!file) return;
     if (!IMAGE_TYPES.includes(file.type)) {
       setError("Use a JPG, PNG, or WebP image.");
       return;
     }
-    if (file.size > maxBytes) {
-      setError("Maximum file size is 5 MB.");
+    if (file.size > PROPERTY_IMAGE_MAX_BYTES) {
+      setError(`Maximum file size is ${PROPERTY_IMAGE_MAX_MB} MB.`);
       return;
     }
     setUploading(true);
@@ -93,7 +92,7 @@ export default function OptionalMediaField({
         className="hidden"
         onChange={(event) => void upload(event.target.files?.[0])}
       />
-      <p className="mt-2 flex items-center gap-1 text-[9px] text-[#68646F]"><ImagePlus className="size-3" /> JPG/PNG/WebP, maximum 5 MB</p>
+      <p className="mt-2 flex items-center gap-1 text-[9px] text-[#68646F]"><ImagePlus className="size-3" /> JPG/PNG/WebP, maximum {PROPERTY_IMAGE_MAX_MB} MB</p>
       {error && <p className="mt-2 flex items-start gap-1 text-[10px] text-red-600"><AlertCircle className="mt-0.5 size-3 shrink-0" /> {error}</p>}
     </div>
   );

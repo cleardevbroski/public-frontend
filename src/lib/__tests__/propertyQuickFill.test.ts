@@ -81,6 +81,7 @@ Amenity 1 Status: Available
 School 1 Name: Example School
 School 1 Distance: 1 km
 School 1 Address: Whitefield
+School 1 Landmark: Near Central Avenue
 Hospital 1 Name: Example Hospital
 Hospital 1 Distance: 2 km
 Workplace 1 Name: Embassy TechVillage
@@ -90,7 +91,7 @@ Road 1 Distance: 2.5 km`, "Apartment");
     expect(result.patch.configurationDetails?.[0]).toMatchObject({ configuration: "3.5 BHK", bedrooms: 3, carpetArea: "1200 sqft", facings: ["East"] });
     expect(result.patch.society).toMatchObject({ security: "24x7 security", lift: "2 lifts" });
     expect(result.patch.facilities).toMatchObject([{ name: "Swimming Pool", description: "Temperature controlled pool", status: "Available" }]);
-    expect(result.patch.nearbyDetails?.schools?.places).toMatchObject([{ name: "Example School", distance: "1 km" }]);
+    expect(result.patch.nearbyDetails?.schools?.places).toMatchObject([{ name: "Example School", distance: "1 km", landmark: "Near Central Avenue" }]);
     expect(result.patch.nearbyDetails?.hospitals?.places).toMatchObject([{ name: "Example Hospital", distance: "2 km" }]);
     expect(result.patch.reraPhases).toMatchObject([{ name: "Regent Park Main Phase", reraNumber: "PRM/KA/RERA/1251/308/PR/150726/008810" }]);
     expect(result.patch.projectArea).toMatchObject({ totalAcres: 8.07 });
@@ -98,6 +99,178 @@ Road 1 Distance: 2.5 km`, "Apartment");
     expect(result.patch.totalTowers).toBe(2);
     expect(result.patch.nearbyDetails?.workplaces?.places).toMatchObject([{ name: "Embassy TechVillage" }]);
     expect(result.patch.nearbyDetails?.roads?.places).toMatchObject([{ name: "Sarjapur Road", distance: "2.5 km" }]);
+  });
+
+  it("imports descriptive Villa configurations and optional inventory fields", () => {
+    const result = analyzePropertyDescription(`[PROPERTY BASICS]
+Property Type: Villa
+Project / Property Name: Sobha Galera
+Builder / Developer: Sobha Limited
+Transaction Type: New Property
+Listing Type: For Sale
+Possession Status: Under Construction
+Expected Completion / Ready Date: Dec 2026
+
+[CONFIGURATIONS]
+Configuration 1:
+BHK: 4 BHK Duplex (G+1)
+Price: ₹ 5.25 Cr
+Built-up Area: 3009 Sq. Ft.
+Carpet Area: 2443 Sq. Ft.
+Super Area: 3009 Sq. Ft.
+Bedrooms: 4
+Bathrooms: 4
+Balconies: 2
+
+Configuration 2:
+BHK: 4 BHK Triplex (G+2)
+Price: ₹ 7.57 Cr
+Built-up Area: 4340 Sq. Ft.
+Carpet Area: 3348 Sq. Ft.
+Super Area: 4340 Sq. Ft.
+Bedrooms: 4
+Bathrooms: 4
+Balconies: 3
+
+[VILLA DETAILS — only for Villa]
+Villa Type: Spanish-Style Row House (Duplex / Triplex)
+Number of Floors: G+1 (Duplex) / G+2 (Triplex)
+Road Width: 9.10 M to 10.50 M
+Private Garden: Yes
+Garden Area: Built-in private garden per unit
+Private Pool: No
+Terrace: Yes
+Gated Community: Yes`);
+
+    expect(result.patch.configs).toEqual(["4 BHK Duplex (G+1)", "4 BHK Triplex (G+2)"]);
+    expect(result.patch.villaDetails).toMatchObject({
+      villaType: "Row Villa",
+      numberOfFloors: "",
+      roadWidthFacing: "9.10 M to 10.50 M",
+      privateGarden: true,
+      privateGardenArea: "",
+      terrace: true,
+      gatedCommunity: true,
+      configurationDetails: [
+        { configuration: "4 BHK Duplex (G+1)", bhk: "4 BHK", unitVariant: "Duplex", numberOfFloors: "G+1", builtUpArea: "3009 Sq. Ft.", carpetArea: "2443 Sq. Ft.", superArea: "3009 Sq. Ft.", bedrooms: 4, bathrooms: 4, balconies: 2 },
+        { configuration: "4 BHK Triplex (G+2)", bhk: "4 BHK", unitVariant: "Triplex", numberOfFloors: "G+2", builtUpArea: "4340 Sq. Ft.", carpetArea: "3348 Sq. Ft.", superArea: "4340 Sq. Ft.", bedrooms: 4, bathrooms: 4, balconies: 3 },
+      ],
+    });
+  });
+
+  it("imports and merges multiple RERA phases, developer copy, and human-readable project content", () => {
+    const result = analyzePropertyDescription(`[PROPERTY BASICS]
+Property Type: Villa
+Project / Property Name: Complete Project
+RERA Registered: Yes
+
+[DEVELOPER DETAILS]
+Developer Name: Complete Developer
+About Developer: A verified developer profile covering history and expertise.
+
+[RERA PHASES]
+Phase 1 Name: North Phase
+Phase 1 RERA Number: PRM/KA/RERA/NORTH001
+Phase 1 RERA URL: https://rera.karnataka.gov.in/viewAllProjects
+
+[RERA PHASES]
+Phase 2 Name: South Phase
+Phase 2 RERA Number: PRM/KA/RERA/SOUTH002
+Phase 2 RERA URL: https://rera.karnataka.gov.in/viewAllProjects
+
+[PROJECT NARRATIVE]
+Introduction Paragraph 1: A verified introduction.
+USP 1: Low-density development.
+Location Advantage 1: Close to the technology corridor.
+Investment Reason 1: Limited inventory.
+
+[PROJECT KEY DETAILS]
+Detail 1 Label: Architecture
+Detail 1 Value: Spanish inspired
+
+[PROJECT FEATURE GROUPS]
+Group 1 Title: Outdoor Spaces
+Group 1 Item 1: Central avenue
+Group 1 Item 2: Private gardens
+
+[MASTER PLAN CONTENT]
+Title: Complete Master Plan
+Summary: A verified master-plan summary.
+Section 1 Heading: Central Zone
+Section 1 Body: Clubhouse and landscaped avenue.
+
+[FAQS]
+FAQ 1 Question: Is the project RERA registered?
+FAQ 1 Answer: Yes, under two registered phases.
+
+[CONFIGURATIONS]
+Configuration 1:
+BHK: 4 BHK Duplex (G+1)
+
+[VILLA DETAILS — only for Villa]
+Villa Type: Row Villa`);
+
+    expect(result.patch).toMatchObject({
+      builder: "Complete Developer",
+      developerDescription: "A verified developer profile covering history and expertise.",
+      reraRegistered: true,
+      reraPhases: [
+        { name: "North Phase", reraNumber: "PRM/KA/RERA/NORTH001" },
+        { name: "South Phase", reraNumber: "PRM/KA/RERA/SOUTH002" },
+      ],
+      projectNarrative: {
+        introduction: ["A verified introduction."],
+        usps: ["Low-density development."],
+        keyDetails: [{ label: "Architecture", value: "Spanish inspired" }],
+        featureGroups: [{ title: "Outdoor Spaces", items: ["Central avenue", "Private gardens"] }],
+      },
+      masterPlan: { title: "Complete Master Plan", summary: "A verified master-plan summary.", sections: [{ heading: "Central Zone", body: "Clubhouse and landscaped avenue." }] },
+      faqs: [{ question: "Is the project RERA registered?", answer: "Yes, under two registered phases." }],
+    });
+
+    const merged = mergeQuickFill({
+      reraRegistered: false,
+      reraPhases: [{ name: "North Phase", reraNumber: "", reraSiteUrl: "https://rera.karnataka.gov.in/viewAllProjects", reraDocuments: [], projectDocuments: [] }],
+      masterPlan: { imageUrl: "existing-master-plan.jpg" },
+      faqs: [{ question: "Existing question?", answer: "Existing answer." }],
+    }, result.patch, false);
+    expect(merged.reraRegistered).toBe(true);
+    expect(merged.reraPhases).toHaveLength(2);
+    expect(merged.reraPhases[0].reraNumber).toBe("PRM/KA/RERA/NORTH001");
+    expect(merged.masterPlan).toMatchObject({ imageUrl: "existing-master-plan.jpg", title: "Complete Master Plan" });
+    expect(merged.faqs).toHaveLength(2);
+  });
+
+  it("imports the repeatable project-content Excel sheets", async () => {
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([
+      ["Project Name", "Property Type", "Builder", "Developer Description"],
+      ["Excel Content Project", "Villa", "Excel Developer", "Verified Excel developer profile"],
+    ]), "Properties");
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([
+      ["Project Name", "Configuration Name"], ["Excel Content Project", "Penthouse"],
+    ]), "Configurations");
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([
+      ["Project Name", "Phase Name", "RERA Number", "RERA URL"],
+      ["Excel Content Project", "Phase 1", "PRM/KA/RERA/EXCEL001", "https://rera.karnataka.gov.in/viewAllProjects"],
+      ["Excel Content Project", "Phase 2", "PRM/KA/RERA/EXCEL002", "https://rera.karnataka.gov.in/viewAllProjects"],
+    ]), "RERA Phases");
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([
+      ["Project Name", "Introduction Paragraphs", "USPs"], ["Excel Content Project", "Intro one | Intro two", "USP one | USP two"],
+    ]), "Project Narrative");
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([
+      ["Project Name", "Title", "Summary", "Section Heading", "Section Body"], ["Excel Content Project", "Master Plan", "Summary", "Zone A", "Zone details"],
+    ]), "Master Plan Content");
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([
+      ["Project Name", "Question", "Answer"], ["Excel Content Project", "Question?", "Answer."],
+    ]), "FAQs");
+    const bytes = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const result = await parsePropertyExcel({ name: "content.xlsx", size: bytes.byteLength, arrayBuffer: async () => bytes } as File);
+    expect(result.patch.developerDescription).toBe("Verified Excel developer profile");
+    expect(result.patch.reraPhases).toHaveLength(2);
+    expect(result.patch.projectNarrative?.introduction).toEqual(["Intro one", "Intro two"]);
+    expect(result.patch.masterPlan).toMatchObject({ title: "Master Plan", sections: [{ heading: "Zone A", body: "Zone details" }] });
+    expect(result.patch.faqs).toEqual([{ question: "Question?", answer: "Answer." }]);
   });
 
   it("imports matching society, amenities, and nearby sheets from the full Excel template", async () => {

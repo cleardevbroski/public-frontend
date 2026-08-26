@@ -6,6 +6,7 @@ import { uploadPropertyMedia } from "@/lib/api";
 import type { ReraDocument, ReraPhase } from "@/components/acres/mock-data";
 import BulkReraDocumentUploader from "./BulkReraDocumentUploader";
 import { PROJECT_DOCUMENT_DEFINITIONS, RERA_DOCUMENT_DEFINITIONS, type ReraDocumentDefinition } from "@/lib/reraBulkUpload";
+import { PROPERTY_DOCUMENT_MAX_BYTES, PROPERTY_DOCUMENT_MAX_MB } from "@/lib/propertyMediaLimits";
 
 export const KARNATAKA_RERA_URL = "https://rera.karnataka.gov.in/viewAllProjects";
 
@@ -44,8 +45,8 @@ function DocumentRows({
       setError("Documents must be PDF, JPG, or PNG files.");
       return;
     }
-    if (file.size > 15 * 1024 * 1024) {
-      setError("Each document must be 15 MB or smaller.");
+    if (file.size > PROPERTY_DOCUMENT_MAX_BYTES) {
+      setError(`Each document must be ${PROPERTY_DOCUMENT_MAX_MB} MB or smaller.`);
       return;
     }
     setUploading(definition.key);

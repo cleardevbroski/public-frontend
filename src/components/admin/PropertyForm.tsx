@@ -56,6 +56,7 @@ import {
 import {
   createVillaConfigurationDetail,
   initialVillaDetails,
+  parseVillaConfigurationLabel,
 } from "@/lib/villaDetails";
 import {
   createPlotSizeDetail,
@@ -68,6 +69,7 @@ import { initialPgDetails } from "@/lib/pgDetails";
 import { mergeQuickFill, type QuickFillPatch } from "@/lib/propertyQuickFill";
 import { mergeUploadedMedia } from "@/lib/propertyMediaState";
 import type { PropertySubmissionProfileInput } from "@/components/property/PropertyPosterProfileForm";
+import { PROPERTY_DOCUMENT_MAX_BYTES, PROPERTY_DOCUMENT_MAX_MB } from "@/lib/propertyMediaLimits";
 
 const steps = [
   { id: 1, label: "Basic Details", icon: Building2 },
@@ -473,9 +475,17 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     const raw = configInput.trim();
     if (!raw) return;
     const plotSize = formData.propertyType === "Plot" ? normalizePlotSize(raw) : null;
-    const config = formData.propertyType === "Plot" ? plotSize?.plotSize || "" : isStructuredType(formData.propertyType) ? normalizeBhkLabel(raw) : raw;
+    const config = formData.propertyType === "Plot"
+      ? plotSize?.plotSize || ""
+      : formData.propertyType === "Villa"
+        ? parseVillaConfigurationLabel(raw)?.configuration || ""
+        : isStructuredType(formData.propertyType) ? normalizeBhkLabel(raw) : raw;
     if (!config) {
-      setConfigError(formData.propertyType === "Plot" ? "Use positive width × length values, for example 30 × 40." : "Use a positive BHK label, for example 2 BHK or 3.5 BHK.");
+      setConfigError(formData.propertyType === "Plot"
+        ? "Use positive width × length values, for example 30 × 40."
+        : formData.propertyType === "Villa"
+          ? "Use a Villa configuration such as 4 BHK Duplex (G+1), Villament, or Penthouse."
+          : "Use a positive BHK label, for example 2 BHK or 3.5 BHK.");
       return;
     }
     if (formData.propertyType !== "Apartment" && formData.propertyType !== "Villa" && formData.configs.some((item) => item.toLowerCase() === config.toLowerCase())) {
@@ -519,7 +529,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     const populated = apartmentRow
       ? Boolean(apartmentRow.price || apartmentRow.builtUpArea || apartmentRow.carpetArea || apartmentRow.facings.length)
       : villaRow
-        ? Boolean(villaRow.price || villaRow.plotArea || villaRow.builtUpArea || villaRow.superArea)
+        ? Boolean(villaRow.price || villaRow.plotArea || villaRow.builtUpArea || villaRow.carpetArea || villaRow.superArea || villaRow.bedrooms || villaRow.bathrooms || villaRow.balconies !== undefined)
         : Boolean(plotRow?.pricePerSqft || plotRow?.facings.length);
     if (populated && !window.confirm(`Remove ${config} and all details entered for it?`)) return;
     setFormData((prev) => ({
@@ -556,7 +566,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
   const changePropertyType = (propertyType: string) => {
     if (propertyType === formData.propertyType) return;
     const apartmentPopulated = Boolean(formData.configurationDetails?.some((row) => row.price || row.builtUpArea || row.carpetArea));
-    const villaPopulated = Boolean(formData.villaDetails?.configurationDetails.some((row) => row.price || row.plotArea || row.builtUpArea || row.superArea));
+    const villaPopulated = Boolean(formData.villaDetails?.configurationDetails.some((row) => row.price || row.plotArea || row.builtUpArea || row.carpetArea || row.superArea || row.bedrooms || row.bathrooms || row.balconies !== undefined));
     const plotPopulated = Boolean(formData.plotDetails?.plotSizeDetails.some((row) => row.pricePerSqft || row.facings.length) || formData.plotDetails?.inventory.length);
     const commercialPopulated = Boolean(formData.commercialDetails?.carpetArea || formData.commercialDetails?.builtUpArea || formData.commercialDetails?.superArea);
     const pgPopulated = Boolean(formData.pgDetails?.sharingDetails.length);
@@ -1284,7 +1294,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 />
                 {formData.propertyType === "Apartment" && <p className={`text-[12px] mt-1 ${validationErrors.description ? "text-red-600" : "text-[#68646F]"}`}>{validationErrors.description || `${(formData.description || "").trim().length}/50 minimum characters`}</p>}
               </div>
-              {formData.propertyType === "Apartment" && (
+              {isStructuredType(formData.propertyType) && (
                 <ProjectContentEditor
                   section="narrative"
                   narrative={formData.projectNarrative}
@@ -1342,7 +1352,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   <h3 className="text-[15px] font-bold text-[#121B35]">Optional Project Presentation</h3>
                   <p className="mt-1 text-[12px] text-[#68646F]">Add project overview photos, a gallery, and a brochure when available.</p>
                 </div>
-                {formData.propertyType === "Apartment" && (
+                {isStructuredType(formData.propertyType) && (
                   <ProjectContentEditor
                     section="media"
                     narrative={formData.projectNarrative}
@@ -1401,8 +1411,8 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
               {formData.propertyType === "Plot" && (
                 <div className="mt-8 pt-6 border-t border-[#F3F1F5]">
                   <h3 className="text-[15px] font-bold text-[#121B35] mb-1">Master Plan / Layout Map</h3>
-                  <p className="text-[13px] text-[#68646F] mb-4">Required for buyers to verify plot numbers and availability. Upload JPG, PNG, WebP, or PDF (max 5 MB).</p>
-                  {formData.plotDetails?.layoutMapUrl ? <div className="flex items-center gap-3 p-4 bg-[#F8F7FA] border border-[#E4E0E7]/40 rounded-2xl"><FileText className="w-6 h-6 text-[#DDAA42]" /><span className="flex-1 text-[13px] font-semibold text-[#121B35]">Layout map attached</span><button type="button" onClick={() => updateField("plotDetails", { ...(formData.plotDetails || initialPlotDetails()), layoutMapUrl: "" })} className="text-[12px] font-bold text-red-500">Remove</button></div> : <label className="flex flex-col items-center justify-center gap-2 p-7 border-2 border-dashed border-[#E4E0E7] rounded-2xl cursor-pointer hover:border-[#DDAA42]/60"><FileText className="w-7 h-7 text-[#DDAA42]" /><span className="text-[14px] font-semibold text-[#121B35]">Upload master plan / layout map</span><input type="file" accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf" className="hidden" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; const isPdf = file.type === "application/pdf"; const isImage = ["image/jpeg", "image/png", "image/webp"].includes(file.type); if ((!isPdf && !isImage) || file.size > 5 * 1024 * 1024) { setSubmitError("Layout map must be a JPG, PNG, WebP, or PDF no larger than 5 MB."); event.target.value = ""; return; } try { const url = await uploadPropertyMedia(file, isPdf ? "layout-map-pdf" : "layout-map-image"); updateField("plotDetails", { ...(formData.plotDetails || initialPlotDetails()), layoutMapUrl: url, layoutMapType: isPdf ? "pdf" : "image" }); setSubmitError(""); } catch (error) { setSubmitError(error instanceof Error ? error.message : "Layout-map upload failed."); } }} /></label>}
+                  <p className="text-[13px] text-[#68646F] mb-4">Required for buyers to verify plot numbers and availability. Upload JPG, PNG, WebP, or PDF (max {PROPERTY_DOCUMENT_MAX_MB} MB).</p>
+                  {formData.plotDetails?.layoutMapUrl ? <div className="flex items-center gap-3 p-4 bg-[#F8F7FA] border border-[#E4E0E7]/40 rounded-2xl"><FileText className="w-6 h-6 text-[#DDAA42]" /><span className="flex-1 text-[13px] font-semibold text-[#121B35]">Layout map attached</span><button type="button" onClick={() => updateField("plotDetails", { ...(formData.plotDetails || initialPlotDetails()), layoutMapUrl: "" })} className="text-[12px] font-bold text-red-500">Remove</button></div> : <label className="flex flex-col items-center justify-center gap-2 p-7 border-2 border-dashed border-[#E4E0E7] rounded-2xl cursor-pointer hover:border-[#DDAA42]/60"><FileText className="w-7 h-7 text-[#DDAA42]" /><span className="text-[14px] font-semibold text-[#121B35]">Upload master plan / layout map</span><input type="file" accept="image/jpeg,image/png,image/webp,application/pdf,.jpg,.jpeg,.png,.webp,.pdf" className="hidden" onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; const isPdf = file.type === "application/pdf"; const isImage = ["image/jpeg", "image/png", "image/webp"].includes(file.type); if ((!isPdf && !isImage) || file.size > PROPERTY_DOCUMENT_MAX_BYTES) { setSubmitError(`Layout map must be a JPG, PNG, WebP, or PDF no larger than ${PROPERTY_DOCUMENT_MAX_MB} MB.`); event.target.value = ""; return; } try { const url = await uploadPropertyMedia(file, isPdf ? "layout-map-pdf" : "layout-map-image"); updateField("plotDetails", { ...(formData.plotDetails || initialPlotDetails()), layoutMapUrl: url, layoutMapType: isPdf ? "pdf" : "image" }); setSubmitError(""); } catch (error) { setSubmitError(error instanceof Error ? error.message : "Layout-map upload failed."); } }} /></label>}
                   {validationErrors.layoutMapUrl && <p className="text-[12px] text-red-600 mt-2">{validationErrors.layoutMapUrl}</p>}
                 </div>
               )}
@@ -1636,7 +1646,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 </div>
               </div>
 
-              {formData.propertyType === "Apartment" && (
+              {isStructuredType(formData.propertyType) && (
                 <div className="mt-6">
                   <ProjectContentEditor
                     section="faqs"

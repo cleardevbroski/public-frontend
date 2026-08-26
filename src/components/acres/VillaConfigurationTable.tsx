@@ -19,7 +19,7 @@ const unitOptions: Array<{ unit: AreaUnit; label: string }> = [
 ];
 
 function sourceArea(row: VillaConfigurationDetail) {
-  return row.superArea?.trim() || row.builtUpArea?.trim() || row.plotArea?.trim() || "";
+  return row.superArea?.trim() || row.builtUpArea?.trim() || row.carpetArea?.trim() || row.plotArea?.trim() || "";
 }
 
 function basePrice(value: string) {
@@ -47,10 +47,13 @@ export default function VillaConfigurationTable({ details, onChargesClick }: { d
           const unitRate = area && price ? calculateUnitPriceRange(price, area, unit) : undefined;
           const unitType = /\bvilla\b/i.test(row.configuration) ? row.configuration : `${row.configuration} Villa`;
           const supportingDetails = [
+            row.unitVariant && !row.configuration.toLowerCase().includes(row.unitVariant.toLowerCase()) ? row.unitVariant : "",
             row.plotArea ? `Plot ${row.plotArea}` : "",
             row.builtUpArea && row.builtUpArea !== source ? `Built-up ${row.builtUpArea}` : "",
+            row.carpetArea && row.carpetArea !== source ? `Carpet ${row.carpetArea}` : "",
             row.bedrooms ? `${row.bedrooms} bed` : "",
             row.bathrooms ? `${row.bathrooms} bath` : "",
+            row.balconies !== undefined ? `${row.balconies} balconies` : "",
             row.plotFacing ? `${row.plotFacing} facing` : "",
           ].filter(Boolean).join(" · ");
 

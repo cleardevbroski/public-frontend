@@ -4,6 +4,7 @@ import { Plus, Trash2, Upload, Loader2 } from "lucide-react";
 import { useState } from "react";
 import type { MasterPlan, ProjectDownload, ProjectFaq, ProjectNarrative } from "@/components/acres/mock-data";
 import { uploadPropertyMedia } from "@/lib/api";
+import { PROPERTY_DOCUMENT_MAX_BYTES, PROPERTY_DOCUMENT_MAX_MB, PROPERTY_WALKTHROUGH_MAX_BYTES, PROPERTY_WALKTHROUGH_MAX_MB } from "@/lib/propertyMediaLimits";
 
 type Props = {
   section?: "all" | "narrative" | "media" | "faqs";
@@ -41,8 +42,10 @@ export default function ProjectContentEditor(props: Props) {
   const uploadDownload = async (kind: ProjectDownload["kind"], file?: File) => {
     if (!file) return;
     const expected = kind === "walkthrough" ? "video/mp4" : "application/pdf";
-    if (file.type !== expected || file.size > 15 * 1024 * 1024) {
-      setError(`${emptyDownloadLabels[kind]} must be ${kind === "walkthrough" ? "an MP4" : "a PDF"} no larger than 15 MB.`);
+    const maxBytes = kind === "walkthrough" ? PROPERTY_WALKTHROUGH_MAX_BYTES : PROPERTY_DOCUMENT_MAX_BYTES;
+    const maxMb = kind === "walkthrough" ? PROPERTY_WALKTHROUGH_MAX_MB : PROPERTY_DOCUMENT_MAX_MB;
+    if (file.type !== expected || file.size > maxBytes) {
+      setError(`${emptyDownloadLabels[kind]} must be ${kind === "walkthrough" ? "an MP4" : "a PDF"} no larger than ${maxMb} MB.`);
       return;
     }
     setUploading(kind);
@@ -91,7 +94,8 @@ export default function ProjectContentEditor(props: Props) {
           {(masterPlan.sections || []).map((section, index) => <div key={index} className="rounded-xl border border-[#E4E0E7] bg-white p-3"><div className="flex gap-2"><input className={input} value={section.heading} onChange={(event) => props.onMasterPlanChange({ ...masterPlan, sections: masterPlan.sections?.map((item, itemIndex) => itemIndex === index ? { ...item, heading: event.target.value } : item) })} placeholder="Section heading" /><button type="button" onClick={() => props.onMasterPlanChange({ ...masterPlan, sections: masterPlan.sections?.filter((_, itemIndex) => itemIndex !== index) })} className="px-2 text-red-500"><Trash2 className="size-4" /></button></div><textarea className={`${input} mt-2 resize-y`} rows={3} value={section.body} onChange={(event) => props.onMasterPlanChange({ ...masterPlan, sections: masterPlan.sections?.map((item, itemIndex) => itemIndex === index ? { ...item, body: event.target.value } : item) })} placeholder="Verified section details" /></div>)}
         </div>
         <div>
-          <h4 className="mb-3 text-[13px] font-bold text-[#121B35]">Download Hub files</h4>
+          <h4 className="text-[13px] font-bold text-[#121B35]">Download Hub files</h4>
+          <p className="mb-3 mt-1 text-[10px] text-[#68646F]">PDF documents up to {PROPERTY_DOCUMENT_MAX_MB} MB. Walkthrough MP4 remains limited to {PROPERTY_WALKTHROUGH_MAX_MB} MB.</p>
           <div className="space-y-2">{(["brochure", "master-plan", "walkthrough"] as const).map((kind) => {
             const current = props.downloads?.find((row) => row.kind === kind);
             return <div key={kind} className="flex items-center gap-3 rounded-xl border border-[#E4E0E7] bg-white p-3"><div className="min-w-0 flex-1"><p className="text-[12px] font-bold text-[#121B35]">{emptyDownloadLabels[kind]}</p><p className="truncate text-[10px] text-[#68646F]">{current?.fileName || "Not uploaded"}</p></div>{current && <button type="button" onClick={() => props.onDownloadsChange((props.downloads || []).filter((row) => row.kind !== kind))} className="text-[10px] font-bold text-red-600">Remove</button>}<label className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-[#121B35] px-3 py-2 text-[10px] font-bold text-white">{uploading === kind ? <Loader2 className="size-3 animate-spin" /> : <Upload className="size-3" />}{current ? "Replace" : "Upload"}<input type="file" accept={kind === "walkthrough" ? "video/mp4,.mp4" : "application/pdf,.pdf"} className="hidden" onChange={(event) => void uploadDownload(kind, event.target.files?.[0])} /></label></div>;

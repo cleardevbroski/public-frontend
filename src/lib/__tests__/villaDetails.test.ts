@@ -4,6 +4,7 @@ import { formatPossession } from "@/lib/propertyDetails";
 import {
   createVillaConfigurationDetail,
   initialVillaDetails,
+  parseVillaConfigurationLabel,
   prepareVillaPropertyPayload,
   validateVillaDraft,
   villaDisplayRange,
@@ -37,6 +38,25 @@ function villa(): Partial<Property> {
 describe("Villa property helpers", () => {
   it("creates rows from normalized BHK values", () => {
     expect(createVillaConfigurationDetail("4 BHK")).toMatchObject({ configuration: "4 BHK", bedrooms: 4, bathrooms: 4 });
+  });
+
+  it("preserves rich Villa labels and derives their structured values", () => {
+    expect(parseVillaConfigurationLabel("4 BHK Triplex (G + 2)")).toEqual({
+      configuration: "4 BHK Triplex (G+2)",
+      bhk: "4 BHK",
+      unitVariant: "Triplex",
+      numberOfFloors: "G+2",
+    });
+    expect(createVillaConfigurationDetail("Pent house")).toMatchObject({ configuration: "Penthouse", unitVariant: "Penthouse" });
+  });
+
+  it("allows optional Villa inventory measurements and room counts", () => {
+    const draft = villa();
+    draft.configs = ["Penthouse"];
+    draft.villaDetails!.villaType = "Penthouse";
+    draft.villaDetails!.configurationDetails = [createVillaConfigurationDetail("Penthouse")];
+    expect(validateVillaDraft(draft)).not.toHaveProperty("villaConfiguration.0.plotArea");
+    expect(validateVillaDraft(draft)).not.toHaveProperty("villaConfiguration.0.bedrooms");
   });
 
   it("allows repeated BHK rows", () => {
@@ -75,8 +95,8 @@ describe("Villa property helpers", () => {
   it("reports row, bedroom, garden, possession, builder, and RERA errors", () => {
     const draft = villa();
     draft.villaDetails!.configurationDetails[0].bedrooms = 2;
-    draft.villaDetails!.configurationDetails[0].plotArea = "";
-    draft.villaDetails!.privateGardenArea = "";
+    draft.villaDetails!.configurationDetails[0].plotArea = "invalid";
+    draft.villaDetails!.privateGardenArea = "invalid";
     draft.possessionDetails = { status: "Under Construction", expectedCompletionDate: "" };
     draft.builder = "";
     draft.reraRegistered = true;

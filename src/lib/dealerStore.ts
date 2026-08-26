@@ -2,7 +2,7 @@ import { getPublishedProperties } from "./propertyStore";
 import type { Property } from "@/components/acres/mock-data";
 import { createHydratedCache } from "./hydratedCache";
 import {
-  fetchDealers,
+  fetchAllDealers,
   createDealer,
   updateDealer,
   deleteDealer as apiDeleteDealer,
@@ -34,8 +34,8 @@ export type Dealer = {
 const DEALERS_EVENT = "cleartitle:dealers-changed";
 
 const cache = createHydratedCache<Dealer>(async () => {
-  const data = await fetchDealers({ limit: 200 });
-  return (data.dealers as Dealer[]).map((d) => ({ ...d, source: "curated" as const }));
+  const dealers = await fetchAllDealers();
+  return (dealers as Dealer[]).map((d) => ({ ...d, source: "curated" as const }));
 }, DEALERS_EVENT);
 
 export function dealerSlug(name: string, agency: string): string {

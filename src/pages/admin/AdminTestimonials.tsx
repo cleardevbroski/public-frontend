@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, X, Search, Star, Quote } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import StatusControls from "@/components/admin/StatusControls";
 import { fetchTestimonials, createTestimonial, updateTestimonial, deleteTestimonial } from "@/lib/api";
+import { matchesAdminSearch } from "@/lib/adminSearch";
 
 type Testimonial = {
   _id: string;
@@ -92,9 +93,7 @@ export default function AdminTestimonials() {
     load();
   };
 
-  const filtered = items.filter(
-    (t) => t.name.toLowerCase().includes(search.toLowerCase()) || t.role.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = items.filter((testimonial) => matchesAdminSearch(search, [testimonial.name, testimonial.role, testimonial.quote]));
 
   const input = "w-full h-11 px-3.5 rounded-xl border border-[#E4E0E7] focus:border-[#DDAA42] outline-none text-[14px] text-[#121B35] bg-white";
   const label = "block text-[12px] font-bold text-[#68646F] mb-1.5";
@@ -124,7 +123,7 @@ export default function AdminTestimonials() {
             <Search className="size-4 text-[#68646F]" />
             <input
               type="text"
-              placeholder="Search by name or role..."
+              placeholder="Search name, role or review text..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="flex-1 bg-transparent text-[14px] text-[#121B35] placeholder-[#68646F] outline-none"

@@ -22,19 +22,22 @@ import { deleteProperty, togglePublish, toggleFeatured, setPropertyStatus } from
 import StatusControls from "@/components/admin/StatusControls";
 import type { Property } from "@/components/acres/mock-data";
 import { getPropertyCoverImage } from "@/lib/propertyPresentation";
+import { matchesPropertyAdminSearch } from "@/lib/adminSearch";
 
 interface PropertyTableProps {
   properties: Property[];
   adminProperties: Property[];
+  initialSearch?: string;
   onPropertyDeleted: () => void;
 }
 
 export default function PropertyTable({
   properties,
   adminProperties,
+  initialSearch = "",
   onPropertyDeleted,
 }: PropertyTableProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [filter, setFilter] = useState<"all" | "pending" | "admin" | "mock">("all");
   const [deleteModal, setDeleteModal] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
@@ -53,12 +56,14 @@ export default function PropertyTable({
     };
   }, []);
 
-  const adminIds = new Set(adminProperties.map((p) => p.id));
-  const normalizedSearch = searchQuery.trim().toLowerCase();
+  useEffect(() => {
+    setSearchQuery(initialSearch);
+    setCurrentPage(1);
+  }, [initialSearch]);
 
+  const adminIds = new Set(adminProperties.map((p) => p.id));
   const filteredProperties = properties.filter((p) => {
-    const matchesSearch = [p?.title, p?.subtitle, p?.builder]
-      .some((value) => typeof value === "string" && value.toLowerCase().includes(normalizedSearch));
+    const matchesSearch = matchesPropertyAdminSearch(p, searchQuery);
     const matchesFilter =
       filter === "all" ||
       (filter === "pending" && (p.status ? !["approved", "published"].includes(p.status) : p.published === false)) ||
@@ -122,7 +127,7 @@ export default function PropertyTable({
               setSearchQuery(e.target.value);
               setCurrentPage(1);
             }}
-            placeholder="Search by name, location, builder..."
+            placeholder="Search name, builder, location, configuration, RERA..."
             className="flex-1 bg-transparent text-[14px] text-[#121B35] placeholder-[#68646F] outline-none"
           />
         </div>
