@@ -22,7 +22,7 @@ function apartment(): Partial<Property> {
     possessionDetails: { status: "Under Construction", expectedCompletionDate: "2028-06" },
     floorLabel: "3",
     transactionType: "New Property",
-    projectArea: { totalAcres: 5, openSpaceAcres: 2, builtUpAcres: 3 },
+    projectArea: { totalAcres: 5, openSpaceSqft: 2000, builtUpSqft: 3000 },
     description: "A well-connected apartment project with spacious homes and modern shared amenities.",
   };
 }
@@ -101,7 +101,7 @@ describe("Apartment property helpers", () => {
     draft.reraRegistered = true;
     draft.reraNumber = "";
     draft.reraPhases = [{ name: "Phase 1", reraNumber: "", reraDocuments: [], projectDocuments: [] }];
-    draft.projectArea = { totalAcres: 5, openSpaceAcres: 3, builtUpAcres: 3 };
+    draft.projectArea = { totalAcres: 5, openSpaceSqft: -1, builtUpSqft: 3000 };
     draft.description = "short";
     const errors = validateApartmentDraft(draft);
     expect(errors["configuration.0.price"]).toBeTruthy();
@@ -111,13 +111,11 @@ describe("Apartment property helpers", () => {
     expect(errors.description).toBeTruthy();
   });
 
-  it("validates an explicit amenities-area split without estimating it", () => {
+  it("keeps total land in acres and independent component areas in square feet", () => {
     const valid = apartment();
-    valid.projectArea = { totalAcres: 5, builtUpAcres: 2, openSpaceAcres: 2, amenitiesAcres: 1 };
+    valid.projectArea = { totalAcres: 5, builtUpSqft: 12000, openSpaceSqft: 3000, amenitiesSqft: 1500 };
     expect(validateApartmentDraft(valid).projectArea).toBeUndefined();
-
-    valid.projectArea.amenitiesAcres = 2;
-    expect(validateApartmentDraft(valid).projectArea).toMatch(/amenities area must equal/i);
+    expect(preparePropertyPayload(valid).projectArea).toEqual(valid.projectArea);
   });
 
   it("validates optional interactive plan and facility presentation fields", () => {

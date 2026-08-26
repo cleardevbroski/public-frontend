@@ -44,7 +44,7 @@ import PropertyQuickFill from "./PropertyQuickFill";
 import ReraPhasesEditor, { KARNATAKA_RERA_URL } from "./ReraPhasesEditor";
 import BulkPropertyMediaImporter from "./BulkPropertyMediaImporter";
 import { addProperty, updateProperty } from "@/lib/propertyStore";
-import { createPropertyDraft, createPublicProperty, fetchBuilders, resubmitProperty, uploadPropertyMedia } from "@/lib/api";
+import { createPropertyDraft, createPublicProperty, fetchBuilders, resolveNearbyPlaceLocation, resubmitProperty, uploadPropertyMedia } from "@/lib/api";
 import { trackAnalytics } from "@/lib/analytics";
 import type { ConfigurationDetail, FacilityDetail, NearbyPlace, PlotDetails, Property, VillaConfigurationDetail } from "@/components/acres/mock-data";
 import {
@@ -82,7 +82,7 @@ const steps = [
 // product owner supplies the required document categories and approval rules.
 
 const propertyTypes = ["Apartment", "Villa", "Plot", "Commercial", "PG/Co-living"];
-const transactionTypes = ["New Property", "Resale"];
+const transactionTypes = ["New Property"];
 const possessionOptions = ["Ready to Move", "Within 3 Months", "Within 6 Months", "Within 1 Year", "Dec 2026", "Mar 2027", "Jun 2027"];
 const furnishingOptions = ["Unfurnished", "Semi-Furnished", "Fully Furnished"];
 const facingOptions = ["East", "West", "North", "South", "North-East", "North-West", "South-East", "South-West"];
@@ -179,6 +179,7 @@ const initialFormData: FormData = {
   projectNarrative: undefined,
   masterPlan: undefined,
   projectDownloads: [],
+  walkthroughVideoUrl: "",
   faqs: [],
   possession: "",
   possessionDetails: undefined,
@@ -215,7 +216,11 @@ const initialFormData: FormData = {
   locality: {
     city: "",
     zone: "",
+    address: "",
     landmark: "",
+    pinCode: "",
+    latitude: undefined,
+    longitude: undefined,
   },
   nearbyAmenities: {
     schools: "",
@@ -304,6 +309,8 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
   const [configError, setConfigError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [uploadInProgress, setUploadInProgress] = useState(false);
+  const [resolvingNearby, setResolvingNearby] = useState("");
+  const [nearbyResolveErrors, setNearbyResolveErrors] = useState<Record<string, string>>({});
 
   const buildPropertyPayload = () => compactPropertyPayload({
     ...formData,
@@ -416,6 +423,32 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
         },
       },
     }));
+  };
+
+  const resolveNearbyMapPlace = async (category: NearbyCategory, index: number) => {
+    const place = formData.nearbyDetails?.[category]?.places?.[index];
+    const latitude = formData.locality?.latitude;
+    const longitude = formData.locality?.longitude;
+    const rowKey = `${category}-${index}`;
+    if (!place?.name.trim()) return;
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      setNearbyResolveErrors((previous) => ({ ...previous, [rowKey]: "Enter the property latitude and longitude first." }));
+      return;
+    }
+    setResolvingNearby(rowKey);
+    setNearbyResolveErrors((previous) => ({ ...previous, [rowKey]: "" }));
+    try {
+      const resolved = await resolveNearbyPlaceLocation({
+        query: [place.name, place.address, formData.locality?.city].filter(Boolean).join(", "),
+        latitude: latitude as number,
+        longitude: longitude as number,
+      });
+      updateNearbyPlace(category, index, resolved);
+    } catch (cause) {
+      setNearbyResolveErrors((previous) => ({ ...previous, [rowKey]: cause instanceof Error ? cause.message : "Could not resolve this place." }));
+    } finally {
+      setResolvingNearby("");
+    }
   };
 
   const toggleAmenity = (amenity: string) => {
@@ -630,7 +663,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
         nearbyDetails: undefined,
       } : {}),
       overlooking: undefined,
-      ...(propertyType !== "Apartment" ? { projectArea: undefined, totalUnits: undefined } : {}),
+      ...(!["Apartment", "Villa"].includes(propertyType) ? { projectArea: undefined, totalUnits: undefined, totalTowers: undefined } : {}),
       amenities: propertyType === "Villa"
         ? prev.amenities
         : propertyType === "Plot"
@@ -964,6 +997,12 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   updateDetail={updateVillaConfigurationDetail}
                   possession={formData.possessionDetails || { status: "Ready to Move", launchDate: "" }}
                   setPossession={(value) => updateField("possessionDetails", value)}
+                  projectArea={formData.projectArea}
+                  setProjectArea={(value) => updateField("projectArea", value)}
+                  totalUnits={formData.totalUnits}
+                  setTotalUnits={(value) => updateField("totalUnits", value)}
+                  totalTowers={formData.totalTowers}
+                  setTotalTowers={(value) => updateField("totalTowers", value)}
                   errors={validationErrors}
                   configError={configError}
                 />
@@ -1300,10 +1339,12 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   narrative={formData.projectNarrative}
                   masterPlan={formData.masterPlan}
                   downloads={formData.projectDownloads}
+                  walkthroughVideoUrl={formData.walkthroughVideoUrl}
                   faqs={formData.faqs}
                   onNarrativeChange={(value) => updateField("projectNarrative", value)}
                   onMasterPlanChange={(value) => updateField("masterPlan", value)}
                   onDownloadsChange={(value) => updateField("projectDownloads", value)}
+                  onWalkthroughVideoUrlChange={(value) => updateField("walkthroughVideoUrl", value)}
                   onFaqsChange={(value) => updateField("faqs", value)}
                 />
               )}
@@ -1321,14 +1362,9 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
               <BulkPropertyMediaImporter
                 heroImages={formData.heroImages || []}
                 galleryImages={formData.images || []}
-                walkthrough={formData.projectDownloads?.find((download) => download.kind === "walkthrough")}
                 onBusyChange={setUploadInProgress}
                 onHeroImagesChange={(heroImages) => updateField("heroImages", heroImages)}
                 onGalleryImagesChange={(images) => updateField("images", images)}
-                onWalkthroughChange={(walkthrough) => setFormData((previous) => ({
-                  ...previous,
-                  projectDownloads: [...(previous.projectDownloads || []).filter((download) => download.kind !== "walkthrough"), walkthrough],
-                }))}
               />
               <HeroImageUploader
                 images={formData.heroImages || []}
@@ -1358,10 +1394,12 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                     narrative={formData.projectNarrative}
                     masterPlan={formData.masterPlan}
                     downloads={formData.projectDownloads}
+                    walkthroughVideoUrl={formData.walkthroughVideoUrl}
                     faqs={formData.faqs}
                     onNarrativeChange={(value) => updateField("projectNarrative", value)}
                     onMasterPlanChange={(value) => updateField("masterPlan", value)}
                     onDownloadsChange={(value) => updateField("projectDownloads", value)}
+                    onWalkthroughVideoUrlChange={(value) => updateField("walkthroughVideoUrl", value)}
                     onFaqsChange={(value) => updateField("faqs", value)}
                   />
                 )}
@@ -1391,20 +1429,6 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                       className="mt-3 min-h-28 w-full resize-y rounded-lg border border-[#E4E0E7] bg-[#F8F7FA] px-3 py-2.5 text-[11px] leading-5 text-[#121B35] outline-none focus:border-[#DDAA42] focus:bg-white"
                     />
                   </div>
-                  <OptionalMediaField
-                    label="Locality map image"
-                    value={formData.localityMapImageUrl}
-                    onChange={(value) => updateField("localityMapImageUrl", value)}
-                    description="Displayed in Locality & Neighbourhood instead of the default placeholder."
-                  />
-                  {formData.propertyType === "Apartment" && (
-                    <OptionalMediaField
-                      label="Master plan image"
-                      value={formData.masterPlan?.imageUrl}
-                      onChange={(imageUrl) => updateField("masterPlan", { ...(formData.masterPlan || {}), imageUrl })}
-                      description="Displayed in the project-level Master Plan section."
-                    />
-                  )}
                 </div>
               </div>
 
@@ -1534,7 +1558,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 <h2 className="text-[20px] font-bold text-[#121B35] mb-6" style={{ fontFamily: "var(--font-outfit)" }}>
                   Locality & Nearby
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   <div>
                     <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">City</label>
                     <input
@@ -1583,6 +1607,14 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                     <input inputMode="numeric" maxLength={6} value={formData.locality?.pinCode || ""} onChange={(e) => updateNestedField("locality", "pinCode", e.target.value.replace(/\D/g, ""))} placeholder="e.g. 560066" className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
                     {validationErrors.pinCode && <p className="text-[12px] text-red-600 mt-1">{validationErrors.pinCode}</p>}
                   </div>}
+                  {isStructuredType(formData.propertyType) && <div>
+                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Property Latitude</label>
+                    <input type="number" step="any" min={-90} max={90} value={formData.locality?.latitude ?? ""} onChange={(event) => setFormData((previous) => ({ ...previous, locality: { ...previous.locality, latitude: event.target.value === "" ? undefined : Number(event.target.value) } }))} placeholder="e.g. 12.9716" className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
+                  </div>}
+                  {isStructuredType(formData.propertyType) && <div>
+                    <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Property Longitude</label>
+                    <input type="number" step="any" min={-180} max={180} value={formData.locality?.longitude ?? ""} onChange={(event) => setFormData((previous) => ({ ...previous, locality: { ...previous.locality, longitude: event.target.value === "" ? undefined : Number(event.target.value) } }))} placeholder="e.g. 77.5946" className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
+                  </div>}
                 </div>
 
                 <h3 className="text-[15px] font-semibold text-[#3F3D46] mb-3">Nearby Amenities</h3>
@@ -1597,8 +1629,8 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                       <div className="space-y-3">
                         {(formData.nearbyDetails?.[key]?.places || []).map((place, index) => (
                           <div key={`${key}-${index}`} className="grid gap-2 rounded-xl border border-[#E4E0E7] bg-white p-3 md:grid-cols-2 lg:grid-cols-[1fr_1.4fr_0.8fr_1fr_auto]">
-                            <div><input value={place.name} onChange={(e) => updateNearbyPlace(key, index, { name: e.target.value })} placeholder="Name *" className="w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[13px]" />{validationErrors[`nearby.${key}.places.${index}.name`] && <p className="mt-1 text-[10px] text-red-600">{validationErrors[`nearby.${key}.places.${index}.name`]}</p>}</div>
-                            <input value={place.address || ""} onChange={(e) => updateNearbyPlace(key, index, { address: e.target.value })} placeholder="Address (optional)" className="w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[13px]" />
+                            <div><input value={place.name} onChange={(e) => updateNearbyPlace(key, index, { name: e.target.value, latitude: undefined, longitude: undefined, mapUrl: "", osmId: "", resolvedAddress: "", approximateDistanceMeters: undefined })} onBlur={() => void resolveNearbyMapPlace(key, index)} placeholder="Name *" className="w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[13px]" />{validationErrors[`nearby.${key}.places.${index}.name`] && <p className="mt-1 text-[10px] text-red-600">{validationErrors[`nearby.${key}.places.${index}.name`]}</p>}{resolvingNearby === `${key}-${index}` && <p className="mt-1 text-[10px] text-[#68646F]">Finding map marker…</p>}{place.latitude !== undefined && place.longitude !== undefined && <p className="mt-1 text-[10px] text-emerald-700">Map marker resolved</p>}{nearbyResolveErrors[`${key}-${index}`] && <p className="mt-1 text-[10px] text-red-600">{nearbyResolveErrors[`${key}-${index}`]}</p>}</div>
+                            <input value={place.address || ""} onChange={(e) => updateNearbyPlace(key, index, { address: e.target.value, latitude: undefined, longitude: undefined, mapUrl: "", osmId: "", resolvedAddress: "", approximateDistanceMeters: undefined })} onBlur={() => void resolveNearbyMapPlace(key, index)} placeholder="Address (optional)" className="w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[13px]" />
                             <input value={place.distance || ""} onChange={(e) => updateNearbyPlace(key, index, { distance: e.target.value })} placeholder="Distance (optional)" className="w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[13px]" />
                             <input value={place.landmark || ""} onChange={(e) => updateNearbyPlace(key, index, { landmark: e.target.value })} placeholder="Landmark (optional)" className="w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 text-[13px]" />
                             <button type="button" onClick={() => removeNearbyPlace(key, index)} className="rounded-lg px-3 py-2 text-[11px] font-bold text-red-600 hover:bg-red-50">Remove</button>
@@ -1653,10 +1685,12 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                     narrative={formData.projectNarrative}
                     masterPlan={formData.masterPlan}
                     downloads={formData.projectDownloads}
+                    walkthroughVideoUrl={formData.walkthroughVideoUrl}
                     faqs={formData.faqs}
                     onNarrativeChange={(value) => updateField("projectNarrative", value)}
                     onMasterPlanChange={(value) => updateField("masterPlan", value)}
                     onDownloadsChange={(value) => updateField("projectDownloads", value)}
+                    onWalkthroughVideoUrlChange={(value) => updateField("walkthroughVideoUrl", value)}
                     onFaqsChange={(value) => updateField("faqs", value)}
                   />
                 </div>

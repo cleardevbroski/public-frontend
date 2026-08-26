@@ -188,15 +188,12 @@ export function validateApartmentDraft(property: Partial<Property>): ApartmentEr
   }
   const projectArea = property.projectArea;
   if (projectArea && Object.values(projectArea).some((value) => value !== undefined)) {
-    const values = [projectArea.totalAcres, projectArea.openSpaceAcres, projectArea.builtUpAcres, projectArea.amenitiesAcres];
+    const values = [projectArea.totalAcres, projectArea.openSpaceSqft, projectArea.builtUpSqft, projectArea.amenitiesSqft];
     if (values.some((value) => value !== undefined && (!Number.isFinite(value) || Number(value) < 0))) {
       errors.projectArea = "Project-area values must be zero or positive numbers.";
-    } else if (projectArea.amenitiesAcres !== undefined && values.every((value) => value !== undefined) && Math.abs(Number(projectArea.totalAcres) - Number(projectArea.openSpaceAcres) - Number(projectArea.builtUpAcres) - Number(projectArea.amenitiesAcres)) > 0.001) {
-      errors.projectArea = "Building, empty/open space and amenities area must equal the total project area.";
-    } else if (projectArea.amenitiesAcres === undefined && [projectArea.totalAcres, projectArea.openSpaceAcres, projectArea.builtUpAcres].every((value) => value !== undefined) && Math.abs(Number(projectArea.totalAcres) - Number(projectArea.openSpaceAcres) - Number(projectArea.builtUpAcres)) > 0.001) {
-      errors.projectArea = "Open space and apartment built-up area must equal the total project area.";
     }
   }
+  if (property.transactionType !== "New Property") errors.transactionType = property.transactionType === "Resale" ? "Resale properties are not applicable." : "Select New Property.";
   if (property.totalUnits !== undefined && (!Number.isInteger(property.totalUnits) || property.totalUnits < 1)) {
     errors.totalUnits = "Total units must be a whole number of at least 1.";
   }

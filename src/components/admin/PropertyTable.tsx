@@ -70,7 +70,7 @@ export default function PropertyTable({
       (filter === "admin" && adminIds.has(p.id)) ||
       (filter === "mock" && !adminIds.has(p.id));
     return matchesSearch && matchesFilter;
-  });
+  }).sort((left, right) => new Date(right.updatedAt || right.postedDate || right.createdAt || 0).getTime() - new Date(left.updatedAt || left.postedDate || left.createdAt || 0).getTime());
 
   const totalPages = Math.ceil(filteredProperties.length / perPage);
   const paged = filteredProperties.slice(
@@ -104,7 +104,9 @@ export default function PropertyTable({
 
   const getTimeAgo = (dateStr?: string) => {
     if (!dateStr || !now) return "—";
-    const diff = now - new Date(dateStr).getTime();
+    const timestamp = new Date(dateStr).getTime();
+    if (!Number.isFinite(timestamp)) return "—";
+    const diff = Math.max(0, now - timestamp);
     const minutes = Math.floor(diff / 60000);
     if (minutes < 1) return "Just now";
     if (minutes < 60) return `${minutes}m ago`;
@@ -252,8 +254,8 @@ export default function PropertyTable({
                       "Mock"
                     )}
                   </span>
-                  {isAdmin && property.postedDate && (
-                    <p className="text-[10px] text-[#68646F] mt-0.5">{getTimeAgo(property.postedDate)}</p>
+                  {isAdmin && (property.updatedAt || property.postedDate || property.createdAt) && (
+                    <p className="text-[10px] text-[#68646F] mt-0.5">Updated {getTimeAgo(property.updatedAt || property.postedDate || property.createdAt)}</p>
                   )}
                 </div>
 

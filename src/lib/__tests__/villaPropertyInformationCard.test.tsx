@@ -15,7 +15,7 @@ const property = {
   configs: ["3 BHK", "4 BHK"],
   propertyType: "Apartment",
   possessionDetails: { status: "New Launch", launchDate: "2026-08-01" },
-  projectArea: { totalAcres: 12.45, builtUpAcres: 6.2, openSpaceAcres: 4.1, amenitiesAcres: 2.15 },
+  projectArea: { totalAcres: 12.45, builtUpSqft: 6200, openSpaceSqft: 4100, amenitiesSqft: 2150 },
   totalUnits: 184,
 } as Property;
 

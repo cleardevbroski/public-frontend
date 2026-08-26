@@ -1,29 +1,28 @@
 "use client";
 
-import { Plus, Trash2, Upload, Loader2 } from "lucide-react";
+import { ExternalLink, Loader2, Play, Plus, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
 import type { MasterPlan, ProjectDownload, ProjectFaq, ProjectNarrative } from "@/components/acres/mock-data";
 import { uploadPropertyMedia } from "@/lib/api";
-import { PROPERTY_DOCUMENT_MAX_BYTES, PROPERTY_DOCUMENT_MAX_MB, PROPERTY_WALKTHROUGH_MAX_BYTES, PROPERTY_WALKTHROUGH_MAX_MB } from "@/lib/propertyMediaLimits";
+import { PROPERTY_DOCUMENT_MAX_BYTES, PROPERTY_DOCUMENT_MAX_MB } from "@/lib/propertyMediaLimits";
+import { canonicalYoutubeUrl, youtubeThumbnail, youtubeVideoId } from "@/lib/youtube";
 
 type Props = {
   section?: "all" | "narrative" | "media" | "faqs";
   narrative?: ProjectNarrative;
   masterPlan?: MasterPlan;
   downloads?: ProjectDownload[];
+  walkthroughVideoUrl?: string;
   faqs?: ProjectFaq[];
   onNarrativeChange: (value: ProjectNarrative) => void;
   onMasterPlanChange: (value: MasterPlan) => void;
   onDownloadsChange: (value: ProjectDownload[]) => void;
+  onWalkthroughVideoUrlChange: (value: string) => void;
   onFaqsChange: (value: ProjectFaq[]) => void;
 };
 
 const input = "w-full rounded-xl border border-[#E4E0E7] bg-white px-3 py-2.5 text-[12px] text-[#121B35] outline-none focus:border-[#DDAA42]";
-const emptyDownloadLabels = {
-  brochure: "Project Brochure",
-  "master-plan": "Master Plan",
-  walkthrough: "Walkthrough Video",
-} as const;
+const emptyDownloadLabels = { "master-plan": "Master Plan" } as const;
 
 function LinesEditor({ label, value = [], onChange, placeholder }: { label: string; value?: string[]; onChange: (value: string[]) => void; placeholder: string }) {
   return <label className="block text-[12px] font-semibold text-[#3F3D46]">{label}<textarea value={value.join("\n")} onChange={(event) => onChange(event.target.value.split("\n").map((line) => line.trim()).filter(Boolean))} rows={4} className={`${input} mt-1.5 resize-y`} placeholder={`${placeholder}\nOne item per line`} /></label>;
@@ -39,19 +38,18 @@ export default function ProjectContentEditor(props: Props) {
   const showFaqs = !props.section || props.section === "all" || props.section === "faqs";
   const sectionTitle = props.section === "media" ? "Project Media & Download Hub" : props.section === "faqs" ? "Frequently Asked Questions" : "Project Content";
 
-  const uploadDownload = async (kind: ProjectDownload["kind"], file?: File) => {
+  const uploadDownload = async (file?: File) => {
     if (!file) return;
-    const expected = kind === "walkthrough" ? "video/mp4" : "application/pdf";
-    const maxBytes = kind === "walkthrough" ? PROPERTY_WALKTHROUGH_MAX_BYTES : PROPERTY_DOCUMENT_MAX_BYTES;
-    const maxMb = kind === "walkthrough" ? PROPERTY_WALKTHROUGH_MAX_MB : PROPERTY_DOCUMENT_MAX_MB;
-    if (file.type !== expected || file.size > maxBytes) {
-      setError(`${emptyDownloadLabels[kind]} must be ${kind === "walkthrough" ? "an MP4" : "a PDF"} no larger than ${maxMb} MB.`);
+    const kind = "master-plan" as const;
+    const expected = "application/pdf" as const;
+    if (file.type !== expected || file.size > PROPERTY_DOCUMENT_MAX_BYTES) {
+      setError(`Master Plan must be a PDF no larger than ${PROPERTY_DOCUMENT_MAX_MB} MB.`);
       return;
     }
     setUploading(kind);
     setError("");
     try {
-      const fileUrl = await uploadPropertyMedia(file, kind === "walkthrough" ? "project-walkthrough" : "project-document-pdf");
+      const fileUrl = await uploadPropertyMedia(file, "project-document-pdf");
       props.onDownloadsChange([
         ...(props.downloads || []).filter((row) => row.kind !== kind),
         { kind, label: emptyDownloadLabels[kind], fileName: file.name, fileUrl, mimeType: expected, fileSize: file.size },
@@ -62,6 +60,10 @@ export default function ProjectContentEditor(props: Props) {
       setUploading("");
     }
   };
+
+  const videoId = youtubeVideoId(props.walkthroughVideoUrl);
+  const videoUrl = canonicalYoutubeUrl(props.walkthroughVideoUrl);
+  const videoThumbnail = youtubeThumbnail(props.walkthroughVideoUrl);
 
   return (
     <div className="space-y-6 rounded-2xl border border-[#E4E0E7] bg-[#F8F7FA]/60 p-5">
@@ -94,12 +96,24 @@ export default function ProjectContentEditor(props: Props) {
           {(masterPlan.sections || []).map((section, index) => <div key={index} className="rounded-xl border border-[#E4E0E7] bg-white p-3"><div className="flex gap-2"><input className={input} value={section.heading} onChange={(event) => props.onMasterPlanChange({ ...masterPlan, sections: masterPlan.sections?.map((item, itemIndex) => itemIndex === index ? { ...item, heading: event.target.value } : item) })} placeholder="Section heading" /><button type="button" onClick={() => props.onMasterPlanChange({ ...masterPlan, sections: masterPlan.sections?.filter((_, itemIndex) => itemIndex !== index) })} className="px-2 text-red-500"><Trash2 className="size-4" /></button></div><textarea className={`${input} mt-2 resize-y`} rows={3} value={section.body} onChange={(event) => props.onMasterPlanChange({ ...masterPlan, sections: masterPlan.sections?.map((item, itemIndex) => itemIndex === index ? { ...item, body: event.target.value } : item) })} placeholder="Verified section details" /></div>)}
         </div>
         <div>
-          <h4 className="text-[13px] font-bold text-[#121B35]">Download Hub files</h4>
-          <p className="mb-3 mt-1 text-[10px] text-[#68646F]">PDF documents up to {PROPERTY_DOCUMENT_MAX_MB} MB. Walkthrough MP4 remains limited to {PROPERTY_WALKTHROUGH_MAX_MB} MB.</p>
-          <div className="space-y-2">{(["brochure", "master-plan", "walkthrough"] as const).map((kind) => {
-            const current = props.downloads?.find((row) => row.kind === kind);
-            return <div key={kind} className="flex items-center gap-3 rounded-xl border border-[#E4E0E7] bg-white p-3"><div className="min-w-0 flex-1"><p className="text-[12px] font-bold text-[#121B35]">{emptyDownloadLabels[kind]}</p><p className="truncate text-[10px] text-[#68646F]">{current?.fileName || "Not uploaded"}</p></div>{current && <button type="button" onClick={() => props.onDownloadsChange((props.downloads || []).filter((row) => row.kind !== kind))} className="text-[10px] font-bold text-red-600">Remove</button>}<label className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-[#121B35] px-3 py-2 text-[10px] font-bold text-white">{uploading === kind ? <Loader2 className="size-3 animate-spin" /> : <Upload className="size-3" />}{current ? "Replace" : "Upload"}<input type="file" accept={kind === "walkthrough" ? "video/mp4,.mp4" : "application/pdf,.pdf"} className="hidden" onChange={(event) => void uploadDownload(kind, event.target.files?.[0])} /></label></div>;
-          })}</div>
+          <h4 className="text-[13px] font-bold text-[#121B35]">Download Hub</h4>
+          <p className="mb-3 mt-1 text-[10px] text-[#68646F]">The project brochure is linked automatically from RERA → Project Documents. Upload it only once there.</p>
+          <div className="rounded-xl border border-[#D9D2BF] bg-[#FFFDF7] p-3 text-[10px] font-semibold text-[#795A18]">Project Brochure · linked from the saved RERA project document</div>
+          {(() => {
+            const current = props.downloads?.find((row) => row.kind === "master-plan");
+            return <div className="mt-2 flex items-center gap-3 rounded-xl border border-[#E4E0E7] bg-white p-3"><div className="min-w-0 flex-1"><p className="text-[12px] font-bold text-[#121B35]">Master Plan</p><p className="truncate text-[10px] text-[#68646F]">{current?.fileName || "Not uploaded"}</p></div>{current && <button type="button" onClick={() => props.onDownloadsChange((props.downloads || []).filter((row) => row.kind !== "master-plan"))} className="text-[10px] font-bold text-red-600">Remove</button>}<label className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-[#121B35] px-3 py-2 text-[10px] font-bold text-white">{uploading === "master-plan" ? <Loader2 className="size-3 animate-spin" /> : <Upload className="size-3" />}{current ? "Replace" : "Upload"}<input type="file" accept="application/pdf,.pdf" className="hidden" onChange={(event) => void uploadDownload(event.target.files?.[0])} /></label></div>;
+          })()}
+          <div className="mt-3 rounded-xl border border-[#E4E0E7] bg-white p-3">
+            <label className="text-[12px] font-bold text-[#121B35]">YouTube walkthrough link</label>
+            <p className="mt-1 text-[10px] text-[#68646F]">Paste a YouTube, youtu.be, Shorts, Live or Embed URL. The public thumbnail opens YouTube.</p>
+            <input type="url" value={props.walkthroughVideoUrl || ""} onChange={(event) => props.onWalkthroughVideoUrlChange(event.target.value)} placeholder="https://www.youtube.com/watch?v=..." className={`${input} mt-2`} />
+            {props.walkthroughVideoUrl && !videoId && <p className="mt-2 text-[10px] font-semibold text-red-600">Enter a valid YouTube video URL.</p>}
+            {videoId && <a href={videoUrl} target="_blank" rel="noreferrer" className="group relative mt-3 block aspect-video overflow-hidden rounded-lg bg-[#121B35]">
+              <img src={videoThumbnail} alt="YouTube walkthrough thumbnail" className="size-full object-cover" />
+              <span className="absolute inset-0 grid place-items-center bg-black/20"><span className="grid size-12 place-items-center rounded-full bg-red-600 text-white shadow-lg"><Play className="size-5 fill-current" /></span></span>
+              <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded bg-black/75 px-2 py-1 text-[9px] font-bold text-white">Open YouTube <ExternalLink className="size-3" /></span>
+            </a>}
+          </div>
           {error && <p className="mt-2 text-[10px] text-red-600">{error}</p>}
         </div>
       </div>}

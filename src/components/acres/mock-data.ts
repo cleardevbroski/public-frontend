@@ -53,8 +53,10 @@ export type VillaType =
   | "Penthouse"
   | "Duplex Villa"
   | "Triplex Villa"
+  | "Luxury Villa"
+  | "Mansion"
   | "Mixed Villa Development";
-export type VillaUnitVariant = "Simplex" | "Duplex" | "Triplex" | "Villament" | "Penthouse" | "Row House" | "Independent Villa" | "Twin Villa" | "Sky Villa" | "Custom";
+export type VillaUnitVariant = "Simplex" | "Duplex" | "Triplex" | "Villament" | "Penthouse" | "Row House" | "Independent Villa" | "Twin Villa" | "Sky Villa" | "Luxury Villa" | "Mansion" | "Custom";
 export type PlotFacing = "East" | "West" | "North" | "South" | "North-East" | "North-West" | "South-East" | "South-West";
 
 export type VillaConfigurationDetail = {
@@ -200,6 +202,12 @@ export type NearbyPlace = {
   address?: string;
   distance?: string;
   landmark?: string;
+  latitude?: number;
+  longitude?: number;
+  osmId?: string;
+  mapUrl?: string;
+  resolvedAddress?: string;
+  approximateDistanceMeters?: number;
 };
 export type NearbyDetail = {
   /** Legacy summary fields retained for existing listings. */
@@ -257,6 +265,10 @@ export type Property = {
   area: string;
   projectArea?: {
     totalAcres?: number;
+    openSpaceSqft?: number;
+    builtUpSqft?: number;
+    amenitiesSqft?: number;
+    /** Legacy acre fields retained while published records are migrated safely. */
     openSpaceAcres?: number;
     builtUpAcres?: number;
     amenitiesAcres?: number;
@@ -266,6 +278,7 @@ export type Property = {
   projectNarrative?: ProjectNarrative;
   masterPlan?: MasterPlan;
   projectDownloads?: ProjectDownload[];
+  walkthroughVideoUrl?: string;
   faqs?: ProjectFaq[];
   possession?: string;
   possessionDetails?: PossessionDetails;
@@ -311,6 +324,8 @@ export type Property = {
     address?: string;
     landmark?: string;
     pinCode?: string;
+    latitude?: number;
+    longitude?: number;
   };
   nearbyAmenities?: {
     schools?: string;
@@ -337,6 +352,8 @@ export type Property = {
   reraPhases?: ReraPhase[];
   verified?: boolean;
   postedDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
   // Downloadable brochure (data URL or external link) + display name
   brochure?: string;
   brochureName?: string;

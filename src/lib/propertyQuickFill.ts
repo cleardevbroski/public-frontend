@@ -11,6 +11,7 @@ import { createConfigurationDetail, normalizeBhkLabel } from "@/lib/propertyDeta
 import {
   createVillaConfigurationDetail,
   initialVillaDetails,
+  normalizeVillaFloorCount,
   normalizeVillaType,
   parseVillaConfigurationLabel,
   villaUnitVariantOptions,
@@ -40,6 +41,23 @@ function key(value: unknown): string {
 function number(value: unknown): number | undefined {
   const match = clean(value).replace(/,/g, "").match(/\d+(?:\.\d+)?/);
   return match ? Number(match[0]) : undefined;
+}
+function normalizeImportTransaction(value: unknown): string | undefined {
+  const raw = clean(value);
+  if (!raw) return undefined;
+  if (/\bnew\s*property\b/i.test(raw)) return "New Property";
+  if (/\bresale\b/i.test(raw)) throw new Error("Resale properties are not applicable. Import a New Property project instead.");
+  return raw;
+}
+function componentAreaToSqft(value: unknown): number | undefined {
+  const parsed = number(value);
+  if (parsed === undefined) return undefined;
+  return /\bacres?\b/i.test(clean(value)) ? parsed * 43_560 : parsed;
+}
+function totalLandToAcres(value: unknown): number | undefined {
+  const parsed = number(value);
+  if (parsed === undefined) return undefined;
+  return /\b(?:sq\.?\s*ft|sqft|square\s*feet)\b/i.test(clean(value)) ? parsed / 43_560 : parsed;
 }
 function list(value: unknown): string[] {
   return clean(value).split(/[,;|\n]/).map((item) => item.trim()).filter(Boolean);
@@ -71,7 +89,7 @@ function approvedCloudinaryUrl(value: unknown): string | undefined {
 export function normalizePropertyType(value: unknown): SupportedPropertyType | undefined {
   const normalized = key(value);
   if (normalized.includes("apartment") || normalized.includes("flat")) return "Apartment";
-  if (normalized.includes("villa")) return "Villa";
+  if (normalized.includes("villa") || normalized.includes("mansion") || normalized.includes("rowhouse") || normalized.includes("penthouse")) return "Villa";
   if (normalized.includes("plot") || normalized.includes("land")) return "Plot";
   if (normalized.includes("commercial") || normalized.includes("office") || normalized.includes("warehouse") || normalized.includes("showroom")) return "Commercial";
   if (normalized.includes("pg") || normalized.includes("coliving") || normalized.includes("hostel")) return "PG/Co-living";
@@ -121,7 +139,7 @@ function buildCommonPatch(read: (names: string[]) => string, preferredType?: Sup
     pricePerSqft: read(["pricepersqft", "psf", "ratepersqft"]),
     area: read(["sqftstartsfrom", "area", "superarea", "builtuparea", "size"]),
     description: read(["description", "propertydescription", "about"]),
-    transactionType: read(["transactiontype", "transaction"]) || undefined,
+    transactionType: normalizeImportTransaction(read(["transactiontype", "transaction"])),
     listingType: read(["listingtype", "listing", "saleorrent"]) || undefined,
     furnishing: read(["furnishing", "furnished"]),
     parking: read(["parking", "carparking"]),
@@ -140,11 +158,11 @@ function buildCommonPatch(read: (names: string[]) => string, preferredType?: Sup
     reraRegistered: Boolean(reraNumber) || /yes|true|registered/i.test(read(["reraregistered"])),
     reraNumber: reraNumber || undefined,
     reraPhases: reraPhasesJson || (reraNumber ? [{ name: reraPhaseName || "Phase 1", reraNumber, reraDocuments: [], projectDocuments: [] }] : []),
-    projectArea: number(read(["totalprojectarea", "projectarea", "totalarea", "sitearea"])) !== undefined ? {
-      totalAcres: number(read(["totalprojectarea", "projectarea", "totalarea", "sitearea"])),
-      openSpaceAcres: number(read(["openspacearea", "emptyopenspacearea"])),
-      builtUpAcres: number(read(["apartmentbuiltuparea", "buildingarea"])),
-      amenitiesAcres: number(read(["amenitiesarea"])),
+    projectArea: ["totalprojectarea", "projectarea", "totalarea", "sitearea", "openspacearea", "emptyopenspacearea", "apartmentbuiltuparea", "buildingarea", "amenitiesarea"].some((name) => Boolean(read([name]))) ? {
+      totalAcres: totalLandToAcres(read(["totalprojectarea", "projectarea", "totalarea", "sitearea"])),
+      openSpaceSqft: componentAreaToSqft(read(["openspacearea", "emptyopenspacearea"])),
+      builtUpSqft: componentAreaToSqft(read(["apartmentbuiltuparea", "buildingarea"])),
+      amenitiesSqft: componentAreaToSqft(read(["amenitiesarea"])),
     } : undefined,
     totalUnits: number(read(["totalunits", "units", "totalhomes"])),
     totalTowers: number(read(["totaltowers", "towers"])),
@@ -217,7 +235,7 @@ function applyTypeDetails(suggestion: QuickFillSuggestion, row: string[], header
   if (type === "Villa") {
     const configs = configurationsFromWideRow(row, rawHeaders, type);
     const details: VillaConfigurationDetail[] = configs.map((item) => ({ ...createVillaConfigurationDetail(item.configuration), price: item.price, builtUpArea: item.area, carpetArea: read(["carpetarea"]), plotArea: read(["plotarea"]), superArea: read(["superarea", "area"]), bedrooms: number(read(["bedrooms"])) ?? createVillaConfigurationDetail(item.configuration).bedrooms, bathrooms: number(read(["bathrooms"])) ?? createVillaConfigurationDetail(item.configuration).bathrooms, balconies: number(read(["balconies"])) }));
-    suggestion.patch.villaDetails = { ...initialVillaDetails(), villaType: normalizeVillaType(read(["villatype"])) || "Independent", configurationDetails: details, plotDimensions: read(["plotdimensions", "dimensions"]), numberOfFloors: read(["numberoffloors", "totalfloors"]), roadWidthFacing: read(["roadwidth"]), privateGarden: /yes|true/i.test(read(["privategarden"])), privatePool: /yes|true/i.test(read(["privatepool"])), terrace: /yes|true/i.test(read(["terrace"])), gatedCommunity: /yes|true/i.test(read(["gatedcommunity"])) };
+    suggestion.patch.villaDetails = { ...initialVillaDetails(), villaType: normalizeVillaType(read(["villatype"])) || "Independent", configurationDetails: details, plotDimensions: read(["plotdimensions", "dimensions"]), numberOfFloors: normalizeVillaFloorCount(read(["numberoffloors", "totalfloors"])) || "", roadWidthFacing: read(["roadwidth"]), privateGarden: /yes|true/i.test(read(["privategarden"])), privatePool: /yes|true/i.test(read(["privatepool"])), terrace: /yes|true/i.test(read(["terrace"])), gatedCommunity: /yes|true/i.test(read(["gatedcommunity"])) };
     suggestion.patch.configs = details.map((item) => item.configuration);
     if (details.length) addField(suggestion.fields, "Villa configurations", details.map((item) => item.configuration).join(", "));
   }
@@ -276,7 +294,7 @@ function applySupplementarySheets(workbook: XLSX.WorkBook, suggestion: QuickFill
       return configuration ? { configuration, bhk: normalizeBhkLabel(recordValue(record, ["bhk"])) || parsedVilla?.bhk, unitVariant, price: recordValue(record, ["price"]), builtUpArea: recordValue(record, ["builtuparea", "area", "sqft"]), carpetArea: recordValue(record, ["carpetarea"]), plotArea: recordValue(record, ["plotarea"]), superArea: recordValue(record, ["superarea"]), bedrooms: number(recordValue(record, ["bedrooms"])), bathrooms: number(recordValue(record, ["bathrooms"])), balconies: number(recordValue(record, ["balconies"])), numberOfFloors: recordValue(record, ["structure", "numberoffloors"]) || parsedVilla?.numberOfFloors, facing: recordValue(record, ["facing", "plotfacing"]) } : null;
     }).filter((item): item is NonNullable<typeof item> => Boolean(item));
     if (type === "Apartment" && rows.length) suggestion.patch.configurationDetails = rows.map((row) => ({ ...createConfigurationDetail(row.configuration), price: row.price, builtUpArea: row.builtUpArea, carpetArea: row.carpetArea, bathrooms: row.bathrooms || createConfigurationDetail(row.configuration).bathrooms }));
-    if (type === "Villa" && rows.length) suggestion.patch.villaDetails = { ...(suggestion.patch.villaDetails || initialVillaDetails()), configurationDetails: rows.map((row) => ({ ...createVillaConfigurationDetail(row.configuration), bhk: row.bhk, unitVariant: row.unitVariant, price: row.price, builtUpArea: row.builtUpArea, carpetArea: row.carpetArea, plotArea: row.plotArea, superArea: row.superArea, bedrooms: row.bedrooms ?? createVillaConfigurationDetail(row.configuration).bedrooms, bathrooms: row.bathrooms ?? createVillaConfigurationDetail(row.configuration).bathrooms, balconies: row.balconies, numberOfFloors: row.numberOfFloors, plotFacing: (row.facing || undefined) as VillaConfigurationDetail["plotFacing"] })) };
+    if (type === "Villa" && rows.length) suggestion.patch.villaDetails = { ...(suggestion.patch.villaDetails || initialVillaDetails()), configurationDetails: rows.map((row) => ({ ...createVillaConfigurationDetail(row.configuration), bhk: row.bhk, unitVariant: row.unitVariant, price: row.price, builtUpArea: row.builtUpArea, carpetArea: row.carpetArea, plotArea: row.plotArea, superArea: row.superArea, bedrooms: row.bedrooms ?? createVillaConfigurationDetail(row.configuration).bedrooms, bathrooms: row.bathrooms ?? createVillaConfigurationDetail(row.configuration).bathrooms, balconies: row.balconies, numberOfFloors: normalizeVillaFloorCount(row.numberOfFloors) || row.numberOfFloors, plotFacing: (row.facing || undefined) as VillaConfigurationDetail["plotFacing"] })) };
     suggestion.patch.configs = rows.map((row) => row.configuration);
     addField(suggestion.fields, "Configuration sheet", `${rows.length} configuration row${rows.length === 1 ? "" : "s"}`);
   }
@@ -295,7 +313,7 @@ function applySupplementarySheets(workbook: XLSX.WorkBook, suggestion: QuickFill
     addField(suggestion.fields, "Society sheet", "Society services");
   }
   const typeDetail = matching(`${type} Details`)[0];
-  if (typeDetail && type === "Villa") suggestion.patch.villaDetails = { ...(suggestion.patch.villaDetails || initialVillaDetails()), villaType: normalizeVillaType(recordValue(typeDetail, ["villatype"])) || "Independent", plotDimensions: recordValue(typeDetail, ["plotdimensions"]), numberOfFloors: recordValue(typeDetail, ["numberoffloors"]), plotFacing: (recordValue(typeDetail, ["plotfacing"]) as any) || undefined, cornerPlot: /yes|true/i.test(recordValue(typeDetail, ["cornerplot"])), roadWidthFacing: recordValue(typeDetail, ["roadwidth"]), privateGarden: /yes|true/i.test(recordValue(typeDetail, ["privategarden"])), privateGardenArea: recordValue(typeDetail, ["gardenarea"]), privatePool: /yes|true/i.test(recordValue(typeDetail, ["privatepool"])), terrace: /yes|true/i.test(recordValue(typeDetail, ["terrace"])), gatedCommunity: /yes|true/i.test(recordValue(typeDetail, ["gatedcommunity"])) };
+  if (typeDetail && type === "Villa") suggestion.patch.villaDetails = { ...(suggestion.patch.villaDetails || initialVillaDetails()), villaType: normalizeVillaType(recordValue(typeDetail, ["villatype"])) || "Independent", plotDimensions: recordValue(typeDetail, ["plotdimensions"]), numberOfFloors: normalizeVillaFloorCount(recordValue(typeDetail, ["numberoffloors"])) || "", plotFacing: (recordValue(typeDetail, ["plotfacing"]) as any) || undefined, cornerPlot: /yes|true/i.test(recordValue(typeDetail, ["cornerplot"])), roadWidthFacing: recordValue(typeDetail, ["roadwidth"]), privateGarden: /yes|true/i.test(recordValue(typeDetail, ["privategarden"])), privateGardenArea: recordValue(typeDetail, ["gardenarea"]), privatePool: /yes|true/i.test(recordValue(typeDetail, ["privatepool"])), terrace: /yes|true/i.test(recordValue(typeDetail, ["terrace"])), gatedCommunity: /yes|true/i.test(recordValue(typeDetail, ["gatedcommunity"])) };
   if (typeDetail && type === "Plot") suggestion.patch.plotDetails = { ...(suggestion.patch.plotDetails || initialPlotDetails()), totalPlots: number(recordValue(typeDetail, ["totalplots"])) || 0, approvalAuthority: recordValue(typeDetail, ["approvalauthority"]) || "BMRDA", approvalNumber: recordValue(typeDetail, ["approvalnumber"]), roadWidth: recordValue(typeDetail, ["roadwidth"]), civicInfrastructure: { undergroundDrainage: (recordValue(typeDetail, ["undergrounddrainage"]) as any) || "Ready", electricity: (recordValue(typeDetail, ["electricity"]) as any) || "Ready", water: (recordValue(typeDetail, ["water"]) as any) || "Ready" }, layoutPossession: /under/i.test(recordValue(typeDetail, ["layoutpossessionstatus"])) ? { status: "Under Development", expectedCompletionDate: recordValue(typeDetail, ["layoutdate"]) } : { status: "Layout Ready", readyDate: recordValue(typeDetail, ["layoutdate"]) } };
   if (typeDetail && type === "Commercial") suggestion.patch.commercialDetails = { ...(suggestion.patch.commercialDetails || initialCommercialDetails()), commercialSubtype: (recordValue(typeDetail, ["commercialsubtype"]) as any) || "Office Space", zoneType: (recordValue(typeDetail, ["zonetype"]) as any) || "Non-SEZ", carpetArea: recordValue(typeDetail, ["carpetarea"]), builtUpArea: recordValue(typeDetail, ["builtuparea"]), superArea: recordValue(typeDetail, ["superarea"]), floor: recordValue(typeDetail, ["floor"]), totalFloors: number(recordValue(typeDetail, ["totalfloors"])) || 0, frontage: recordValue(typeDetail, ["frontage"]), seatingCapacity: number(recordValue(typeDetail, ["seatingcapacity"])) || 0, cabins: number(recordValue(typeDetail, ["cabins"])) || 0, meetingRooms: number(recordValue(typeDetail, ["meetingrooms"])) || 0, buildingGrade: (recordValue(typeDetail, ["buildinggrade"]) as any) || "Not Applicable", pantry: (recordValue(typeDetail, ["pantry"]) as any) || "None", washrooms: recordValue(typeDetail, ["washrooms"]), parking: recordValue(typeDetail, ["parking"]), powerBackup: recordValue(typeDetail, ["powerbackup"]), sanctionedLoadKva: number(recordValue(typeDetail, ["sanctionedloadkva"])) || 0, fireSafetyCompliance: recordValue(typeDetail, ["firesafety"]), furnishing: (recordValue(typeDetail, ["furnishing"]) as any) || "Bare Shell" };
   if (typeDetail && type === "PG/Co-living") suggestion.patch.pgDetails = { ...(suggestion.patch.pgDetails || initialPgDetails()), genderPreference: (recordValue(typeDetail, ["genderpreference"]) as any) || "Co-ed", availableFrom: recordValue(typeDetail, ["availablefrom"]), mealsIncluded: (recordValue(typeDetail, ["mealsincluded"]) as any) || "No meals", foodType: (recordValue(typeDetail, ["foodtype"]) as any) || "", wifiIncluded: /yes|true|included/i.test(recordValue(typeDetail, ["wifiincluded"])), laundryIncluded: /yes|true|included/i.test(recordValue(typeDetail, ["laundryincluded"])), housekeeping: recordValue(typeDetail, ["housekeeping"]), curfewEntryTiming: recordValue(typeDetail, ["curfewentrytiming"]), visitorsAllowed: recordValue(typeDetail, ["visitorsallowed"]), noticePeriod: recordValue(typeDetail, ["noticeperiod"]), lockInPeriod: recordValue(typeDetail, ["lockinperiod"]), contactType: (recordValue(typeDetail, ["contacttype"]) as any) || "PG Manager", commonAmenities: list(recordValue(typeDetail, ["commonamenities"])) };
@@ -420,7 +438,7 @@ export const PROPERTY_IMPORT_DESCRIPTION_FORMAT = `PROPERTY IMPORT FORMAT
 Property Type: Apartment | Villa | Plot | Commercial | PG/Co-living
 Project / Property Name:
 Builder / Developer:
-Transaction Type: New Property | Resale
+Transaction Type: New Property
 Listing Type: For Sale
 Title / Subtitle:
 Description:
@@ -639,7 +657,7 @@ function section(text: string, name: string) {
   return sections(text, name)[0] || "";
 }
 function labelled(text: string, label: string) {
-  const match = text.match(new RegExp(`^\\s*${label.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}\\s*:\\s*(.+?)\\s*$`, "im"));
+  const match = text.match(new RegExp(`^[\\t ]*${label.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}[\\t ]*:[\\t ]*([^\\r\\n]*)[\\t ]*$`, "im"));
   const value = clean(match?.[1]);
   return isProvided(value) ? value : "";
 }
@@ -660,7 +678,7 @@ function analyzeStructuredDescription(source: string, preferredType?: SupportedP
   const fields: QuickFillSuggestion["fields"] = []; const warnings = ["Only fields supplied in this format are filled. Complete missing fields and all photo/document uploads manually."];
   const type = normalizePropertyType(get("Property Type")) || preferredType;
   const reraNumber = get("RERA Number");
-  const totalProjectArea = number(get("Total Project Area", inventory)); const openSpaceArea = number(get("Open Space Area", inventory)); const builtUpProjectArea = number(get("Apartment Built-up Area", inventory)); const amenitiesArea = number(get("Amenities Area", inventory));
+  const totalProjectArea = totalLandToAcres(get("Total Project Area", inventory)); const openSpaceArea = componentAreaToSqft(get("Open Space Area", inventory)); const builtUpProjectArea = componentAreaToSqft(get("Apartment Built-up Area", inventory) || get("Project Built-up Area", inventory)); const amenitiesArea = componentAreaToSqft(get("Amenities Area", inventory));
   const phaseRows = [...reraPhases.matchAll(/Phase\s+(\d+)\s+Name\s*:\s*(.+)/gi)].map((match) => {
     const index = match[1]; const name = clean(match[2]); const phaseNumber = labelled(reraPhases, `Phase ${index} RERA Number`); const reraSiteUrl = labelled(reraPhases, `Phase ${index} RERA URL`);
     if (!isProvided(name) || !phaseNumber) { warnings.push(`RERA Phase ${index} was skipped because both its name and registration number are required.`); return null; }
@@ -677,7 +695,7 @@ function analyzeStructuredDescription(source: string, preferredType?: SupportedP
   const projectNarrative = introduction.length || usps.length || keyDetails.length || featureGroups.length || locationAdvantage.length || investmentReasons.length ? { introduction, usps, keyDetails, featureGroups, locationAdvantage, investmentReasons } : undefined;
   const masterPlanTitle = get("Title", masterPlanText); const masterPlanSummary = get("Summary", masterPlanText);
   const masterPlan = masterPlanTitle || masterPlanSummary || masterPlanSections.length ? { title: masterPlanTitle, summary: masterPlanSummary, sections: masterPlanSections } : undefined;
-  const patch: QuickFillPatch = { propertyType: type, title: get("Project / Property Name"), builder: get("Builder / Developer") || get("Developer Name", developerText), developerDescription: get("About Developer", developerText), subtitle: get("Title / Subtitle"), description: get("Description"), price: get("Price"), pricePerSqft: get("Price Per Sqft"), area: get("Total Area"), transactionType: get("Transaction Type") || undefined, listingType: get("Listing Type") || undefined, possession: get("Possession Status") || undefined, possessionDetails: completion(`${get("Possession Status")} ${get("Expected Completion / Ready Date")}`), reraRegistered: /yes|true/i.test(get("RERA Registered")) || Boolean(reraNumber) || phaseRows.length > 0, reraNumber: reraNumber || phaseRows[0]?.reraNumber || undefined, reraPhases: phaseRows.length ? phaseRows : reraNumber ? [{ name: "Phase 1", reraNumber, reraSiteUrl: KARNATAKA_RERA_URL, reraDocuments: [], projectDocuments: [] }] : [], projectNarrative, masterPlan, faqs: faqs.length ? faqs : undefined, projectArea: totalProjectArea !== undefined || openSpaceArea !== undefined || builtUpProjectArea !== undefined || amenitiesArea !== undefined ? { totalAcres: totalProjectArea, openSpaceAcres: openSpaceArea, builtUpAcres: builtUpProjectArea, amenitiesAcres: amenitiesArea } : undefined, totalUnits: number(get("Total Units", inventory)), totalTowers: number(get("Total Towers", inventory)), locality: { address: get("Address", location), landmark: get("Landmark", location), city: get("City", location), zone: get("Zone", location), pinCode: get("Pincode", location) }, society: { security: get("Security", society), waterSupply: get("Water Supply", society), powerBackup: get("Power Backup", society), lift: get("Lift", society), visitorParking: get("Visitor Parking", society), maintenanceStaff: get("Maintenance Staff", society) } };
+  const patch: QuickFillPatch = { propertyType: type, title: get("Project / Property Name"), builder: get("Builder / Developer") || get("Developer Name", developerText), developerDescription: get("About Developer", developerText), subtitle: get("Title / Subtitle"), description: get("Description"), price: get("Price"), pricePerSqft: get("Price Per Sqft"), area: get("Total Area"), transactionType: normalizeImportTransaction(get("Transaction Type")), listingType: get("Listing Type") || undefined, possession: get("Possession Status") || undefined, possessionDetails: completion(`${get("Possession Status")} ${get("Expected Completion / Ready Date")}`), reraRegistered: /yes|true/i.test(get("RERA Registered")) || Boolean(reraNumber) || phaseRows.length > 0, reraNumber: reraNumber || phaseRows[0]?.reraNumber || undefined, reraPhases: phaseRows.length ? phaseRows : reraNumber ? [{ name: "Phase 1", reraNumber, reraSiteUrl: KARNATAKA_RERA_URL, reraDocuments: [], projectDocuments: [] }] : [], projectNarrative, masterPlan, faqs: faqs.length ? faqs : undefined, projectArea: totalProjectArea !== undefined || openSpaceArea !== undefined || builtUpProjectArea !== undefined || amenitiesArea !== undefined ? { totalAcres: totalProjectArea, openSpaceSqft: openSpaceArea, builtUpSqft: builtUpProjectArea, amenitiesSqft: amenitiesArea } : undefined, totalUnits: number(get("Total Units", inventory)), totalTowers: number(get("Total Towers", inventory)), locality: { address: get("Address", location), landmark: get("Landmark", location), city: get("City", location), zone: get("Zone", location), pinCode: get("Pincode", location) }, society: { security: get("Security", society), waterSupply: get("Water Supply", society), powerBackup: get("Power Backup", society), lift: get("Lift", society), visitorParking: get("Visitor Parking", society), maintenanceStaff: get("Maintenance Staff", society) } };
   const locality = get("Locality", location); if (locality && !patch.subtitle) patch.subtitle = locality;
   const configBlocks = [...configurations.matchAll(/Configuration\s+\d+\s*:\s*[\s\S]*?(?=\n\s*Configuration\s+\d+\s*:|$)/gi)];
   const configRows = configBlocks.map((block) => {
@@ -693,7 +711,7 @@ function analyzeStructuredDescription(source: string, preferredType?: SupportedP
   if (type === "Apartment" && configRows.length) { patch.configurationDetails = configRows.map((row) => ({ ...createConfigurationDetail(row.configuration), price: row.price, builtUpArea: row.builtUpArea, carpetArea: row.carpetArea, bedrooms: row.bedrooms || createConfigurationDetail(row.configuration).bedrooms, bathrooms: row.bathrooms || createConfigurationDetail(row.configuration).bathrooms, balconies: row.balconies ?? 0, facings: row.facing ? [row.facing] : [] })); patch.configs = configRows.map((row) => row.configuration); }
   if (type === "Villa") {
     const sharedNumberOfFloors = get("Number of Floors", villaText);
-    const validSharedFloorCount = /^(?:G(?:\s*\+\s*[1-9]\d*)?|[1-9]\d*)$/i.test(sharedNumberOfFloors) ? sharedNumberOfFloors : "";
+    const validSharedFloorCount = normalizeVillaFloorCount(sharedNumberOfFloors) || "";
     const gardenArea = get("Garden Area", villaText);
     patch.villaDetails = {
       ...initialVillaDetails(),
@@ -710,7 +728,7 @@ function analyzeStructuredDescription(source: string, preferredType?: SupportedP
         bedrooms: row.bedrooms ?? createVillaConfigurationDetail(row.configuration).bedrooms,
         bathrooms: row.bathrooms ?? createVillaConfigurationDetail(row.configuration).bathrooms,
         balconies: row.balconies,
-        numberOfFloors: row.numberOfFloors,
+        numberOfFloors: normalizeVillaFloorCount(row.numberOfFloors) || row.numberOfFloors,
         plotFacing: (row.facing || undefined) as VillaConfigurationDetail["plotFacing"],
       })),
       plotDimensions: get("Plot Dimensions", villaText),
@@ -728,7 +746,7 @@ function analyzeStructuredDescription(source: string, preferredType?: SupportedP
   }
   const facilities = [...amenityText.matchAll(/Amenity\s+\d+\s+Name\s*:\s*(.+?)(?=\n\s*Amenity\s+\d+\s+Name\s*:|$)/gis)].map((block) => { const body = block[0]; const name = labelled(body, block[0].match(/Amenity\s+\d+\s+Name/i)?.[0] || ""); const index = block[0].match(/Amenity\s+(\d+)/i)?.[1] || ""; return { name, description: labelled(amenityText, `Amenity ${index} Description`), status: (labelled(amenityText, `Amenity ${index} Status`) as any) || "Available", category: "Amenities" }; }).filter((item) => item.name);
   if (facilities.length) { patch.facilities = facilities; patch.amenities = facilities.map((facility) => facility.name); }
-  const nearbyDetails: NonNullable<Property["nearbyDetails"]> = {}; (["School", "Hospital", "College", "Shopping / Mall", "Metro", "Workplace", "Park", "Road"] as const).forEach((label) => { const category = label === "School" ? "schools" : label === "Hospital" ? "hospitals" : label === "College" ? "colleges" : label === "Metro" ? "metro" : label === "Workplace" ? "workplaces" : label === "Park" ? "parks" : label === "Road" ? "roads" : "shopping"; const places = [...nearbyText.matchAll(new RegExp(`${label.replace("/", "\\/")}\\s+\\d+\\s+Name\\s*:\\s*(.+)`, "gi"))].map((match) => { const index = match[0].match(/\d+/)?.[0] || ""; return { name: clean(match[1]), distance: labelled(nearbyText, `${label} ${index} Distance`), address: labelled(nearbyText, `${label} ${index} Address`), landmark: labelled(nearbyText, `${label} ${index} Landmark`) }; }).filter((item) => isProvided(item.name)); if (places.length) nearbyDetails[category] = { places }; });
+  const nearbyDetails: NonNullable<Property["nearbyDetails"]> = {}; (["School", "Hospital", "College", "Shopping / Mall", "Metro", "Workplace", "Park", "Road"] as const).forEach((label) => { const category = label === "School" ? "schools" : label === "Hospital" ? "hospitals" : label === "College" ? "colleges" : label === "Metro" ? "metro" : label === "Workplace" ? "workplaces" : label === "Park" ? "parks" : label === "Road" ? "roads" : "shopping"; const places = [...nearbyText.matchAll(new RegExp(`${label.replace("/", "\\/")}\\s+\\d+\\s+Name[\\t ]*:[\\t ]*([^\\r\\n]*)`, "gi"))].map((match) => { const index = match[0].match(/\d+/)?.[0] || ""; return { name: clean(match[1]), distance: labelled(nearbyText, `${label} ${index} Distance`), address: labelled(nearbyText, `${label} ${index} Address`), landmark: labelled(nearbyText, `${label} ${index} Landmark`) }; }).filter((item) => isProvided(item.name)); if (places.length) nearbyDetails[category] = { places }; });
   if (Object.keys(nearbyDetails).length) patch.nearbyDetails = nearbyDetails;
   Object.entries(patch).forEach(([label, value]) => { if (Array.isArray(value) ? value.length : value && typeof value === "object" ? Object.values(value).some(Boolean) : value) addField(fields, label, Array.isArray(value) ? value.join(", ") : value); });
   if (phaseRows.length) addField(fields, "RERA phases recognized", `${phaseRows.length}`);

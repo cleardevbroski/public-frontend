@@ -78,7 +78,7 @@ export function validatePlotDraft(property: Partial<Property>): PlotErrors {
   if (details?.layoutPossession.status === "Layout Ready" && !validDate(details.layoutPossession.readyDate)) errors.layoutPossession = "Layout Ready requires a ready date.";
   if (details?.layoutPossession.status === "Under Development" && !validMonth(details.layoutPossession.expectedCompletionDate)) errors.layoutPossession = "Under Development requires an expected completion month and year.";
   if (!property.builder?.trim()) errors.builder = "Builder/developer is required.";
-  if (!property.transactionType || !["New Property", "Resale"].includes(property.transactionType)) errors.transactionType = "Select a transaction type.";
+  if (property.transactionType !== "New Property") errors.transactionType = property.transactionType === "Resale" ? "Resale properties are not applicable." : "Select New Property.";
   if (!property.listingType || !["For Sale", "For Rent"].includes(property.listingType)) errors.listingType = "Select a listing type.";
   if (property.reraRegistered && (!property.reraPhases?.length || property.reraPhases.some((phase) => !phase.name.trim() || !/^[A-Za-z0-9/._-]{8,50}$/.test(phase.reraNumber.trim())))) errors.reraPhases = "Every phase needs a valid name and 8–50 character RERA number.";
   if (property.locality?.pinCode && !/^\d{6}$/.test(property.locality.pinCode)) errors.pinCode = "Enter a 6-digit PIN code.";

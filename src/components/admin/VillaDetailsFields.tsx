@@ -5,11 +5,13 @@ import type {
   VillaDetails,
   VillaType,
   VillaUnitVariant,
+  Property,
 } from "@/components/acres/mock-data";
 import { useState } from "react";
 import { facingOptions } from "@/lib/propertyDetails";
 import type { VillaErrors } from "@/lib/villaDetails";
 import { villaTypeOptions, villaUnitVariantOptions } from "@/lib/villaDetails";
+import ProjectAreaFields from "./ProjectAreaFields";
 
 type Props = {
   configInput: string;
@@ -23,6 +25,12 @@ type Props = {
   setPossession: (value: PossessionDetails) => void;
   errors: VillaErrors;
   configError?: string;
+  projectArea?: Property["projectArea"];
+  setProjectArea?: (value: NonNullable<Property["projectArea"]>) => void;
+  totalUnits?: number;
+  setTotalUnits?: (value?: number) => void;
+  totalTowers?: number;
+  setTotalTowers?: (value?: number) => void;
 };
 
 const inputClass = "w-full min-w-[105px] px-3 py-2.5 border border-[#E4E0E7] rounded-lg text-[13px] focus:outline-none focus:border-[#DDAA42]";
@@ -152,6 +160,15 @@ export default function VillaDetailsFields(props: Props) {
           {props.errors.possessionDate && <p className="text-[12px] text-red-600 mt-1">{props.errors.possessionDate}</p>}
         </div>
       </div>
+      <ProjectAreaFields
+        projectArea={props.projectArea}
+        setProjectArea={props.setProjectArea}
+        totalUnits={props.totalUnits}
+        setTotalUnits={props.setTotalUnits}
+        totalTowers={props.totalTowers}
+        setTotalTowers={props.setTotalTowers}
+        error={props.errors.projectArea || props.errors.totalUnits}
+      />
     </div>
   );
 }

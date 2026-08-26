@@ -24,7 +24,7 @@ export function validateCommercialDraft(property: Partial<Property>): Commercial
   if (/^[1-9]\d*$/.test(details.floor) && Number(details.floor) > details.totalFloors) errors.floor = "Floor cannot exceed total floors.";
   if (details.commercialSubtype === "Shop/Showroom" && !positive(details.frontage)) errors.frontage = "Frontage is required for a shop/showroom.";
   if (!property.builder?.trim()) errors.builder = "Builder/developer is required.";
-  if (!['New Property', 'Resale'].includes(property.transactionType || "")) errors.transactionType = "Select a transaction type.";
+  if (property.transactionType !== "New Property") errors.transactionType = property.transactionType === "Resale" ? "Resale properties are not applicable." : "Select New Property.";
   if (!['For Sale', 'For Rent'].includes(property.listingType || "")) errors.listingType = "Select a listing type.";
   const possession = property.possessionDetails;
   if (!possession || !["Ready to Move", "Under Construction"].includes(possession.status)) errors.possessionDetails = "Select Ready to Move or Under Construction.";

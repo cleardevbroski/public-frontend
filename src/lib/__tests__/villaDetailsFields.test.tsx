@@ -22,5 +22,7 @@ describe("VillaDetailsFields", () => {
     for (const label of ["Villa Type", "Variant", "Plot area", "Built-up area", "Carpet area", "Super area", "Bedrooms", "Bathrooms", "Balconies", "Plot Dimensions", "Corner Plot", "Private Garden / Lawn", "Private Pool", "Terrace", "Gated Community", "Ready Since"]) {
       expect(html).toContain(label);
     }
+    expect(html).toContain("Project area and inventory");
+    expect(html).toContain("Total Land / Project Area");
   });
 });

@@ -12,7 +12,7 @@ const property = {
   configs: ["3 BHK", "4 BHK"],
   propertyType: "Apartment",
   possessionDetails: { status: "New Launch", launchDate: "2026-08-01" },
-  projectArea: { totalAcres: 12.45, builtUpAcres: 6.2, openSpaceAcres: 4.1, amenitiesAcres: 2.15 },
+  projectArea: { totalAcres: 12.45, builtUpSqft: 6200, openSpaceSqft: 4100, amenitiesSqft: 2150 },
   totalUnits: 184,
 } as Property;
 
@@ -28,9 +28,9 @@ describe("getPropertyLedgerInformation", () => {
         { key: "scale", label: "Total Units", value: "184" },
       ],
       landBreakdown: [
-        { label: "Building area", value: "6.2 acres" },
-        { label: "Empty / open space", value: "4.1 acres" },
-        { label: "Amenities area", value: "2.15 acres" },
+        { label: "Building area", value: "6,200 sq. ft." },
+        { label: "Empty / open space", value: "4,100 sq. ft." },
+        { label: "Amenities area", value: "2,150 sq. ft." },
       ],
     });
   });

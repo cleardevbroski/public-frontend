@@ -11,12 +11,12 @@ export type VillaErrors = Record<string, string>;
 
 export const villaTypeOptions: VillaType[] = [
   "Independent", "Row Villa", "Twin Villa", "Villament", "Penthouse",
-  "Duplex Villa", "Triplex Villa", "Mixed Villa Development",
+  "Duplex Villa", "Triplex Villa", "Luxury Villa", "Mansion", "Mixed Villa Development",
 ];
 
 export const villaUnitVariantOptions: VillaUnitVariant[] = [
   "Simplex", "Duplex", "Triplex", "Villament", "Penthouse", "Row House",
-  "Independent Villa", "Twin Villa", "Sky Villa", "Custom",
+  "Independent Villa", "Twin Villa", "Sky Villa", "Luxury Villa", "Mansion", "Custom",
 ];
 
 export function normalizeVillaType(value: string): VillaType | undefined {
@@ -26,6 +26,8 @@ export function normalizeVillaType(value: string): VillaType | undefined {
   if (normalized.includes("villament")) return "Villament";
   if (normalized.includes("penthouse") || normalized.includes("pent house")) return "Penthouse";
   if (normalized.includes("row") || normalized.includes("townhouse") || normalized.includes("town house")) return "Row Villa";
+  if (normalized.includes("mansion")) return "Mansion";
+  if (normalized.includes("luxury")) return "Luxury Villa";
   if (normalized.includes("triplex")) return "Triplex Villa";
   if (normalized.includes("duplex")) return "Duplex Villa";
   if (normalized.includes("twin")) return "Twin Villa";
@@ -42,9 +44,23 @@ function inferVillaUnitVariant(value: string): VillaUnitVariant | undefined {
   if (/\bpent\s*house\b/.test(normalized)) return "Penthouse";
   if (/\bsky\s*villa\b/.test(normalized)) return "Sky Villa";
   if (/\b(row\s*(?:house|villa)|town\s*house)\b/.test(normalized)) return "Row House";
+  if (/\bmansion\b/.test(normalized)) return "Mansion";
+  if (/\bluxury\s*villa\b/.test(normalized)) return "Luxury Villa";
   if (/\btwin\s*villa\b/.test(normalized)) return "Twin Villa";
   if (/\bindependent\s*villa\b/.test(normalized)) return "Independent Villa";
+  if (/^villa$/.test(normalized.trim())) return "Independent Villa";
   return undefined;
+}
+
+export function normalizeVillaFloorCount(value?: string): string | undefined {
+  const normalized = String(value || "").trim();
+  if (!normalized) return undefined;
+  const compact = normalized.replace(/\b(?:upper\s+)?floors?\b/gi, "").trim();
+  if (/^(?:g|ground(?:\s+floor)?)$/i.test(compact)) return "G";
+  const ground = compact.match(/^(?:g|ground(?:\s+floor)?)\s*(?:\+|plus)\s*([1-9]\d*)$/i);
+  if (ground) return `G+${Number(ground[1])}`;
+  const numeric = compact.match(/^([1-9]\d*)$/);
+  return numeric ? String(Number(numeric[1])) : undefined;
 }
 
 export type ParsedVillaConfiguration = {
@@ -66,7 +82,7 @@ export function parseVillaConfigurationLabel(value: string): ParsedVillaConfigur
   configuration = configuration
     .replace(/pent\s*house/gi, "Penthouse")
     .replace(/\(\s*(G\s*\+\s*\d+|\d+)\s*\)/gi, (_, structure: string) => `(${structure.replace(/\s+/g, "").toUpperCase()})`);
-  const structure = configuration.match(/\((G\+\d+|\d+)\)/i)?.[1]?.toUpperCase();
+  const structure = normalizeVillaFloorCount(configuration.match(/\(([^)]+)\)/)?.[1]);
   return { configuration, bhk, unitVariant: inferredVariant, numberOfFloors: structure };
 }
 
@@ -170,7 +186,7 @@ export function validateVillaDraft(property: Partial<Property>): VillaErrors {
       const dimensions = row.plotDimensions.trim().match(/^(\d+(?:\.\d+)?)\s*(?:ft|feet|')?\s*[x×*]\s*(\d+(?:\.\d+)?)\s*(?:ft|feet|')?$/i);
       if (!dimensions || Number(dimensions[1]) <= 0 || Number(dimensions[2]) <= 0) errors[`${prefix}.plotDimensions`] = "Use positive width × length values.";
     }
-    if (row.numberOfFloors?.trim() && !/^(?:G(?:\s*\+\s*[1-9]\d*)?|[1-9]\d*)$/i.test(row.numberOfFloors.trim())) errors[`${prefix}.numberOfFloors`] = "Use G, G+N, or a positive whole number.";
+    if (row.numberOfFloors?.trim() && !normalizeVillaFloorCount(row.numberOfFloors)) errors[`${prefix}.numberOfFloors`] = "Use G, G+N, Ground + N Floors, or a positive whole number.";
     if (row.roadWidthFacing?.trim() && !positiveDisplay(row.roadWidthFacing)) errors[`${prefix}.roadWidthFacing`] = "Enter a positive road width.";
     if (row.privateGarden && row.privateGardenArea && !positiveDisplay(row.privateGardenArea)) errors[`${prefix}.privateGardenArea`] = "Enter a positive garden area.";
   });
@@ -191,11 +207,17 @@ export function validateVillaDraft(property: Partial<Property>): VillaErrors {
     errors.possessionDate = "Ready to Move requires only a Ready Since date.";
   }
   if (!property.builder?.trim()) errors.builder = "Builder/developer is required.";
-  if (!property.transactionType || !["New Property", "Resale"].includes(property.transactionType)) errors.transactionType = "Select a transaction type.";
+  if (property.transactionType !== "New Property") errors.transactionType = property.transactionType === "Resale" ? "Resale properties are not applicable." : "Select New Property.";
   if (!property.listingType || !["For Sale", "For Rent"].includes(property.listingType)) errors.listingType = "Select a listing type.";
   if (property.reraRegistered && (!property.reraPhases?.length || property.reraPhases.some((phase) => !phase.name.trim() || !/^[A-Za-z0-9/._-]{8,50}$/.test(phase.reraNumber.trim())))) {
     errors.reraPhases = "Every phase needs a valid name and 8–50 character RERA number.";
   }
+  const projectArea = property.projectArea;
+  if (projectArea && [projectArea.totalAcres, projectArea.openSpaceSqft, projectArea.builtUpSqft, projectArea.amenitiesSqft].some((value) => value !== undefined && (!Number.isFinite(value) || Number(value) < 0))) {
+    errors.projectArea = "Project-area values must be zero or positive numbers.";
+  }
+  if (property.totalUnits !== undefined && (!Number.isInteger(property.totalUnits) || property.totalUnits < 1)) errors.totalUnits = "Total units must be a whole number of at least 1.";
+  if (property.totalTowers !== undefined && (!Number.isInteger(property.totalTowers) || property.totalTowers < 1)) errors.totalTowers = "Total towers must be a whole number of at least 1.";
   if (property.locality?.pinCode && !/^\d{6}$/.test(property.locality.pinCode)) errors.pinCode = "Enter a 6-digit PIN code.";
   for (const key of ["schools", "colleges", "hospitals", "shopping", "metro", "workplaces", "parks", "roads"] as const) {
     const item = property.nearbyDetails?.[key];

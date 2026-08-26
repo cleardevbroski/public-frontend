@@ -245,6 +245,7 @@ export function projectFaqs(property: Property): ProjectFaq[] {
   add(`What is the unit size range in ${property.title}?`, propertyAreaRange(property) ? `The listed unit sizes range from ${formatAreaRange(propertyAreaRange(property), "sqft")}.` : undefined);
   const reraNumber = property.reraNumber || property.reraPhases?.[0]?.reraNumber;
   add(`Is ${property.title} RERA registered?`, property.reraRegistered && reraNumber ? `Yes. The listed RERA registration number is ${reraNumber}.` : undefined);
-  add(`How much open space is available in ${property.title}?`, property.projectArea?.openSpaceAcres !== undefined ? `${property.projectArea.openSpaceAcres} acres are listed as open-space area.` : undefined);
+  const openSpaceSqft = property.projectArea?.openSpaceSqft ?? property.projectArea?.openSpaceAcres;
+  add(`How much open space is available in ${property.title}?`, openSpaceSqft !== undefined ? `${openSpaceSqft.toLocaleString("en-IN")} sq. ft. are listed as open-space area.` : undefined);
   return rows.slice(0, 10);
 }

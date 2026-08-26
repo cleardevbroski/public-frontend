@@ -5,6 +5,8 @@ import {
   createVillaConfigurationDetail,
   initialVillaDetails,
   parseVillaConfigurationLabel,
+  normalizeVillaFloorCount,
+  normalizeVillaType,
   prepareVillaPropertyPayload,
   validateVillaDraft,
   villaDisplayRange,
@@ -48,6 +50,13 @@ describe("Villa property helpers", () => {
       numberOfFloors: "G+2",
     });
     expect(createVillaConfigurationDetail("Pent house")).toMatchObject({ configuration: "Penthouse", unitVariant: "Penthouse" });
+  });
+
+  it("supports luxury and mansion variants and Ground + N floor labels", () => {
+    expect(normalizeVillaType("Luxury Villa Project")).toBe("Luxury Villa");
+    expect(normalizeVillaType("Mansion")).toBe("Mansion");
+    expect(normalizeVillaFloorCount("Ground + 3 Floors")).toBe("G+3");
+    expect(normalizeVillaFloorCount("g + 2")).toBe("G+2");
   });
 
   it("allows optional Villa inventory measurements and room counts", () => {

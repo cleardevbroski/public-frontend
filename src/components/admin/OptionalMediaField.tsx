@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { AlertCircle, ImagePlus, Link2, Loader2, Upload, X } from "lucide-react";
 import { uploadPropertyMedia } from "@/lib/api";
 import { PROPERTY_IMAGE_MAX_BYTES, PROPERTY_IMAGE_MAX_MB } from "@/lib/propertyMediaLimits";
+import { detectFileType } from "@/lib/fileTypeDetection";
 
 type Props = {
   label: string;
@@ -25,10 +26,14 @@ export default function OptionalMediaField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [dragging, setDragging] = useState(false);
   const upload = async (file?: File) => {
     if (!file) return;
-    if (!IMAGE_TYPES.includes(file.type)) {
-      setError("Use a JPG, PNG, or WebP image.");
+    const detected = await detectFileType(file);
+    if (!IMAGE_TYPES.includes(detected.mime)) {
+      setError(detected.mime === "image/avif" || detected.mime === "image/heic" || detected.mime === "image/heif"
+        ? `${detected.label} is not supported yet. Export it as JPEG, PNG, or WebP and retry.`
+        : "Use a JPG, PNG, or WebP image.");
       return;
     }
     if (file.size > PROPERTY_IMAGE_MAX_BYTES) {
@@ -48,7 +53,13 @@ export default function OptionalMediaField({
   };
 
   return (
-    <div className="rounded-xl border border-[#E4E0E7] bg-white p-3">
+    <div
+      className={`rounded-xl border bg-white p-3 transition-colors ${dragging ? "border-[#DDAA42] bg-[#FFF8E8]" : "border-[#E4E0E7]"}`}
+      onDragEnter={(event) => { event.preventDefault(); if (!uploading) setDragging(true); }}
+      onDragOver={(event) => event.preventDefault()}
+      onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }}
+      onDrop={(event) => { event.preventDefault(); setDragging(false); if (!uploading) void upload(event.dataTransfer.files?.[0]); }}
+    >
       <div className="flex items-start justify-between gap-2">
         <div>
           <label className="text-[12px] font-bold text-[#3F3D46]">{label}</label>
@@ -92,7 +103,7 @@ export default function OptionalMediaField({
         className="hidden"
         onChange={(event) => void upload(event.target.files?.[0])}
       />
-      <p className="mt-2 flex items-center gap-1 text-[9px] text-[#68646F]"><ImagePlus className="size-3" /> JPG/PNG/WebP, maximum {PROPERTY_IMAGE_MAX_MB} MB</p>
+      <p className="mt-2 flex items-center gap-1 text-[9px] text-[#68646F]"><ImagePlus className="size-3" /> Drag and drop or choose JPG/PNG/WebP, maximum {PROPERTY_IMAGE_MAX_MB} MB</p>
       {error && <p className="mt-2 flex items-start gap-1 text-[10px] text-red-600"><AlertCircle className="mt-0.5 size-3 shrink-0" /> {error}</p>}
     </div>
   );

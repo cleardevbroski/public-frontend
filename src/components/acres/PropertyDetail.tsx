@@ -36,6 +36,7 @@ import {
   BarChart3,
   Play,
   Tag,
+  TreePine,
 } from "lucide-react";
 import Header from "./Header";
 import Footer from "./Footer";
@@ -77,6 +78,7 @@ import FavoriteButton from "./FavoriteButton";
 import VillaPropertyInformationCard from "./VillaPropertyInformationCard";
 import VillaLocationPriceComparison from "./VillaLocationPriceComparison";
 import ExactLoanCalculator from "./ExactLoanCalculator";
+import LocalityMap from "./LocalityMap";
 
 type Pools = {
   recommended: Property[];
@@ -128,7 +130,7 @@ function ProjectBrandTile({ property }: { property: Property }) {
   );
 }
 
-type NearbyCategory = "schools" | "colleges" | "hospitals" | "shopping" | "metro";
+type NearbyCategory = "schools" | "colleges" | "hospitals" | "shopping" | "metro" | "workplaces" | "parks" | "roads";
 function NearbyPlaceSummary({ property, category, label, Icon, legacy, showPlaces = false }: { property: Property; category: NearbyCategory; label: string; Icon: typeof School; legacy?: string; showPlaces?: boolean }) {
   const places = property.nearbyDetails?.[category]?.places || [];
   const detail = property.nearbyDetails?.[category];
@@ -136,7 +138,7 @@ function NearbyPlaceSummary({ property, category, label, Icon, legacy, showPlace
   if (!summary && !places.length) return null;
   return <details open={showPlaces} className="border-b border-[#E6E8ED] py-2.5 last:border-b-0">
     <summary className="flex cursor-pointer list-none items-center gap-2"><Icon className="size-4 shrink-0 text-[#DDAA42]" /><span className="min-w-0 flex-1"><span className="text-[12px] font-bold text-[#121B35]">{label}</span><span className="ml-2 text-[10px] text-[#7A8290]">{summary || `${places.length} nearby`}</span></span><span className="text-[10px] font-bold text-[#795A18]">Details</span></summary>
-    {places.length > 0 && <div className="mt-2 space-y-1.5 pl-6">{places.map((place, index) => <div key={`${place.name}-${index}`} className="text-[11px] leading-5"><p className="font-bold text-[#121B35]">{place.name}</p>{place.address && <p className="text-[#68646F]">{place.address}</p>}{(place.distance || place.landmark) && <p className="font-semibold text-[#5A5762]">{[place.distance, place.landmark].filter(Boolean).join(" · ")}</p>}</div>)}</div>}
+    {places.length > 0 && <div className="mt-2 space-y-1.5 pl-6">{places.map((place, index) => <div key={`${place.name}-${index}`} className="text-[11px] leading-5">{place.mapUrl ? <a href={place.mapUrl} target="_blank" rel="noreferrer" className="font-bold text-[#121B35] underline decoration-[#DDAA42] underline-offset-2">{place.name}</a> : <p className="font-bold text-[#121B35]">{place.name}</p>}{place.address && <p className="text-[#68646F]">{place.address}</p>}{(place.distance || place.landmark) && <p className="font-semibold text-[#5A5762]">{[place.distance, place.landmark].filter(Boolean).join(" · ")}</p>}</div>)}</div>}
   </details>;
 }
 
@@ -499,7 +501,12 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   ));
   const hasPriceList = Boolean(property.configurationDetails?.length || property.villaDetails?.configurationDetails?.length || property.plotDetails?.plotSizeDetails?.length || property.pgDetails?.sharingDetails?.length);
   const hasPhotosOrVideos = Boolean(images.length || property.videos?.length || property.heroVideo);
-  const hasBrochure = Boolean(property.brochure || property.projectDownloads?.length);
+  const hasBrochure = Boolean(
+    property.brochure ||
+    property.projectDownloads?.length ||
+    property.walkthroughVideoUrl ||
+    property.reraPhases?.some((phase) => phase.projectDocuments?.some((document) => document.key === "brochure"))
+  );
   const hasMasterPlan = Boolean(property.masterPlan?.imageUrl || property.masterPlan?.summary || property.masterPlan?.sections?.length || property.plotDetails?.layoutMapUrl);
   const hasReraPhases = Boolean(property.reraRegistered && property.reraPhases?.length);
   const hasProjectDocuments = Boolean(property.reraPhases?.some((phase) => phase.projectDocuments?.length));
@@ -511,6 +518,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const hasDetailedNearbyPlaces = Boolean(property.nearbyDetails && Object.values(property.nearbyDetails).some((item) => item?.places?.length));
   const hasLocalityContent = Boolean(
     property.localityMapImageUrl ||
+    (Number.isFinite(property.locality?.latitude) && Number.isFinite(property.locality?.longitude)) ||
     property.locality?.address ||
     hasNearbyPlaces
   );
@@ -695,8 +703,8 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     { label: "Total Floors", val: floorDisplay },
     { label: "RERA number", val: property.reraNumber },
     { label: "Total project area", val: property.projectArea?.totalAcres !== undefined ? `${property.projectArea.totalAcres} acres` : "" },
-    { label: "Open space area", val: property.projectArea?.openSpaceAcres !== undefined ? `${property.projectArea.openSpaceAcres} acres` : "" },
-    { label: "Apartment built-up area", val: property.projectArea?.builtUpAcres !== undefined ? `${property.projectArea.builtUpAcres} acres` : "" },
+    { label: "Open space area", val: (property.projectArea?.openSpaceSqft ?? property.projectArea?.openSpaceAcres) !== undefined ? `${property.projectArea?.openSpaceSqft ?? property.projectArea?.openSpaceAcres} sq. ft.` : "" },
+    { label: "Project built-up area", val: (property.projectArea?.builtUpSqft ?? property.projectArea?.builtUpAcres) !== undefined ? `${property.projectArea?.builtUpSqft ?? property.projectArea?.builtUpAcres} sq. ft.` : "" },
     { label: "Number of units", val: property.totalUnits ? property.totalUnits.toLocaleString("en-IN") : "" },
     { label: "Security", val: property.society?.security },
     { label: "Water supply", val: property.society?.waterSupply },
@@ -797,8 +805,8 @@ const whyHighlights = (property.description || "")
   const projectStatus = property.possessionDetails?.status || property.possession || "";
   const possessionDateValue = possessionDate === "—" ? "" : possessionDate;
   const areaBreakdownRows = [
-    property.projectArea?.openSpaceAcres !== undefined ? { label: "Open Space Area", value: `${property.projectArea.openSpaceAcres} acres` } : null,
-    property.projectArea?.builtUpAcres !== undefined ? { label: "Built-up Footprint Area", value: `${property.projectArea.builtUpAcres} acres` } : null,
+    (property.projectArea?.openSpaceSqft ?? property.projectArea?.openSpaceAcres) !== undefined ? { label: "Open Space Area", value: `${property.projectArea?.openSpaceSqft ?? property.projectArea?.openSpaceAcres} sq. ft.` } : null,
+    (property.projectArea?.builtUpSqft ?? property.projectArea?.builtUpAcres) !== undefined ? { label: "Built-up Footprint Area", value: `${property.projectArea?.builtUpSqft ?? property.projectArea?.builtUpAcres} sq. ft.` } : null,
   ].filter((item): item is { label: string; value: string } => Boolean(item));
   const hasAreaBreakdown = areaBreakdownRows.length > 0;
 
@@ -1306,10 +1314,10 @@ const whyHighlights = (property.description || "")
 
             {/* Locality Guide */}
             {hasLocalityContent && <div ref={setSectionRef("locality")} className="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-[#E4E0E7]/30 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-[20px] font-bold text-[#121B35] flex items-center gap-2"><div className="w-1.5 h-6 bg-[#DDAA42] rounded-full" /> Map &amp; Nearby Landmarks</h2><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.locality?.address || property.subtitle)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#172039] px-4 py-2.5 text-[12px] font-bold text-white"><MapPin className="size-4" /> View on Map</a></div>
-              <div className={`grid gap-5 ${hasNearbyPlaces && (property.localityMapImageUrl || property.locality?.address) ? "md:grid-cols-[1.2fr_0.8fr]" : "grid-cols-1"}`}>
-              {(property.localityMapImageUrl || property.locality?.address) && <div>
-              {property.localityMapImageUrl && <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden border border-[#E4E0E7]/50 bg-white">
+              <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-[20px] font-bold text-[#121B35] flex items-center gap-2"><div className="w-1.5 h-6 bg-[#DDAA42] rounded-full" /> Map &amp; Nearby Landmarks</h2><a href={Number.isFinite(property.locality?.latitude) && Number.isFinite(property.locality?.longitude) ? `https://www.google.com/maps/search/?api=1&query=${property.locality?.latitude},${property.locality?.longitude}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.locality?.address || property.subtitle)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#172039] px-4 py-2.5 text-[12px] font-bold text-white"><MapPin className="size-4" /> View on Map</a></div>
+              <div className={`grid gap-5 ${hasNearbyPlaces && (Number.isFinite(property.locality?.latitude) || property.localityMapImageUrl || property.locality?.address) ? "md:grid-cols-[1.2fr_0.8fr]" : "grid-cols-1"}`}>
+              {(Number.isFinite(property.locality?.latitude) || property.localityMapImageUrl || property.locality?.address) && <div className="space-y-3">
+              {Number.isFinite(property.locality?.latitude) && Number.isFinite(property.locality?.longitude) ? <LocalityMap property={property} /> : property.localityMapImageUrl && <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden border border-[#E4E0E7]/50 bg-white">
                 <img src={property.localityMapImageUrl} alt={`${property.subtitle} locality map`} className="h-full w-full object-contain bg-white" />
               </div>}
               {property.locality?.address && (
@@ -1327,6 +1335,9 @@ const whyHighlights = (property.description || "")
                   <NearbyPlaceSummary property={property} category="hospitals" label="Hospitals" Icon={Hospital} legacy={property.nearbyAmenities?.hospitals} showPlaces={showAllNearby} />
                   <NearbyPlaceSummary property={property} category="shopping" label="Shopping" Icon={ShoppingBag} legacy={property.nearbyAmenities?.shopping} showPlaces={showAllNearby} />
                   <NearbyPlaceSummary property={property} category="metro" label="Metro / Train" Icon={Train} legacy={property.nearbyAmenities?.metro} showPlaces={showAllNearby} />
+                  <NearbyPlaceSummary property={property} category="workplaces" label="IT Parks / Workplaces" Icon={Building2} legacy={property.nearbyAmenities?.workplaces} showPlaces={showAllNearby} />
+                  <NearbyPlaceSummary property={property} category="parks" label="Parks" Icon={TreePine} legacy={property.nearbyAmenities?.parks} showPlaces={showAllNearby} />
+                  <NearbyPlaceSummary property={property} category="roads" label="Roads / Connectivity" Icon={Car} legacy={property.nearbyAmenities?.roads} showPlaces={showAllNearby} />
                 </div>
                 {hasDetailedNearbyPlaces && <button type="button" onClick={() => setShowAllNearby((value) => !value)} className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-[#795A18] underline underline-offset-4">
                   {showAllNearby ? "Show less" : "Show more nearby places"}

@@ -158,6 +158,52 @@ Gated Community: Yes`);
     });
   });
 
+  it("keeps blank labels blank, normalizes floors, and separates project-area units", () => {
+    const result = analyzePropertyDescription(`[PROPERTY BASICS]
+Property Type: Mansion
+Project / Property Name: La Vita
+Transaction Type: Resale and New Property
+
+[PROJECT AREA AND INVENTORY]
+Total Project Area: 3 Acres
+Open Space Area: 3000
+Project Built-up Area: 1 Acre
+Amenities Area: 1200 sqft
+
+[CONFIGURATIONS]
+Configuration 1:
+BHK: 4 BHK Luxury Villa
+Carpet Area:
+Super Area: 3260 sqft
+Number of Floors: Ground + 2 Floors
+
+[VILLA DETAILS — only for Villa]
+Villa Type: Mansion
+Number of Floors: Ground + 2 Floors
+Private Pool:
+Terrace: Yes
+
+[NEARBY PLACES]
+College 1 Name:
+College 1 Distance:
+Metro 1 Name:
+Metro 1 Distance:`);
+
+    expect(result.patch).toMatchObject({
+      propertyType: "Villa",
+      transactionType: "New Property",
+      projectArea: { totalAcres: 3, openSpaceSqft: 3000, builtUpSqft: 43560, amenitiesSqft: 1200 },
+      villaDetails: { villaType: "Mansion", numberOfFloors: "G+2", privatePool: false, terrace: true },
+    });
+    expect(result.patch.villaDetails?.configurationDetails[0]).toMatchObject({ carpetArea: "", superArea: "3260 sqft", numberOfFloors: "G+2" });
+    expect(result.patch.nearbyDetails?.colleges).toBeUndefined();
+    expect(result.patch.nearbyDetails?.metro).toBeUndefined();
+  });
+
+  it("rejects a resale-only import with a clear error", () => {
+    expect(() => analyzePropertyDescription(`[PROPERTY BASICS]\nProperty Type: Villa\nProject / Property Name: Resale Home\nTransaction Type: Resale`)).toThrow(/Resale properties are not applicable/i);
+  });
+
   it("imports and merges multiple RERA phases, developer copy, and human-readable project content", () => {
     const result = analyzePropertyDescription(`[PROPERTY BASICS]
 Property Type: Villa

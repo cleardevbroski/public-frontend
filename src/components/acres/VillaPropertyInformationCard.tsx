@@ -152,9 +152,9 @@ export function getPropertyLedgerInformation(property: Property): PropertyLedger
   add({ key: "rera", label: "RERA Number", value: property.reraRegistered ? firstValue(property.reraNumber, property.reraPhases?.[0]?.reraNumber) : "" });
 
   const landBreakdown = [
-    { label: "Building area", value: property.projectArea?.builtUpAcres ? `${property.projectArea.builtUpAcres.toLocaleString("en-IN")} acres` : "" },
-    { label: "Empty / open space", value: property.projectArea?.openSpaceAcres ? `${property.projectArea.openSpaceAcres.toLocaleString("en-IN")} acres` : "" },
-    { label: "Amenities area", value: property.projectArea?.amenitiesAcres ? `${property.projectArea.amenitiesAcres.toLocaleString("en-IN")} acres` : "" },
+    { label: "Building area", value: (property.projectArea?.builtUpSqft ?? property.projectArea?.builtUpAcres) ? `${(property.projectArea?.builtUpSqft ?? property.projectArea?.builtUpAcres)?.toLocaleString("en-IN")} sq. ft.` : "" },
+    { label: "Empty / open space", value: (property.projectArea?.openSpaceSqft ?? property.projectArea?.openSpaceAcres) ? `${(property.projectArea?.openSpaceSqft ?? property.projectArea?.openSpaceAcres)?.toLocaleString("en-IN")} sq. ft.` : "" },
+    { label: "Amenities area", value: (property.projectArea?.amenitiesSqft ?? property.projectArea?.amenitiesAcres) ? `${(property.projectArea?.amenitiesSqft ?? property.projectArea?.amenitiesAcres)?.toLocaleString("en-IN")} sq. ft.` : "" },
   ].filter((item) => Boolean(item.value));
 
   return { items: items.slice(0, 6), landBreakdown };

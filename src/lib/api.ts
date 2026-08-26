@@ -1,3 +1,5 @@
+import { correctedFile, detectFileType } from "./fileTypeDetection";
+
 /**
  * API URLs are configured per frontend deployment.  People commonly paste the
  * backend URL from Render with `/api` on the end; every endpoint below already
@@ -547,14 +549,38 @@ export async function reviewPublicSubmission(id: string, action: "start_review" 
 }
 
 export async function uploadPropertyMedia(file: File, kind: "image" | "brochure" | "layout-map-image" | "layout-map-pdf" | "project-document-image" | "project-document-pdf" | "project-walkthrough" | "legal-document-image" | "legal-document-pdf" | "rera-document-image" | "rera-document-pdf"): Promise<string> {
+  const detected = await detectFileType(file);
+  const source = correctedFile(file, detected);
   const res = await apiFetch(`/api/property-media?kind=${kind}`, {
     method: "POST",
-    headers: { "Content-Type": file.type },
-    body: file,
+    headers: { "Content-Type": source.type || "application/octet-stream" },
+    body: source,
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Media upload failed");
+  if (!res.ok) {
+    const mismatch = detected.mismatch
+      ? ` Detected ${detected.label} content although the file was declared as ${detected.declaredMime || "another type"}.`
+      : "";
+    throw new Error(`${data.error || "Media upload failed"}${mismatch}`);
+  }
   return data.url;
+}
+
+export type ResolvedNearbyPlace = {
+  latitude: number;
+  longitude: number;
+  osmId: string;
+  mapUrl: string;
+  resolvedAddress: string;
+  approximateDistanceMeters: number;
+};
+
+export async function resolveNearbyPlaceLocation(input: { query: string; latitude: number; longitude: number }): Promise<ResolvedNearbyPlace> {
+  const data = await readJson(await apiFetch("/api/geocoding/nearby-place", {
+    method: "POST",
+    body: JSON.stringify(input),
+  }), "Failed to resolve nearby place") as { place: ResolvedNearbyPlace };
+  return data.place;
 }
 
 export type PropertyVerificationPurpose = "company-pan" | "company-rera" | "company-registration" | "individual-pan" | "individual-aadhaar" | "individual-ownership";

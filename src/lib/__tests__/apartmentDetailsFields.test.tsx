@@ -64,4 +64,12 @@ describe("Apartment possession date controls", () => {
     expect(html.match(/Optional/g)?.length).toBeGreaterThanOrEqual(2);
     expect(html).toContain("Upload file");
   });
+
+  it("labels only total land as acres and component areas as square feet", () => {
+    const html = renderPossession({ status: "Ready to Move", launchDate: "2024-01-15" });
+    expect(html).toContain("Total Land / Project Area");
+    expect(html).toContain("Project Built-up Area");
+    expect(html.match(/>acres<\/span>/g)).toHaveLength(1);
+    expect(html.match(/>sq\. ft\.<\/span>/g)).toHaveLength(3);
+  });
 });
