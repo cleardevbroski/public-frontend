@@ -113,6 +113,14 @@ export function normalizePropertyType(value: unknown): SupportedPropertyType | u
   return undefined;
 }
 
+function normalizeImportedApartmentConfiguration(value: unknown): string | null {
+  const raw = clean(value);
+  const direct = normalizeBhkLabel(raw);
+  if (direct) return direct;
+  const embedded = raw.match(/\b\d+(?:\.5)?\s*BHK\b/i)?.[0];
+  return embedded ? normalizeBhkLabel(embedded) : null;
+}
+
 function completion(value: string): QuickFillPatch["possessionDetails"] | undefined {
   const month = value.match(/(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s*[-, ]?\s*(20\d{2})/i);
   if (month) {
@@ -233,14 +241,14 @@ function configurationsFromWideRow(row: string[], rawHeaders: string[], property
     const rawConfiguration = clean(row[index]);
     const configuration = propertyType === "Villa"
       ? parseVillaConfigurationLabel(rawConfiguration)?.configuration
-      : normalizeBhkLabel(rawConfiguration);
+      : normalizeImportedApartmentConfiguration(rawConfiguration);
     if (!configuration) return;
     configurations.push({ configuration, area: clean(row[index + 1]), price: clean(row[index + 2]) });
   });
   if (!configurations.length) {
     const fromSingle = list(valueAt(row, getHeaders([rawHeaders]), ["configurations", "bhkconfigurations", "bhk"]));
     fromSingle.forEach((item) => {
-      const configuration = propertyType === "Villa" ? parseVillaConfigurationLabel(item)?.configuration : normalizeBhkLabel(item);
+      const configuration = propertyType === "Villa" ? parseVillaConfigurationLabel(item)?.configuration : normalizeImportedApartmentConfiguration(item);
       if (configuration) configurations.push({ configuration, area: "", price: "" });
     });
   }
@@ -316,7 +324,7 @@ function applySupplementarySheets(workbook: XLSX.WorkBook, suggestion: QuickFill
     const rows = configurations.map((record) => {
       const rawConfiguration = recordValue(record, ["configurationname", "configuration", "bhk"]);
       const parsedVilla = type === "Villa" ? parseVillaConfigurationLabel(rawConfiguration) : null;
-      const configuration = type === "Villa" ? parsedVilla?.configuration : normalizeBhkLabel(rawConfiguration);
+      const configuration = type === "Villa" ? parsedVilla?.configuration : normalizeImportedApartmentConfiguration(rawConfiguration);
       const unitVariantRaw = recordValue(record, ["unitvariant", "variant"]);
       const unitVariant = villaUnitVariantOptions.find((option) => option.toLowerCase() === unitVariantRaw.toLowerCase()) || parsedVilla?.unitVariant;
       return configuration ? { configuration, bhk: normalizeBhkLabel(recordValue(record, ["bhk"])) || parsedVilla?.bhk, unitVariant, price: recordValue(record, ["price"]), builtUpArea: recordValue(record, ["builtuparea", "area", "sqft"]), carpetArea: recordValue(record, ["carpetarea"]), plotArea: recordValue(record, ["plotarea"]), superArea: recordValue(record, ["superarea"]), bedrooms: number(recordValue(record, ["bedrooms"])), bathrooms: number(recordValue(record, ["bathrooms"])), balconies: number(recordValue(record, ["balconies"])), numberOfFloors: recordValue(record, ["structure", "numberoffloors"]) || parsedVilla?.numberOfFloors, facing: recordValue(record, ["facing", "plotfacing"]) } : null;
@@ -743,7 +751,7 @@ function numberedValues(text: string, label: string) {
 
 function exactSections(text: string, name: string) {
   const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return [...text.matchAll(new RegExp(`(?:^|\\r?\\n)[\\t ]*\\[${escaped}\\][\\t ]*(?:\\r?\\n|$)([\\s\\S]*?)(?=\\r?\\n[\\t ]*\\[[^\\]\\r\\n]+\\][\\t ]*(?:\\r?\\n|$)|$)`, "gi"))]
+  return [...text.matchAll(new RegExp(`(?:^|\\r?\\n)[\\t ]*\\[${escaped}(?:\\s*(?:#\\s*)?\\d+)?\\][\\t ]*(?:\\r?\\n|$)([\\s\\S]*?)(?=\\r?\\n[\\t ]*\\[[^\\]\\r\\n]+\\][\\t ]*(?:\\r?\\n|$)|$)`, "gi"))]
     .map((match) => match[1] || "");
 }
 
@@ -809,7 +817,7 @@ function applyModernDescriptionBlocks(
     patch.reraRegistered = /^(?:yes|true)$/i.test(registeredValue) || uniquePhases.length > 0;
     patch.reraPhases = patch.reraRegistered ? uniquePhases : [];
     patch.reraNumber = uniquePhases[0]?.reraNumber || undefined;
-    addField(fields, "RERA phases recognized", `${uniquePhases.length}`);
+    if (uniquePhases.length) addField(fields, "RERA phases recognized", `${uniquePhases.length}`);
   }
 
   const introduction = exactSections(source, "PROJECT INTRODUCTION").flatMap((block) => labelledValues(block, "Paragraph"));
@@ -880,9 +888,10 @@ function applyModernDescriptionBlocks(
   const configBlocks = exactSections(source, "CONFIGURATION");
   if (type === "Apartment" && configBlocks.length) {
     const rows = configBlocks.map((block, index): ConfigurationDetail | null => {
-      const configuration = normalizeBhkLabel(labelled(block, "Configuration Name") || labelled(block, "BHK"));
+      const rawConfiguration = labelled(block, "Configuration Name") || labelled(block, "BHK Configuration") || labelled(block, "BHK");
+      const configuration = normalizeImportedApartmentConfiguration(rawConfiguration);
       if (!configuration) {
-        if (labelled(block, "Configuration Name") || labelled(block, "BHK")) warnings.push(`Apartment configuration ${index + 1} was skipped because its BHK label is invalid.`);
+        if (rawConfiguration) warnings.push(`Apartment configuration ${index + 1} was skipped because its BHK label is invalid.`);
         return null;
       }
       const row = createConfigurationDetail(configuration);
@@ -899,7 +908,7 @@ function applyModernDescriptionBlocks(
     }).filter((row): row is ConfigurationDetail => row !== null);
     patch.configurationDetails = rows;
     patch.configs = rows.map((row) => row.configuration);
-    addField(fields, "Apartment configurations", `${rows.length}`);
+    if (rows.length) addField(fields, "Apartment configurations", `${rows.length}`);
   }
 
   const modernVillaBlock = exactSection(source, "VILLA DETAILS");
@@ -961,7 +970,7 @@ function applyModernDescriptionBlocks(
       gatedCommunity: yes(labelled(villaBlock, "Gated Community")),
     };
     patch.configs = rows.map((row) => row.configuration);
-    addField(fields, "Villa configurations", `${rows.length}`);
+    if (rows.length) addField(fields, "Villa configurations", `${rows.length}`);
   }
 
   const modernPlotDetailsBlock = exactSection(source, "PLOT DETAILS");
@@ -1006,8 +1015,8 @@ function applyModernDescriptionBlocks(
       inventory,
     };
     patch.configs = sizeRows.map((row) => row.plotSize);
-    addField(fields, "Plot sizes", `${sizeRows.length}`);
-    addField(fields, "Plot inventory rows", `${inventory.length}`);
+    if (sizeRows.length) addField(fields, "Plot sizes", `${sizeRows.length}`);
+    if (inventory.length) addField(fields, "Plot inventory rows", `${inventory.length}`);
     warnings.push("Upload the Plot master plan / layout map manually after applying the text template.");
   }
 
@@ -1057,7 +1066,7 @@ function applyModernDescriptionBlocks(
       commonAmenities: multiLineList(labelled(block, "Common Amenities")), contactType: (labelled(block, "Contact Type") || current.contactType) as PgDetails["contactType"],
     };
     patch.configs = sharingDetails.map((row) => row.sharingType);
-    addField(fields, "PG sharing options", `${sharingDetails.length}`);
+    if (sharingDetails.length) addField(fields, "PG sharing options", `${sharingDetails.length}`);
   }
 }
 
@@ -1096,7 +1105,7 @@ function analyzeStructuredDescription(source: string, preferredType?: SupportedP
     const rawBhk = get("BHK", body);
     const rawConfiguration = get("Configuration Name", body) || rawBhk;
     const parsedVilla = type === "Villa" ? parseVillaConfigurationLabel(rawConfiguration) : null;
-    const configuration = type === "Villa" ? parsedVilla?.configuration : normalizeBhkLabel(rawConfiguration);
+    const configuration = type === "Villa" ? parsedVilla?.configuration : normalizeImportedApartmentConfiguration(rawConfiguration);
     const unitVariantRaw = get("Unit Variant", body);
     const unitVariant = villaUnitVariantOptions.find((option) => option.toLowerCase() === unitVariantRaw.toLowerCase()) || parsedVilla?.unitVariant;
     return configuration ? { configuration, bhk: normalizeBhkLabel(rawBhk) || parsedVilla?.bhk, unitVariant, numberOfFloors: get("Structure", body) || get("Number of Floors", body) || parsedVilla?.numberOfFloors, price: get("Price", body), plotArea: get("Plot Area", body), builtUpArea: get("Built-up Area", body), carpetArea: get("Carpet Area", body), superArea: get("Super Area", body), bedrooms: number(get("Bedrooms", body)), bathrooms: number(get("Bathrooms", body)), balconies: number(get("Balconies", body)), facing: get("Facing", body) } : null;

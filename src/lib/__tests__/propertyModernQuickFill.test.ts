@@ -84,6 +84,80 @@ Answer: Verified 2 BHK homes are available.`);
     expect(result.patch.faqs).toHaveLength(1);
   });
 
+  it("imports numbered apartment configuration blocks and descriptive BHK labels", () => {
+    const result = analyzePropertyDescription(`[PROPERTY BASICS]
+Property Type: Apartment
+Project / Property Name: Configuration Heights
+Transaction Type: New Property
+Listing Type: For Sale
+
+[CONFIGURATION 1]
+Configuration Name: 2 BHK Apartment
+Price: ₹1.20 Cr
+Built-up Area: 1200 Sq. Ft.
+Carpet Area: 900 Sq. Ft.
+Bedrooms: 2
+Bathrooms: 2
+Balconies: 1
+Facings: East, North-East
+
+[CONFIGURATION #2]
+BHK Configuration: 3BHK Premium Home
+Price: ₹1.65 Cr
+Built-up Area: 1550 Sq. Ft.
+Carpet Area: 1180 Sq. Ft.
+Bedrooms: 3
+Bathrooms: 3
+Balconies: 2
+Facings: West`);
+
+    expect(result.patch.configs).toEqual(["2 BHK", "3 BHK"]);
+    expect(result.patch.configurationDetails).toMatchObject([
+      {
+        configuration: "2 BHK",
+        price: "₹1.20 Cr",
+        builtUpArea: "1200 Sq. Ft.",
+        carpetArea: "900 Sq. Ft.",
+        bedrooms: 2,
+        bathrooms: 2,
+        balconies: 1,
+        facings: ["East", "North-East"],
+      },
+      {
+        configuration: "3 BHK",
+        price: "₹1.65 Cr",
+        builtUpArea: "1550 Sq. Ft.",
+        carpetArea: "1180 Sq. Ft.",
+        bedrooms: 3,
+        bathrooms: 3,
+        balconies: 2,
+        facings: ["West"],
+      },
+    ]);
+    expect(result.fields).toContainEqual({ label: "Apartment configurations", value: "2" });
+  });
+
+  it("does not report empty configuration or RERA blocks as imported", () => {
+    const result = analyzePropertyDescription(`[PROPERTY BASICS]
+Property Type: Apartment
+Transaction Type: New Property
+
+[RERA PHASE]
+Phase Name:
+RERA Number:
+RERA Website:
+
+[CONFIGURATION]
+Configuration Name:
+BHK:
+Price:`);
+
+    expect(result.patch.configurationDetails).toEqual([]);
+    expect(result.patch.reraPhases).toEqual([]);
+    expect(result.fields.map((field) => field.label)).not.toContain("Apartment configurations");
+    expect(result.fields.map((field) => field.label)).not.toContain("RERA phases recognized");
+  });
+
   it("imports repeatable Plot size and inventory blocks", () => {
     const result = analyzePropertyDescription(`[PROPERTY BASICS]
 Property Type: Plot

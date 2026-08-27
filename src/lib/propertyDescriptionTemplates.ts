@@ -1,16 +1,28 @@
 export type PropertyImportType = "Apartment" | "Villa" | "Plot" | "Commercial" | "PG/Co-living";
 
-const AI_INSTRUCTIONS = `PROPERTY IMPORT TEMPLATE
+const AI_INSTRUCTIONS = `Read this property template and convert the source information at the end into this exact template format.
 
 [AI INSTRUCTIONS]
-1. Convert the supplied source information into this exact format.
-2. Keep every section heading and field label unchanged.
-3. Use only facts present in the source. Never guess or invent details.
-4. Leave unavailable fields blank. Do not write N/A, Not Available, or explanations in fields.
-5. Repeat record blocks such as [RERA PHASE], [CONFIGURATION], [AMENITY], [NEARBY PLACE], [FAQ], [MASTER PLAN DETAIL], [PLOT SIZE], [PLOT INVENTORY ITEM], and [PG SHARING OPTION] as many times as required.
-6. Put only one value in a single-choice field. Do not combine Villa facings such as East / North / West; leave it blank if one exact direction is unknown.
-7. Do not include image, PDF, brochure, plan, certificate, or document URLs. Those files are uploaded manually.
-8. Return only the completed template without commentary.`;
+1. Keep every section heading and field label unchanged and use all explicit facts from the source data.
+2. Leave unavailable fields blank. Do not write N/A, Not Available, explanations, or invented values in fields.
+3. Even when the source has no FAQ section, create 6-10 useful project FAQs and answers using only supplied facts. FAQs may cover location, property type, configurations, price and area, possession, RERA phases, amenities, developer, connectivity, nearby places, furnishing, and parking when those facts are provided.
+4. Create 4-6 [WHY INVEST] reasons by analyzing supplied project facts such as density, inventory, location, workplaces, infrastructure, amenities, developer information, RERA registration, design, connectivity, and possession timeline.
+5. Why Invest reasons and FAQs must remain factual. Do not promise guaranteed returns, appreciation, rental income, legal approval, or investment safety unless the source explicitly supports the statement.
+6. You may create introduction paragraphs by summarizing the source, Project USPs by identifying factual highlights, Why Invest reasons through reasonable fact-supported conclusions, FAQs by converting supplied facts into questions and answers, and location advantages from supplied distances, roads, and nearby places.
+7. Never invent prices, areas, distances, RERA numbers, completion dates, amenities, developer achievements, approvals, or specifications.
+8. Repeat [RERA PHASE], [CONFIGURATION], [AMENITY], [NEARBY PLACE], [PROJECT KEY DETAIL], [PROJECT FEATURE GROUP], [MASTER PLAN DETAIL], [FAQ], [PLOT SIZE], [PLOT INVENTORY ITEM], and [PG SHARING OPTION] blocks whenever multiple records are required.
+9. If exactly one RERA number is supplied without a phase name, set its Phase Name to Phase 1. If multiple RERA numbers are supplied without phase names, use Phase 1, Phase 2, and so on in source order. Include every supplied RERA phase.
+10. Create master-plan content only when the source contains master-plan, layout, planning, zoning, or project-design information.
+11. Put only one value in a single-choice field. Do not combine Villa facings such as East / North / West; leave the field blank if one exact allowed direction is unknown. For multi-facing fields such as Facings, use only the supplied allowed directions.
+12. Do not include image, PDF, brochure, plan, certificate, or document URLs. Actual files must be uploaded manually; import only their relevant text facts.
+13. Return only the completed property template beginning with [PROPERTY BASICS]. Do not return instructions, explanations, citations, source data, greetings, or commentary.
+14. Before returning, verify that the Project / Property Name is filled; Builder / Developer or Operator / Developer is filled when available; at least one matching type-specific configuration, size, inventory, commercial-detail, or sharing block is filled; every available RERA phase is included; Introduction, Project USPs, 4-6 Why Invest reasons, and 6-10 FAQs are generated; and no unsupported facts were added.`;
+
+const sourceDataPlaceholder = `[SOURCE DATA START]
+
+PASTE THE COMPLETE PROPERTY WEBSITE TEXT HERE
+
+[SOURCE DATA END]`;
 
 const developerAndRera = `[DEVELOPER DETAILS]
 Developer Name:
@@ -140,6 +152,7 @@ ${location}
 
 [CONFIGURATION]
 Configuration Name:
+BHK:
 Price:
 Built-up Area:
 Carpet Area:
@@ -151,7 +164,9 @@ Facings:
 
 ${societyAmenitiesNearby}
 
-${projectContent}`;
+${projectContent}
+
+${sourceDataPlaceholder}`;
 
 const villa = `${AI_INSTRUCTIONS}
 
@@ -223,7 +238,9 @@ Gated Community:
 
 ${societyAmenitiesNearby}
 
-${projectContent}`;
+${projectContent}
+
+${sourceDataPlaceholder}`;
 
 const plot = `${AI_INSTRUCTIONS}
 
@@ -279,7 +296,9 @@ ${amenitiesNearby}
 ${projectContent}
 
 [MANUAL UPLOAD REMINDER]
-Master plan / layout-map image or PDF must be uploaded manually after applying this template.`;
+Master plan / layout-map image or PDF must be uploaded manually after applying this template.
+
+${sourceDataPlaceholder}`;
 
 const commercial = `${AI_INSTRUCTIONS}
 
@@ -334,7 +353,9 @@ Furnishing:
 
 ${societyAmenitiesNearby}
 
-${projectContent}`;
+${projectContent}
+
+${sourceDataPlaceholder}`;
 
 const pg = `${AI_INSTRUCTIONS}
 
@@ -394,7 +415,9 @@ Distance:
 Address:
 Landmark:
 
-${projectContent}`;
+${projectContent}
+
+${sourceDataPlaceholder}`;
 
 export const PROPERTY_DESCRIPTION_TEMPLATES: Record<PropertyImportType, string> = {
   Apartment: apartment,
