@@ -1,11 +1,12 @@
 import type {
   Property,
+  PlotFacing,
   VillaConfigurationDetail,
   VillaDetails,
   VillaType,
   VillaUnitVariant,
 } from "@/components/acres/mock-data";
-import { normalizeBhkLabel } from "@/lib/propertyDetails";
+import { facingOptions, normalizeBhkLabel } from "@/lib/propertyDetails";
 
 export type VillaErrors = Record<string, string>;
 
@@ -18,6 +19,18 @@ export const villaUnitVariantOptions: VillaUnitVariant[] = [
   "Simplex", "Duplex", "Triplex", "Villament", "Penthouse", "Row House",
   "Independent Villa", "Twin Villa", "Sky Villa", "Luxury Villa", "Mansion", "Custom",
 ];
+
+/** Returns one canonical facing. Combined option lists are intentionally rejected. */
+export function normalizePlotFacing(value?: string): PlotFacing | undefined {
+  const normalized = String(value || "")
+    .trim()
+    .replace(/\s+facing$/i, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-")
+    .toLowerCase();
+  if (!normalized) return undefined;
+  return facingOptions.find((option) => option.toLowerCase() === normalized);
+}
 
 export function normalizeVillaType(value: string): VillaType | undefined {
   const normalized = String(value || "").trim().toLowerCase().replace(/[\s_-]+/g, " ");
@@ -187,6 +200,7 @@ export function validateVillaDraft(property: Partial<Property>): VillaErrors {
       if (!dimensions || Number(dimensions[1]) <= 0 || Number(dimensions[2]) <= 0) errors[`${prefix}.plotDimensions`] = "Use positive width × length values.";
     }
     if (row.numberOfFloors?.trim() && !normalizeVillaFloorCount(row.numberOfFloors)) errors[`${prefix}.numberOfFloors`] = "Use G, G+N, Ground + N Floors, or a positive whole number.";
+    if (row.plotFacing && !normalizePlotFacing(row.plotFacing)) errors[`${prefix}.plotFacing`] = "Select one facing direction.";
     if (row.roadWidthFacing?.trim() && !positiveDisplay(row.roadWidthFacing)) errors[`${prefix}.roadWidthFacing`] = "Enter a positive road width.";
     if (row.privateGarden && row.privateGardenArea && !positiveDisplay(row.privateGardenArea)) errors[`${prefix}.privateGardenArea`] = "Enter a positive garden area.";
   });
@@ -194,6 +208,7 @@ export function validateVillaDraft(property: Partial<Property>): VillaErrors {
   if (details?.privateGardenArea && !positiveDisplay(details.privateGardenArea)) {
     errors.privateGardenArea = "Enter a positive private garden area.";
   }
+  if (details?.plotFacing && !normalizePlotFacing(details.plotFacing)) errors.plotFacing = "Select one facing direction.";
   const tags = (property.configs || []).map((tag) => parseVillaConfigurationLabel(tag)?.configuration);
   if (tags.some((tag) => !tag) || tags.length !== rows.length || tags.some((tag, index) => tag !== parseVillaConfigurationLabel(rows[index]?.configuration || "")?.configuration)) {
     errors.configurations = "Configuration tags and Villa rows must match in the same order.";

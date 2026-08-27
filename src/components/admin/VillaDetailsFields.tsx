@@ -63,6 +63,15 @@ export default function VillaDetailsFields(props: Props) {
       </div>
 
       <div>
+        <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Project Plot Facing <span className="font-normal text-[#68646F]">(optional; select one)</span></label>
+        <select value={props.details.plotFacing || ""} onChange={(event) => updateVilla({ plotFacing: (event.target.value || undefined) as PlotFacing | undefined })} className={inputClass}>
+          <option value="">Not specified</option>
+          {facingOptions.map((facing) => <option key={facing}>{facing}</option>)}
+        </select>
+        {props.errors.plotFacing && <p className="text-[12px] text-red-600 mt-1">{props.errors.plotFacing}</p>}
+      </div>
+
+      <div>
         <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Configurations <span className="text-[#F2C052]">*</span></label>
         <div className="flex gap-2">
           <input value={props.configInput} onChange={(event) => props.setConfigInput(event.target.value)} onKeyDown={(event) => event.key === "Enter" && (event.preventDefault(), props.addConfig())} placeholder="e.g. 4 BHK Duplex (G+1), Villament, or Penthouse" className="flex-1 px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42]" />
@@ -132,7 +141,7 @@ export default function VillaDetailsFields(props: Props) {
               <div><label className="mb-2 block text-[13px] font-semibold">BHK</label><input value={row.bhk || ""} onChange={(event) => props.updateDetail(index, { bhk: event.target.value })} placeholder="e.g. 4 BHK" className={inputClass} />{field("bhk") && <p className="mt-1 text-[11px] text-red-600">{field("bhk")}</p>}</div>
               <div><label className="mb-2 block text-[13px] font-semibold">Plot Dimensions</label><input value={row.plotDimensions || ""} onChange={(event) => props.updateDetail(index, { plotDimensions: event.target.value })} placeholder="e.g. 40 ft × 60 ft" className={inputClass} />{field("plotDimensions") && <p className="mt-1 text-[11px] text-red-600">{field("plotDimensions")}</p>}</div>
               <div><label className="mb-2 block text-[13px] font-semibold">Number of Floors</label><input value={row.numberOfFloors || ""} onChange={(event) => props.updateDetail(index, { numberOfFloors: event.target.value })} placeholder="e.g. G+2" className={inputClass} />{field("numberOfFloors") && <p className="mt-1 text-[11px] text-red-600">{field("numberOfFloors")}</p>}</div>
-              <div><label className="mb-2 block text-[13px] font-semibold">Plot Facing <span className="font-normal text-[#68646F]">(optional)</span></label><select value={row.plotFacing || ""} onChange={(event) => props.updateDetail(index, { plotFacing: (event.target.value || undefined) as PlotFacing | undefined })} className={inputClass}><option value="">Not specified</option>{facingOptions.map((facing) => <option key={facing}>{facing}</option>)}</select></div>
+              <div><label className="mb-2 block text-[13px] font-semibold">Plot Facing <span className="font-normal text-[#68646F]">(optional; select one)</span></label><select value={row.plotFacing || ""} onChange={(event) => props.updateDetail(index, { plotFacing: (event.target.value || undefined) as PlotFacing | undefined })} className={inputClass}><option value="">Not specified</option>{facingOptions.map((facing) => <option key={facing}>{facing}</option>)}</select>{field("plotFacing") && <p className="mt-1 text-[11px] text-red-600">{field("plotFacing")}</p>}</div>
               <YesNoSelect label="Corner Plot" value={Boolean(row.cornerPlot)} onChange={(cornerPlot) => props.updateDetail(index, { cornerPlot })} />
               <div><label className="mb-2 block text-[13px] font-semibold">Road Width Facing</label><input value={row.roadWidthFacing || ""} onChange={(event) => props.updateDetail(index, { roadWidthFacing: event.target.value })} placeholder="e.g. 30 ft road" className={inputClass} />{field("roadWidthFacing") && <p className="mt-1 text-[11px] text-red-600">{field("roadWidthFacing")}</p>}</div>
               <YesNoSelect label="Private Garden / Lawn" value={Boolean(row.privateGarden)} onChange={(privateGarden) => props.updateDetail(index, { privateGarden, ...(!privateGarden ? { privateGardenArea: "" } : {}) })} />

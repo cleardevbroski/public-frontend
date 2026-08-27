@@ -57,6 +57,7 @@ import {
   createVillaConfigurationDetail,
   initialVillaDetails,
   parseVillaConfigurationLabel,
+  validateVillaDraft,
 } from "@/lib/villaDetails";
 import {
   createPlotSizeDetail,
@@ -706,6 +707,16 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
         setSubmitError(plotErrors.inventory && rowCount !== totalPlots
           ? `Plot inventory has ${rowCount} row${rowCount === 1 ? "" : "s"}, but total plots is ${totalPlots}.`
           : "Complete the highlighted plot details before publishing.");
+        setCurrentStep(1);
+        return;
+      }
+    }
+    if (action === "publish" && formData.propertyType === "Villa") {
+      const villaErrors = validateVillaDraft(formData);
+      if (Object.keys(villaErrors).length) {
+        setValidationErrors(villaErrors);
+        const facingError = Object.entries(villaErrors).find(([field]) => field.endsWith("plotFacing"))?.[1];
+        setSubmitError(facingError || Object.values(villaErrors)[0] || "Complete the highlighted Villa details.");
         setCurrentStep(1);
         return;
       }

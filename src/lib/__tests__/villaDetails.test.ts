@@ -4,6 +4,7 @@ import { formatPossession } from "@/lib/propertyDetails";
 import {
   createVillaConfigurationDetail,
   initialVillaDetails,
+  normalizePlotFacing,
   parseVillaConfigurationLabel,
   normalizeVillaFloorCount,
   normalizeVillaType,
@@ -38,6 +39,11 @@ function villa(): Partial<Property> {
 }
 
 describe("Villa property helpers", () => {
+  it("accepts one canonical facing and rejects combined facing options", () => {
+    expect(normalizePlotFacing("north east facing")).toBe("North-East");
+    expect(normalizePlotFacing("East / North / West")).toBeUndefined();
+  });
+
   it("creates rows from normalized BHK values", () => {
     expect(createVillaConfigurationDetail("4 BHK")).toMatchObject({ configuration: "4 BHK", bedrooms: 4, bathrooms: 4 });
   });
@@ -105,6 +111,8 @@ describe("Villa property helpers", () => {
     const draft = villa();
     draft.villaDetails!.configurationDetails[0].bedrooms = 2;
     draft.villaDetails!.configurationDetails[0].plotArea = "invalid";
+    draft.villaDetails!.plotFacing = "East / North / West" as any;
+    draft.villaDetails!.configurationDetails[0].plotFacing = "East / North / West" as any;
     draft.villaDetails!.privateGardenArea = "invalid";
     draft.possessionDetails = { status: "Under Construction", expectedCompletionDate: "" };
     draft.builder = "";
@@ -114,6 +122,8 @@ describe("Villa property helpers", () => {
     const errors = validateVillaDraft(draft);
     expect(errors["villaConfiguration.0.bedrooms"]).toBeTruthy();
     expect(errors["villaConfiguration.0.plotArea"]).toBeTruthy();
+    expect(errors["villaConfiguration.0.plotFacing"]).toBe("Select one facing direction.");
+    expect(errors.plotFacing).toBe("Select one facing direction.");
     expect(errors.privateGardenArea).toBeTruthy();
     expect(errors.possessionDate).toBeTruthy();
     expect(errors.builder).toBeTruthy();

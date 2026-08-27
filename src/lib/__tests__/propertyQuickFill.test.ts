@@ -200,6 +200,27 @@ Metro 1 Distance:`);
     expect(result.patch.nearbyDetails?.metro).toBeUndefined();
   });
 
+  it("skips combined Villa facings and tells the administrator to select one", () => {
+    const result = analyzePropertyDescription(`[PROPERTY BASICS]
+Property Type: Villa
+Project / Property Name: Facing Options Villa
+
+[CONFIGURATIONS]
+Configuration 1:
+BHK: 4 BHK Duplex (G+1)
+Facing: East / North / West
+
+[VILLA DETAILS — only for Villa]
+Villa Type: Row Villa
+Plot Facing: East / North / West`);
+
+    expect(result.patch.villaDetails?.plotFacing).toBeUndefined();
+    expect(result.patch.villaDetails?.configurationDetails[0].plotFacing).toBeUndefined();
+    expect(result.warnings).toEqual(expect.arrayContaining([
+      expect.stringMatching(/select one facing/i),
+    ]));
+  });
+
   it("rejects a resale-only import with a clear error", () => {
     expect(() => analyzePropertyDescription(`[PROPERTY BASICS]\nProperty Type: Villa\nProject / Property Name: Resale Home\nTransaction Type: Resale`)).toThrow(/Resale properties are not applicable/i);
   });
