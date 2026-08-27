@@ -805,6 +805,17 @@ function applyModernDescriptionBlocks(
       name: labelled(block, "Phase Name"),
       reraNumber: labelled(block, "RERA Number"),
       reraSiteUrl: labelled(block, "RERA Website") || KARNATAKA_RERA_URL,
+      officialDetails: {
+        promoterName: labelled(block, "Official Promoter"),
+        projectId: labelled(block, "RERA Project ID"),
+        acknowledgementNumber: labelled(block, "Acknowledgement Number"),
+        registrationStatus: labelled(block, "Registration Status"),
+        district: labelled(block, "District"),
+        approvalDate: labelled(block, "Project Approval Date"),
+        registeredCompletionDate: labelled(block, "Registered Completion Date"),
+        registeredAddress: labelled(block, "Registered Address"),
+        promoterAddress: labelled(block, "Promoter Address"),
+      },
       reraDocuments: [],
       projectDocuments: [],
       order: index,
@@ -901,8 +912,8 @@ function applyModernDescriptionBlocks(
         builtUpArea: labelled(block, "Built-up Area"),
         carpetArea: labelled(block, "Carpet Area"),
         bedrooms: number(labelled(block, "Bedrooms")) ?? row.bedrooms,
-        bathrooms: number(labelled(block, "Bathrooms")) ?? row.bathrooms,
-        balconies: number(labelled(block, "Balconies")) ?? row.balconies,
+        bathrooms: number(labelled(block, "Bathrooms")),
+        balconies: number(labelled(block, "Balconies")),
         facings: parseImportedFacings(labelled(block, "Facings") || labelled(block, "Facing"), warnings, configuration),
       } as ConfigurationDetail;
     }).filter((row): row is ConfigurationDetail => row !== null);

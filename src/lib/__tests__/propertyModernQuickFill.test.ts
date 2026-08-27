@@ -24,6 +24,15 @@ RERA Registered: Yes
 Phase Name: North Phase
 RERA Number: PRM/KA/RERA/NORTH001
 RERA Website: https://rera.karnataka.gov.in/viewAllProjects
+Official Promoter: Registered Promoter Private Limited
+RERA Project ID: 9960
+Acknowledgement Number: ACK/KA/RERA/001
+Registration Status: APPROVED
+District: BENGALURU URBAN
+Project Approval Date: 2022-09-22
+Registered Completion Date: 2027-03-31
+Registered Address: Registered project address
+Promoter Address: Registered promoter address
 
 [RERA PHASE]
 Phase Name: South Phase
@@ -77,6 +86,7 @@ Answer: Verified 2 BHK homes are available.`);
 
     expect(result.patch.reraPhases).toHaveLength(2);
     expect(result.patch.reraPhases?.map((phase) => phase.name)).toEqual(["North Phase", "South Phase"]);
+    expect(result.patch.reraPhases?.[0].officialDetails).toMatchObject({ promoterName: "Registered Promoter Private Limited", projectId: "9960", acknowledgementNumber: "ACK/KA/RERA/001", registrationStatus: "APPROVED", district: "BENGALURU URBAN", approvalDate: "2022-09-22", registeredCompletionDate: "2027-03-31", registeredAddress: "Registered project address", promoterAddress: "Registered promoter address" });
     expect(result.patch.configurationDetails?.[0].facings).toEqual(["East", "North-East"]);
     expect(result.patch.projectNarrative).toMatchObject({ introduction: ["First verified introduction.", "Second verified introduction."], usps: ["Low-density development.", "Metro connectivity."], investmentReasons: ["Strong employment corridor."], locationAdvantage: ["Ten minutes from the metro."] });
     expect(result.patch.masterPlan).toMatchObject({ title: "Complete Heights Master Plan", summary: "Verified planning summary.", sections: [{ heading: "Central zone", body: "Contains the clubhouse and landscaped court." }] });

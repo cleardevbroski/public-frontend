@@ -103,7 +103,7 @@ export default function ApartmentDetailsFields(props: Props) {
                       ))}
                       {(["bedrooms", "bathrooms", "balconies"] as const).map((key) => (
                         <td key={key} className="px-2 py-2">
-                          <input type="number" min={key === "balconies" ? 0 : 1} step={1} className={`${inputClass} min-w-[72px]`} value={row[key]} onChange={(e) => props.updateDetail(index, { [key]: Number(e.target.value) })} />
+                          <input type="number" min={key === "balconies" ? 0 : 1} step={1} className={`${inputClass} min-w-[72px]`} value={row[key] ?? ""} onChange={(e) => props.updateDetail(index, { [key]: e.target.value === "" ? undefined : Number(e.target.value) })} />
                           {field(key) && <p className="text-[10px] text-red-600 mt-1">{field(key)}</p>}
                         </td>
                       ))}

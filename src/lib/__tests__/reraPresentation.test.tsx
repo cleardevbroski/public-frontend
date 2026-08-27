@@ -24,6 +24,17 @@ const property: Property = {
     name: "Phase 1",
     reraNumber: "PRM/KA/RERA/1234",
     reraSiteUrl: "https://rera.karnataka.gov.in/project/phase-1",
+    officialDetails: {
+      promoterName: "REDDY STRUCTURES PRIVATE LIMITED",
+      projectId: "9960",
+      acknowledgementNumber: "ACK/KA/RERA/1251/310/PR/190822/006261",
+      registrationStatus: "APPROVED",
+      district: "BENGALURU URBAN",
+      approvalDate: "2022-09-22",
+      registeredCompletionDate: "2027-03-31",
+      registeredAddress: "Katha No. 28/25/1P, Kommaghatta Village, Bengaluru South",
+      promoterAddress: "#133/1, The Residency, Residency Road, Bengaluru 560060",
+    },
     reraDocuments: [{
       _id: "rera-document-1",
       key: "registration-certificate",
@@ -83,6 +94,11 @@ describe("phase-wise RERA presentation", () => {
     expect(html).not.toContain("17 Oct 2024");
     expect(html).not.toContain("1.24 MB");
     expect(html).toContain("https://rera.karnataka.gov.in/project/phase-1");
+    expect(html).toContain("Official registration information");
+    expect(html).toContain("REDDY STRUCTURES PRIVATE LIMITED");
+    expect(html).toContain("9960");
+    expect(html).toContain("22 Sept 2022");
+    expect(html).toContain("31 Mar 2027");
     expect(html).not.toContain("Document storage links stay private");
     expect(html).not.toContain("Linked Dealer");
   });

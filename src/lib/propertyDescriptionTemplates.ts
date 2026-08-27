@@ -36,11 +36,29 @@ RERA Registered:
 Phase Name:
 RERA Number:
 RERA Website:
+Official Promoter:
+RERA Project ID:
+Acknowledgement Number:
+Registration Status:
+District:
+Project Approval Date:
+Registered Completion Date:
+Registered Address:
+Promoter Address:
 
 [RERA PHASE]
 Phase Name:
 RERA Number:
-RERA Website:`;
+RERA Website:
+Official Promoter:
+RERA Project ID:
+Acknowledgement Number:
+Registration Status:
+District:
+Project Approval Date:
+Registered Completion Date:
+Registered Address:
+Promoter Address:`;
 
 const projectContent = `[PROJECT INTRODUCTION]
 Paragraph:

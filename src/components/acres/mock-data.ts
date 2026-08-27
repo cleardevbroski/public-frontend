@@ -27,8 +27,8 @@ export type ConfigurationDetail = {
   carpetArea: string;
   builtUpArea?: string;
   bedrooms: number;
-  bathrooms: number;
-  balconies: number;
+  bathrooms?: number;
+  balconies?: number;
   facings: string[];
   floorPlan2dUrl?: string;
   floorPlan3dUrl?: string;
@@ -179,12 +179,25 @@ export type ReraDocument = {
   uploadedAt?: string;
 };
 
+export type ReraOfficialDetails = {
+  promoterName?: string;
+  projectId?: string;
+  acknowledgementNumber?: string;
+  registrationStatus?: string;
+  district?: string;
+  approvalDate?: string;
+  registeredCompletionDate?: string;
+  registeredAddress?: string;
+  promoterAddress?: string;
+};
+
 export type ReraPhase = {
   _id?: string;
   name: string;
   reraNumber: string;
   reraSiteUrl?: string;
   order?: number;
+  officialDetails?: ReraOfficialDetails;
   reraDocuments: ReraDocument[];
   projectDocuments: ReraDocument[];
 };

@@ -38,6 +38,13 @@ const formatUploadDate = (value?: string) => {
   return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric" }).format(date);
 };
 
+const formatOfficialDate = (value?: string) => {
+  if (!value) return "";
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric" }).format(date);
+};
+
 function VerificationQr({ url }: { url: string }) {
   const [source, setSource] = useState("");
 
@@ -125,6 +132,18 @@ export default function PropertyReraSections({
   if (!property.reraRegistered || !phases.length) return null;
 
   const selected = phases[Math.min(phaseIndex, phases.length - 1)];
+  const officialDetails = selected.officialDetails;
+  const officialRows = officialDetails ? [
+    { label: "Official promoter", value: officialDetails.promoterName },
+    { label: "RERA project ID", value: officialDetails.projectId },
+    { label: "Acknowledgement number", value: officialDetails.acknowledgementNumber },
+    { label: "Registration status", value: officialDetails.registrationStatus },
+    { label: "District", value: officialDetails.district },
+    { label: "Project approval date", value: formatOfficialDate(officialDetails.approvalDate) },
+    { label: "Registered completion date", value: formatOfficialDate(officialDetails.registeredCompletionDate) },
+    { label: "Registered project address", value: officialDetails.registeredAddress, wide: true },
+    { label: "Promoter address", value: officialDetails.promoterAddress, wide: true },
+  ].filter((row) => Boolean(row.value)) : [];
   const officialUrl = officialReraUrl(selected.reraSiteUrl);
   const visibleDocuments = view === "rera" ? selected.reraDocuments || [] : selected.projectDocuments || [];
   const panelKey = `${selected._id || phaseIndex}:${view}`;
@@ -189,6 +208,15 @@ export default function PropertyReraSections({
               </div>
             </div>
           </div>
+          {officialRows.length > 0 && <div data-testid="official-rera-details" className="mt-3 rounded-xl border border-[#E1E4EA] bg-white p-4">
+            <h3 className="text-[12px] font-extrabold text-[#172039]">Official registration information</h3>
+            <div className="mt-3 grid gap-x-6 gap-y-3 md:grid-cols-2">
+              {officialRows.map((row) => <div key={row.label} className={row.wide ? "md:col-span-2" : ""}>
+                <p className="text-[9px] font-bold uppercase tracking-[.07em] text-[#7A8290]">{row.label}</p>
+                <p className="mt-1 break-words text-[11px] font-semibold leading-5 text-[#263044]">{row.value}</p>
+              </div>)}
+            </div>
+          </div>}
           {visibleDocuments.length > 0 && <div className="mt-2 flex justify-end" data-testid="download-disclosure">
             <button
               type="button"

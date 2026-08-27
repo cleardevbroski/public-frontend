@@ -64,6 +64,7 @@ export function displayRange(
 export function preparePropertyPayload<T extends Partial<Property>>(property: T): T {
   if (property.propertyType !== "Apartment" || !property.configurationDetails?.length) return property;
   const rows = property.configurationDetails;
+  const bathroomCounts = rows.map((row) => row.bathrooms).filter((value): value is number => Number.isInteger(value));
   const nearbyDetails = property.nearbyDetails
     ? Object.fromEntries(
         Object.entries(property.nearbyDetails).filter(([, item]) =>
@@ -77,7 +78,7 @@ export function preparePropertyPayload<T extends Partial<Property>>(property: T)
     price: displayRange(rows, "price") || property.price,
     area: displayRange(rows, "builtUpArea") || displayRange(rows, "superBuiltUpArea") || displayRange(rows, "carpetArea") || property.area,
     bedrooms: Math.min(...rows.map((row) => row.bedrooms)),
-    bathrooms: Math.min(...rows.map((row) => row.bathrooms)),
+    bathrooms: bathroomCounts.length ? Math.min(...bathroomCounts) : property.bathrooms,
     facing: rows.find((row) => row.facings.length)?.facings.join(", ") || "",
     possession: property.possessionDetails?.status || property.possession,
     ageOfProperty: property.possessionDetails?.status === "Under Construction" ? "Under Construction" : "",
@@ -160,8 +161,8 @@ export function validateApartmentDraft(property: Partial<Property>): ApartmentEr
     if (!row.price.trim()) errors[`${prefix}.price`] = "Price is required.";
     if (!row.carpetArea.trim()) errors[`${prefix}.carpetArea`] = "Carpet area is required.";
     if (!Number.isInteger(row.bedrooms) || row.bedrooms < 1) errors[`${prefix}.bedrooms`] = "Enter at least 1 bedroom.";
-    if (!Number.isInteger(row.bathrooms) || row.bathrooms < 1) errors[`${prefix}.bathrooms`] = "Enter at least 1 bathroom.";
-    if (!Number.isInteger(row.balconies) || row.balconies < 0) errors[`${prefix}.balconies`] = "Balconies cannot be negative.";
+    if (row.bathrooms === undefined || !Number.isInteger(row.bathrooms) || row.bathrooms < 1) errors[`${prefix}.bathrooms`] = "Enter at least 1 bathroom.";
+    if (row.balconies === undefined || !Number.isInteger(row.balconies) || row.balconies < 0) errors[`${prefix}.balconies`] = "Enter the number of balconies, including 0 when there is no balcony.";
     if (row.facings.some((facing) => !facingOptions.some((option) => option === facing))) {
       errors[`${prefix}.facings`] = "Select only valid facing options.";
     }

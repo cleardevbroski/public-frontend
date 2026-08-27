@@ -14,6 +14,12 @@ describe("property description templates", () => {
       expect(template).toContain("[SOURCE DATA START]");
       expect(template).toContain("PASTE THE COMPLETE PROPERTY WEBSITE TEXT HERE");
       expect(template).toContain("[SOURCE DATA END]");
+      expect(template).toContain("Official Promoter:");
+      expect(template).toContain("RERA Project ID:");
+      expect(template).toContain("Acknowledgement Number:");
+      expect(template).toContain("Registered Completion Date:");
+      expect(template).toContain("Registered Address:");
+      expect(template).toContain("Promoter Address:");
       expect(template).toContain(`Property Type: ${type}`);
       expect(template.match(/^\[RERA PHASE\]$/gm)).toHaveLength(2);
       expect(template).toContain("About Developer:");

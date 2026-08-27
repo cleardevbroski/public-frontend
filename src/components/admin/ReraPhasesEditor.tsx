@@ -173,6 +173,41 @@ export default function ReraPhasesEditor({ phases, onChange, error, onUploadingC
         </label>
       </div>
 
+      <div className="mt-5 rounded-xl border border-[#DDD4BE] bg-white p-4">
+        <h5 className="text-[12px] font-bold text-[#121B35]">Official RERA project information</h5>
+        <p className="mt-1 text-[10px] text-[#68646F]">Public facts from the registration record. ZIP imports fill these fields when the certificate or project metadata supplies them.</p>
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <label className="text-[11px] font-bold text-[#3F3D46]">Official promoter
+            <input value={active.officialDetails?.promoterName || ""} onChange={(event) => updateActive({ officialDetails: { ...active.officialDetails, promoterName: event.target.value } })} maxLength={250} className="mt-1 w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 font-normal" />
+          </label>
+          <label className="text-[11px] font-bold text-[#3F3D46]">RERA project ID
+            <input value={active.officialDetails?.projectId || ""} onChange={(event) => updateActive({ officialDetails: { ...active.officialDetails, projectId: event.target.value } })} maxLength={100} className="mt-1 w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 font-normal" />
+          </label>
+          <label className="text-[11px] font-bold text-[#3F3D46]">Acknowledgement number
+            <input value={active.officialDetails?.acknowledgementNumber || ""} onChange={(event) => updateActive({ officialDetails: { ...active.officialDetails, acknowledgementNumber: event.target.value } })} maxLength={150} className="mt-1 w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 font-normal" />
+          </label>
+          <label className="text-[11px] font-bold text-[#3F3D46]">Registration status
+            <input value={active.officialDetails?.registrationStatus || ""} onChange={(event) => updateActive({ officialDetails: { ...active.officialDetails, registrationStatus: event.target.value } })} maxLength={100} className="mt-1 w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 font-normal" />
+          </label>
+          <label className="text-[11px] font-bold text-[#3F3D46]">District
+            <input value={active.officialDetails?.district || ""} onChange={(event) => updateActive({ officialDetails: { ...active.officialDetails, district: event.target.value } })} maxLength={150} className="mt-1 w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 font-normal" />
+          </label>
+          <div className="hidden md:block" />
+          <label className="text-[11px] font-bold text-[#3F3D46]">Project approval date
+            <input type="date" value={active.officialDetails?.approvalDate || ""} onChange={(event) => updateActive({ officialDetails: { ...active.officialDetails, approvalDate: event.target.value } })} className="mt-1 w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 font-normal" />
+          </label>
+          <label className="text-[11px] font-bold text-[#3F3D46]">Registered completion date
+            <input type="date" value={active.officialDetails?.registeredCompletionDate || ""} onChange={(event) => updateActive({ officialDetails: { ...active.officialDetails, registeredCompletionDate: event.target.value } })} className="mt-1 w-full rounded-lg border border-[#E4E0E7] px-3 py-2.5 font-normal" />
+          </label>
+          <label className="text-[11px] font-bold text-[#3F3D46] md:col-span-2">Registered project address
+            <textarea value={active.officialDetails?.registeredAddress || ""} onChange={(event) => updateActive({ officialDetails: { ...active.officialDetails, registeredAddress: event.target.value } })} rows={2} maxLength={1000} className="mt-1 w-full resize-y rounded-lg border border-[#E4E0E7] px-3 py-2.5 font-normal" />
+          </label>
+          <label className="text-[11px] font-bold text-[#3F3D46] md:col-span-2">Promoter address
+            <textarea value={active.officialDetails?.promoterAddress || ""} onChange={(event) => updateActive({ officialDetails: { ...active.officialDetails, promoterAddress: event.target.value } })} rows={2} maxLength={1000} className="mt-1 w-full resize-y rounded-lg border border-[#E4E0E7] px-3 py-2.5 font-normal" />
+          </label>
+        </div>
+      </div>
+
       <BulkReraDocumentUploader
         key={active._id || `phase-${activeIndex}`}
         phaseName={active.name}
