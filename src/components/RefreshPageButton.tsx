@@ -37,7 +37,7 @@ export default function RefreshPageButton({ variant = "floating", onRefresh }: P
   };
 
   if (variant === "toolbar") {
-    return <button type="button" onClick={refresh} disabled={refreshing} aria-label={refreshing ? "Refreshing page" : "Refresh page"} title="Refresh page" className="fixed bottom-5 left-4 z-40 inline-flex h-10 items-center gap-2 rounded-xl border border-[#E4E0E7]/60 bg-[#F8F7FA] px-3 text-[12px] font-bold text-[#596277] shadow-[0_8px_24px_rgba(16,24,40,.12)] transition-colors hover:bg-[#F3F1F5] hover:text-[#121B35] disabled:cursor-wait disabled:opacity-70 lg:left-[264px]">
+    return <button type="button" onClick={refresh} disabled={refreshing} aria-label={refreshing ? "Refreshing page" : "Refresh page"} title="Refresh page" className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[#E4E0E7]/60 bg-[#F8F7FA] px-3 text-[12px] font-bold text-[#596277] transition-colors hover:bg-[#F3F1F5] hover:text-[#121B35] disabled:cursor-wait disabled:opacity-70">
       <RefreshCw className={`size-4 ${refreshing ? "animate-spin" : ""}`} />
       <span className="hidden xl:inline">{refreshing ? "Refreshing" : "Refresh"}</span>
     </button>;
