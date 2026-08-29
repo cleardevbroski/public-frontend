@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PropertyTable from "@/components/admin/PropertyTable";
-import BulkRecheckImport from "@/components/admin/BulkRecheckImport";
 import { fetchAllAdminProperties } from "@/lib/api";
 import { isAdminAuthed } from "@/lib/adminAuth";
 import type { Property } from "@/components/acres/mock-data";
@@ -155,7 +154,7 @@ export default function AdminDashboard() {
           <p className="text-[13px] text-[#68646F]">Pending Approval</p>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#E4E0E7]/30 hover:shadow-md transition-shadow group">
+        <Link href="/admin/recheck-properties" className="block bg-white rounded-2xl p-5 shadow-sm border border-[#E4E0E7]/30 hover:shadow-md transition-shadow group">
           <div className="flex items-center justify-between mb-3">
             <div className="w-11 h-11 bg-gradient-to-br from-[#EEF4FF] to-[#DFE9FF] rounded-xl flex items-center justify-center group-hover:shadow-md transition-all">
               <Archive className="w-5 h-5 text-blue-700" />
@@ -163,10 +162,8 @@ export default function AdminDashboard() {
           </div>
           <p className="text-[28px] font-bold text-[#121B35]">{counts.recheck}</p>
           <p className="text-[13px] text-[#68646F]">Recheck Properties</p>
-        </div>
+        </Link>
       </div>
-
-      <BulkRecheckImport onImported={loadData} />
 
       {/* Properties Table */}
       <div>

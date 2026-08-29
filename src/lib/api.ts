@@ -341,6 +341,7 @@ export interface PropertyFilters {
   city?: string;
   propertyType?: string;
   bedrooms?: number;
+  status?: string;
   search?: string;
   sort?: string;
 }
