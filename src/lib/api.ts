@@ -465,6 +465,36 @@ export function fetchAllAdminProperties(filters: Omit<PropertyFilters, "page" | 
   return fetchAllPages<any>((params) => fetchAdminProperties(params), "properties", filters);
 }
 
+export type RecheckPackage = {
+  packageName: string;
+  packageSize: number;
+  packageKey: string;
+  batchName: string;
+};
+
+export async function preflightRecheckPackages(packages: RecheckPackage[]) {
+  return readJson(await apiFetch("/api/properties/admin/recheck-imports/preflight", {
+    method: "POST",
+    body: JSON.stringify({ packages }),
+  }), "Failed to check ZIP packages");
+}
+
+export async function createRecheckImport(packageInfo: RecheckPackage, property: Record<string, unknown>) {
+  const data = await readJson(await apiFetch("/api/properties/admin/recheck-imports", {
+    method: "POST",
+    body: JSON.stringify({ package: packageInfo, property }),
+  }), "Failed to create Recheck property");
+  return normalizePropertyResponse(data);
+}
+
+export async function reviewRecheckProperty(id: string, action: "move_to_pending" | "publish") {
+  const data = await readJson(await apiFetch(`/api/properties/admin/recheck-imports/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ action }),
+  }), "Failed to update Recheck property");
+  return normalizePropertyResponse(data);
+}
+
 /** Fetch one listing with its complete media and workflow data for admin editing. */
 export async function fetchAdminProperty(id: string) {
   const data = await readJson(

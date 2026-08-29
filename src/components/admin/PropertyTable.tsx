@@ -13,16 +13,15 @@ import {
   MapPin,
   Eye,
   Star,
-  CheckCircle2,
-  CircleOff,
   UserRound,
   Pencil,
 } from "lucide-react";
-import { deleteProperty, togglePublish, toggleFeatured, setPropertyStatus } from "@/lib/propertyStore";
+import { deleteProperty, toggleFeatured, setPropertyStatus } from "@/lib/propertyStore";
 import StatusControls from "@/components/admin/StatusControls";
 import type { Property } from "@/components/acres/mock-data";
 import { getPropertyCoverImage } from "@/lib/propertyPresentation";
 import { matchesPropertyAdminSearch } from "@/lib/adminSearch";
+import { reviewRecheckProperty } from "@/lib/api";
 
 interface PropertyTableProps {
   properties: Property[];
@@ -38,10 +37,12 @@ export default function PropertyTable({
   onPropertyDeleted,
 }: PropertyTableProps) {
   const [searchQuery, setSearchQuery] = useState(initialSearch);
-  const [filter, setFilter] = useState<"all" | "pending" | "admin" | "mock">("all");
+  const [filter, setFilter] = useState<"all" | "pending" | "recheck" | "admin" | "mock">("all");
   const [deleteModal, setDeleteModal] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [workflowBusy, setWorkflowBusy] = useState<string | null>(null);
+  const [workflowError, setWorkflowError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [now, setNow] = useState(0);
   const perPage = 8;
@@ -66,7 +67,8 @@ export default function PropertyTable({
     const matchesSearch = matchesPropertyAdminSearch(p, searchQuery);
     const matchesFilter =
       filter === "all" ||
-      (filter === "pending" && (p.status ? !["approved", "published"].includes(p.status) : p.published === false)) ||
+      (filter === "pending" && p.status !== "recheck" && (p.status ? !["approved", "published"].includes(p.status) : p.published === false)) ||
+      (filter === "recheck" && p.status === "recheck") ||
       (filter === "admin" && adminIds.has(p.id)) ||
       (filter === "mock" && !adminIds.has(p.id));
     return matchesSearch && matchesFilter;
@@ -92,14 +94,22 @@ export default function PropertyTable({
     }
   };
 
-  const handlePublish = async (id: string, currentState: boolean) => {
-    await togglePublish(id, currentState);
-    onPropertyDeleted();
-  };
-
   const handleFeature = async (id: string, currentState: boolean) => {
     await toggleFeatured(id, currentState);
     onPropertyDeleted();
+  };
+
+  const handleRecheck = async (id: string, action: "move_to_pending" | "publish") => {
+    setWorkflowBusy(id);
+    setWorkflowError("");
+    try {
+      await reviewRecheckProperty(id, action);
+      await onPropertyDeleted();
+    } catch (cause) {
+      setWorkflowError(cause instanceof Error ? cause.message : "Unable to update this Recheck property.");
+    } finally {
+      setWorkflowBusy(null);
+    }
   };
 
   const getTimeAgo = (dateStr?: string) => {
@@ -134,10 +144,11 @@ export default function PropertyTable({
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {(["all", "pending", "admin", "mock"] as const).map((f) => {
-            const pendingCount = properties.filter((p) => (p.status ? !["approved", "published"].includes(p.status) : p.published === false)).length;
+          {(["all", "pending", "recheck", "admin", "mock"] as const).map((f) => {
+            const pendingCount = properties.filter((p) => p.status !== "recheck" && (p.status ? !["approved", "published"].includes(p.status) : p.published === false)).length;
+            const recheckCount = properties.filter((p) => p.status === "recheck").length;
             const label =
-              f === "all" ? "All" : f === "pending" ? "Pending" : f === "admin" ? "Admin Posted" : "Mock Data";
+              f === "all" ? "All" : f === "pending" ? "Pending" : f === "recheck" ? "Recheck" : f === "admin" ? "Admin Posted" : "Mock Data";
             return (
               <button
                 key={f}
@@ -148,7 +159,7 @@ export default function PropertyTable({
                 className={`px-4 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 border flex items-center gap-1.5 ${
                   filter === f
                     ? "bg-[#DDAA42] text-[#0B1328] border-[#DDAA42] shadow-md"
-                    : f === "pending" && pendingCount > 0
+                    : (f === "pending" && pendingCount > 0) || (f === "recheck" && recheckCount > 0)
                     ? "bg-amber-50 text-amber-700 border-amber-200 hover:border-amber-300"
                     : "bg-white text-[#68646F] border-[#E4E0E7]/30 hover:border-[#DDAA42]/40"
                 }`}
@@ -159,11 +170,16 @@ export default function PropertyTable({
                     {pendingCount}
                   </span>
                 )}
+                {f === "recheck" && recheckCount > 0 && (
+                  <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${filter === f ? "bg-white/25" : "bg-blue-600 text-white"}`}>{recheckCount}</span>
+                )}
               </button>
             );
           })}
         </div>
       </div>
+
+      {workflowError && <p role="alert" className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-[12px] text-red-700">{workflowError}</p>}
 
       {/* Table */}
       <div className="overflow-x-auto rounded-2xl border border-[#E4E0E7]/30 bg-white shadow-sm">
@@ -265,6 +281,10 @@ export default function PropertyTable({
                     status={property.status || (property.published !== false ? "approved" : "pending")}
                     onChange={(s) => setPropertyStatus(property.id, s).then(onPropertyDeleted)}
                   />
+                  {property.status === "recheck" && <div className="mt-1.5 flex flex-wrap gap-1">
+                    <button type="button" disabled={workflowBusy === property.id} onClick={() => void handleRecheck(property.id, "move_to_pending")} className="rounded-md bg-amber-50 px-2 py-1 text-[9px] font-bold text-amber-800 disabled:opacity-50">Mark correct → Pending</button>
+                    <button type="button" disabled={workflowBusy === property.id} onClick={() => void handleRecheck(property.id, "publish")} className="rounded-md bg-emerald-50 px-2 py-1 text-[9px] font-bold text-emerald-700 disabled:opacity-50">Publish</button>
+                  </div>}
                   {property.featured && (
                     <p className="text-[10px] text-[#DDAA42] font-bold mt-0.5 flex items-center gap-0.5">
                       <Star className="w-3 h-3 fill-[#DDAA42]" /> Featured
@@ -275,10 +295,10 @@ export default function PropertyTable({
                 {/* Actions */}
                 <div className="flex w-full flex-wrap items-center justify-start gap-2 border-t border-[#F3F1F5] pt-3 lg:w-auto lg:flex-nowrap lg:justify-center lg:border-t-0 lg:pt-0 lg:whitespace-nowrap">
                   <Link
-                    href={`/property/${property.id}`}
-                    aria-label={`View ${property.title}`}
+                    href={property.status === "recheck" ? `/admin/post?edit=${encodeURIComponent(property.id)}` : `/property/${property.id}`}
+                    aria-label={`${property.status === "recheck" ? "Review" : "View"} ${property.title}`}
                     className="inline-flex h-9 min-w-[76px] flex-1 items-center justify-center gap-1 rounded-lg border border-[#E4E0E7]/30 bg-[#F8F7FA] px-2 text-[11px] font-bold text-[#DDAA42] transition-colors hover:bg-[#F3F1F5] lg:h-8 lg:min-w-8 lg:flex-none lg:px-0"
-                    title="View on site"
+                    title={property.status === "recheck" ? "Open private review form" : "View on site"}
                   >
                     <Eye className="h-4 w-4" /><span className="lg:hidden">View</span>
                   </Link>

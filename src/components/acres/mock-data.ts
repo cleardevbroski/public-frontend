@@ -390,6 +390,13 @@ export type Property = {
   reviewMessages?: Array<{ _id?: string; senderRole: "admin" | "user"; message: string; createdAt?: string }>;
   source?: "admin" | "mock" | "public";
   submittedBy?: "user" | "admin";
+  bulkImport?: {
+    packageKey?: string;
+    packageName?: string;
+    packageSize?: number;
+    batchName?: string;
+    importedAt?: string;
+  };
   postedBy?: {
     _id?: string;
     id?: string;

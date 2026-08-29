@@ -10,9 +10,9 @@ GlobalWorkerOptions.workerSrc = typeof process !== "undefined" && process.env?.V
   ? `file://${process.cwd()}/node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs`
   : new URL("pdfjs-dist/legacy/build/pdf.worker.min.mjs", import.meta.url).toString();
 
-const MAX_ZIP_BYTES = 150 * 1024 * 1024;
-const MAX_EXPANDED_BYTES = 750 * 1024 * 1024;
-const MAX_ENTRIES = 500;
+const MAX_ZIP_BYTES = 350 * 1024 * 1024;
+const MAX_EXPANDED_BYTES = 2 * 1024 * 1024 * 1024;
+const MAX_ENTRIES = 2000;
 const KARNATAKA_RERA_URL = "https://rera.karnataka.gov.in/viewAllProjects";
 
 type ZipProgress = { completed: number; total: number; label: string };
@@ -21,7 +21,7 @@ type JsonRecord = Record<string, unknown>;
 type MediaRecord = { kind?: string; label?: string; status?: string; saved_as?: string };
 type DocumentRecord = { category?: string; label?: string; status?: string; saved_as?: string };
 type UploadTask = {
-  category: "gallery" | "floor-plan" | "master-plan" | "walkthrough" | "document";
+  category: "gallery" | "floor-plan" | "master-plan" | "developer-logo" | "walkthrough" | "document";
   entry: JSZipObject;
   label: string;
   savedAs: string;
@@ -187,6 +187,7 @@ function matchConfigurationIndex(rows: ConfigurationDetail[], label: string, pat
   const source = `${label} ${path}`;
   const bhk = source.match(/\b(\d+(?:\.5)?)\s*BHK\b/i)?.[1];
   const area = source.match(/\b(\d{3,5})\s*(?:Sq\.?\s*Ft\.?|sqft)\b/i)?.[1];
+  if (!bhk && !area) return -1;
   let index = rows.findIndex((row) => (!bhk || row.configuration.startsWith(`${Number(bhk)} BHK`)) && (!area || numericArea(row.builtUpArea || row.superBuiltUpArea || row.carpetArea) === area));
   if (index < 0 && bhk) index = rows.findIndex((row) => row.configuration.startsWith(`${Number(bhk)} BHK`));
   return index;
@@ -213,19 +214,40 @@ function documentRecords(manifest: JsonRecord) {
   return records(manifest.documents).map((item): DocumentRecord => ({ category: clean(item.category), label: clean(item.label), status: clean(item.status), saved_as: clean(item.saved_as) }));
 }
 
-function buildTasks(entries: JSZipObject[], media: MediaRecord[], documents: Array<{ row: DocumentRecord; phaseIndex: number }>, warnings: string[]) {
+function isUsableManifestStatus(value?: string) {
+  return ["downloaded", "approved"].includes(clean(value).toLowerCase());
+}
+
+function buildTasks(
+  entries: JSZipObject[],
+  media: MediaRecord[],
+  documents: Array<{ row: DocumentRecord; phaseIndex: number }>,
+  warnings: string[],
+  configurations: ConfigurationDetail[],
+  mode: "full" | "recheck",
+) {
   const tasks: UploadTask[] = [];
-  media.filter((item) => item.status === "downloaded" && item.saved_as).forEach((item) => {
+  const acceptedMedia = media.filter((item) => isUsableManifestStatus(item.status) && item.saved_as);
+  const selectedMedia = mode === "recheck" ? acceptedMedia.filter((item, index, all) => {
+    const kind = clean(item.kind).toLowerCase();
+    if (kind === "gallery" || kind === "master_plan" || kind === "developer_logo") {
+      return index === all.findIndex((candidate) => clean(candidate.kind).toLowerCase() === kind);
+    }
+    if (!["floor_plan", "3d_plan"].includes(kind)) return false;
+    return matchConfigurationIndex(configurations, item.label || "", item.saved_as || "") >= 0;
+  }) : acceptedMedia;
+  selectedMedia.forEach((item) => {
     const entry = findEntry(entries, item.saved_as || "");
     if (!entry) {
       warnings.push(`${item.label || item.saved_as} is listed in the media manifest but is missing from the ZIP.`);
       return;
     }
     const kind = clean(item.kind).toLowerCase();
-    const category = kind === "gallery" ? "gallery" : kind === "master_plan" ? "master-plan" : kind === "walkthrough" ? "walkthrough" : ["floor_plan", "3d_plan"].includes(kind) ? "floor-plan" : undefined;
+    const category = kind === "gallery" ? "gallery" : kind === "master_plan" ? "master-plan" : kind === "developer_logo" ? "developer-logo" : kind === "walkthrough" ? "walkthrough" : ["floor_plan", "3d_plan"].includes(kind) ? "floor-plan" : undefined;
     if (category) tasks.push({ category, entry, label: item.label || basename(entry.name), savedAs: item.saved_as || entry.name, mediaKind: kind });
   });
-  documents.filter(({ row }) => row.status === "downloaded" && row.saved_as).forEach(({ row: item, phaseIndex }) => {
+  if (mode === "recheck") return tasks;
+  documents.filter(({ row }) => isUsableManifestStatus(row.status) && row.saved_as).forEach(({ row: item, phaseIndex }) => {
     const entry = findEntry(entries, item.saved_as || "");
     if (!entry) {
       warnings.push(`${item.label || item.saved_as} is listed in the RERA manifest but is missing from the ZIP.`);
@@ -273,6 +295,9 @@ function attachUploads(patch: Partial<Property>, uploads: UploadResult[], warnin
   const masterPlanImage = uploads.find((item) => item.category === "master-plan" && item.url)?.url;
   if (masterPlanImage) patch.masterPlan = { ...(patch.masterPlan || {}), imageUrl: masterPlanImage };
 
+  const developerLogo = uploads.find((item) => item.category === "developer-logo" && item.url)?.url;
+  if (developerLogo) patch.developerLogoUrl = developerLogo;
+
   const rows = (patch.configurationDetails || []).map((row) => ({ ...row }));
   uploads.filter((item) => item.category === "floor-plan" && item.url).forEach((item) => {
     const index = matchConfigurationIndex(rows, item.label, item.savedAs);
@@ -316,9 +341,14 @@ function attachUploads(patch: Partial<Property>, uploads: UploadResult[], warnin
   patch.reraPhases = phases;
 }
 
-export async function importPropertyZip(file: File, preferredType?: SupportedPropertyType, onProgress?: ProgressCallback): Promise<QuickFillSuggestion> {
+export async function importPropertyZip(
+  file: File,
+  preferredType?: SupportedPropertyType,
+  onProgress?: ProgressCallback,
+  options: { mode?: "full" | "recheck" } = {},
+): Promise<QuickFillSuggestion> {
   if (!file.name.toLowerCase().endsWith(".zip") && !["application/zip", "application/x-zip-compressed"].includes(file.type)) throw new Error("Select a ZIP property package.");
-  if (file.size > MAX_ZIP_BYTES) throw new Error("ZIP packages must be 150 MB or smaller.");
+  if (file.size > MAX_ZIP_BYTES) throw new Error("ZIP packages must be 350 MB or smaller.");
 
   onProgress?.({ completed: 0, total: 1, label: "Validating ZIP package" });
   let zip: JSZip;
@@ -404,7 +434,8 @@ export async function importPropertyZip(file: File, preferredType?: SupportedPro
   }
 
   const media = mediaRecords(projectData, assetManifestRaw as JsonRecord);
-  const tasks = buildTasks(entries, media, packagedDocuments, warnings);
+  const mode = options.mode || "full";
+  const tasks = buildTasks(entries, media, packagedDocuments, warnings, suggestion.patch.configurationDetails || [], mode);
   const uploads = await uploadTasks(tasks, onProgress, warnings);
   attachUploads(suggestion.patch, uploads, warnings);
 
@@ -417,6 +448,7 @@ export async function importPropertyZip(file: File, preferredType?: SupportedPro
     { label: "ZIP documents uploaded", value: String(uploadedDocuments) },
     { label: "Official RERA fields", value: String(officialFieldCount) },
   );
+  if (mode === "recheck") warnings.push("Recheck import uploaded original cover, master-plan, developer-logo and matched configuration-plan images only. RERA PDFs and duplicate extracted legal-page images remain in the local ZIP.");
   suggestion.warnings = [...new Set([...warnings, ...propertyMissingWarnings(suggestion.patch)])];
   return suggestion;
 }

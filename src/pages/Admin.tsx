@@ -10,9 +10,11 @@ import {
   Clock,
   BarChart3,
   Sparkles,
+  Archive,
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PropertyTable from "@/components/admin/PropertyTable";
+import BulkRecheckImport from "@/components/admin/BulkRecheckImport";
 import { fetchAllAdminProperties } from "@/lib/api";
 import { isAdminAuthed } from "@/lib/adminAuth";
 import type { Property } from "@/components/acres/mock-data";
@@ -22,7 +24,7 @@ export default function AdminDashboard() {
   const initialSearch = searchParams.get("q") || "";
   const [allProperties, setAllProperties] = useState<Property[]>([]);
   const [adminProperties, setAdminProperties] = useState<Property[]>([]);
-  const [counts, setCounts] = useState({ total: 0, admin: 0, mock: 0, published: 0, pending: 0 });
+  const [counts, setCounts] = useState({ total: 0, admin: 0, mock: 0, published: 0, pending: 0, recheck: 0 });
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -38,12 +40,14 @@ export default function AdminDashboard() {
       setAdminProperties(adminProps);
 
       const published = properties.filter((p) => ["approved", "published"].includes(p.status || "") || (!p.status && p.published !== false)).length;
+      const recheck = properties.filter((p) => p.status === "recheck").length;
       setCounts({
         total: properties.length,
         admin: adminProps.length,
         mock: 0,
         published,
-        pending: properties.length - published,
+        pending: properties.length - published - recheck,
+        recheck,
       });
     } catch (error) {
       console.error(error);
@@ -108,7 +112,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#E4E0E7]/30 hover:shadow-md transition-shadow group">
           <div className="flex items-center justify-between mb-3">
             <div className="w-11 h-11 bg-gradient-to-br from-[#EEEFF4] to-[#E1E3EC] rounded-xl flex items-center justify-center group-hover:shadow-md transition-all">
@@ -150,7 +154,19 @@ export default function AdminDashboard() {
           <p className="text-[28px] font-bold text-[#121B35]">{counts.pending}</p>
           <p className="text-[13px] text-[#68646F]">Pending Approval</p>
         </div>
+
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#E4E0E7]/30 hover:shadow-md transition-shadow group">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-11 h-11 bg-gradient-to-br from-[#EEF4FF] to-[#DFE9FF] rounded-xl flex items-center justify-center group-hover:shadow-md transition-all">
+              <Archive className="w-5 h-5 text-blue-700" />
+            </div>
+          </div>
+          <p className="text-[28px] font-bold text-[#121B35]">{counts.recheck}</p>
+          <p className="text-[13px] text-[#68646F]">Recheck Properties</p>
+        </div>
       </div>
+
+      <BulkRecheckImport onImported={loadData} />
 
       {/* Properties Table */}
       <div>

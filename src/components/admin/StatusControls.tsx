@@ -1,11 +1,12 @@
 import { CheckCircle2, Clock, CircleOff } from "lucide-react";
 
 type Status = "pending" | "approved" | "rejected";
-type WorkflowStatus = Status | "draft" | "submitted" | "under_review" | "changes_requested" | "resubmitted" | "published";
+type WorkflowStatus = Status | "draft" | "submitted" | "under_review" | "changes_requested" | "resubmitted" | "published" | "recheck";
 
 const META: Record<WorkflowStatus, { label: string; badge: string; icon: typeof CheckCircle2 }> = {
   approved: { label: "Approved", badge: "bg-green-50 text-green-600", icon: CheckCircle2 },
   pending: { label: "Pending", badge: "bg-amber-50 text-amber-600", icon: Clock },
+  recheck: { label: "Recheck", badge: "bg-blue-50 text-blue-700", icon: Clock },
   rejected: { label: "Rejected", badge: "bg-red-50 text-red-500", icon: CircleOff },
   draft: { label: "Draft", badge: "bg-slate-50 text-slate-600", icon: Clock },
   submitted: { label: "Submitted", badge: "bg-amber-50 text-amber-700", icon: Clock },

@@ -123,6 +123,35 @@ RESIDENCY ROAD, BENGALURU URBAN, KARNATAKA - 560060
     await expect(importPropertyZip(new File([bytes], "missing.zip", { type: "application/zip" }), "Apartment")).rejects.toThrow("property_upload.txt");
   });
 
+  it("uses the original minimal media set for Recheck imports and skips legal-page duplicates", async () => {
+    const zip = new JSZip();
+    zip.file("property_upload.txt", propertyText);
+    zip.file("project_data.json", "{}");
+    zip.file("asset_manifest.json", JSON.stringify([
+      { kind: "gallery", label: "Cover", status: "approved", saved_as: "gallery/cover.jpg" },
+      { kind: "gallery", label: "Extra gallery", status: "approved", saved_as: "gallery/extra.jpg" },
+      { kind: "master_plan", label: "Master", status: "approved", saved_as: "plans/master.jpg" },
+      { kind: "developer_logo", label: "Logo", status: "approved", saved_as: "logos/developer.png" },
+      { kind: "floor_plan", label: "Floor plan of 2 BHK 964 Sq. Ft.", status: "approved", saved_as: "plans/2bhk.jpg" },
+      { kind: "floor_plan", label: "RERA sectional page", status: "approved", saved_as: "plans/legal-page.jpg" },
+      { kind: "project_images", label: "RERA PDF page", status: "approved", saved_as: "rera/page.jpg" },
+    ]));
+    for (const path of ["gallery/cover.jpg", "gallery/extra.jpg", "plans/master.jpg", "plans/2bhk.jpg", "plans/legal-page.jpg", "rera/page.jpg"]) {
+      zip.file(path, new Uint8Array([0xff, 0xd8, 0xff, 0xd9]));
+    }
+    zip.file("logos/developer.png", new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+
+    const bytes = await zip.generateAsync({ type: "blob" });
+    const result = await importPropertyZip(new File([bytes], "recheck.zip", { type: "application/zip" }), "Apartment", undefined, { mode: "recheck" });
+
+    expect(uploadPropertyMedia).toHaveBeenCalledTimes(4);
+    expect(result.patch.heroImages).toHaveLength(1);
+    expect(result.patch.developerLogoUrl).toContain("res.cloudinary.com");
+    expect(result.patch.configurationDetails?.[0].floorPlan2dUrl).toContain("res.cloudinary.com");
+    expect(result.patch.reraPhases?.[0].reraDocuments || []).toHaveLength(0);
+    expect(result.warnings.some((warning) => warning.includes("duplicate extracted legal-page images"))).toBe(true);
+  });
+
   it("keeps documents from separate RERA folders attached to their matching phases", async () => {
     const zip = new JSZip();
     zip.file("property_upload.txt", `${propertyText.replace("Phase 1", "North Phase")}
