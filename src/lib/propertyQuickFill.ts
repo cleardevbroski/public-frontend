@@ -115,6 +115,7 @@ export function normalizePropertyType(value: unknown): SupportedPropertyType | u
 
 function normalizeImportedApartmentConfiguration(value: unknown): string | null {
   const raw = clean(value);
+  if (/\bstudio\b/i.test(raw)) return "Studio";
   const direct = normalizeBhkLabel(raw);
   if (direct) return direct;
   const embedded = raw.match(/\b\d+(?:\.5)?\s*BHK\b/i)?.[0];

@@ -319,7 +319,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
   const [analyzingLocation, setAnalyzingLocation] = useState(false);
   const [confirmingLocation, setConfirmingLocation] = useState(false);
   const [locationVerificationError, setLocationVerificationError] = useState("");
-  const [coordinatePublishAcknowledgement, setCoordinatePublishAcknowledgement] = useState("");
+  const [publicationWarningAcknowledgement, setPublicationWarningAcknowledgement] = useState("");
 
   const latitude = Number(formData.locality?.latitude);
   const longitude = Number(formData.locality?.longitude);
@@ -329,6 +329,21 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     && Math.abs(Number(formData.locationVerification.inputLongitude) - longitude) < 0.0000001;
   const unverifiedCoordinateKey = hasProjectCoordinates && !locationVerificationMatches
     ? `${latitude.toFixed(7)},${longitude.toFixed(7)}`
+    : "";
+  const publicationWarnings = !isPublic && formData.propertyType === "Apartment"
+    ? [
+        ...(unverifiedCoordinateKey ? ["The entered project coordinates have not been confirmed by an administrator, so the public map pin will not carry the Verified Pin label."] : []),
+        ...((formData.configurationDetails || []).some((row) => !String(row.price || "").trim()) ? ["One or more configurations do not have a verified price and will show without a configuration price."] : []),
+        ...((formData.configurationDetails || []).some((row) => !String(row.carpetArea || "").trim()) ? ["One or more configurations do not have a verified carpet area; available built-up-area information will still be shown."] : []),
+        ...((formData.configurationDetails || []).some((row) => row.bathrooms === undefined || row.balconies === undefined) ? ["Bathroom or balcony counts are unavailable for one or more configurations and will not be displayed as verified facts."] : []),
+        ...(formData.possessionDetails?.status === "Under Construction" && !formData.possessionDetails.expectedCompletionDate ? ["The expected completion month is not available in the imported source."] : []),
+        ...(["Ready to Move", "New Launch"].includes(formData.possessionDetails?.status || "") && !formData.possessionDetails?.launchDate ? ["The ready or launch date is not available in the imported source."] : []),
+      ]
+    : unverifiedCoordinateKey
+      ? ["The entered project coordinates have not been confirmed by an administrator, so the public map pin will not carry the Verified Pin label."]
+      : [];
+  const publicationWarningKey = publicationWarnings.length
+    ? JSON.stringify({ coordinates: unverifiedCoordinateKey, warnings: publicationWarnings })
     : "";
 
   const buildPropertyPayload = () => compactPropertyPayload({
@@ -624,7 +639,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
         ? "Use positive width × length values, for example 30 × 40."
         : formData.propertyType === "Villa"
           ? "Use a Villa configuration such as 4 BHK Duplex (G+1), Villament, or Penthouse."
-          : "Use a positive BHK label, for example 2 BHK or 3.5 BHK.");
+          : "Use Studio or a positive BHK label, for example 2 BHK or 3.5 BHK.");
       return;
     }
     if (formData.propertyType !== "Apartment" && formData.propertyType !== "Villa" && formData.configs.some((item) => item.toLowerCase() === config.toLowerCase())) {
@@ -831,8 +846,8 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
       setCurrentStep(1);
       return;
     }
-    if (!isPublic && action === "publish" && unverifiedCoordinateKey && coordinatePublishAcknowledgement !== unverifiedCoordinateKey) {
-      setCoordinatePublishAcknowledgement(unverifiedCoordinateKey);
+    if (!isPublic && action === "publish" && publicationWarningKey && publicationWarningAcknowledgement !== publicationWarningKey) {
+      setPublicationWarningAcknowledgement(publicationWarningKey);
       setSubmitError("");
       return;
     }
@@ -2126,10 +2141,10 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
         </div>
 
         {/* Navigation Footer */}
-        {!isPublic && currentStep === 5 && unverifiedCoordinateKey && coordinatePublishAcknowledgement === unverifiedCoordinateKey && (
+        {!isPublic && currentStep === 5 && publicationWarningKey && publicationWarningAcknowledgement === publicationWarningKey && (
           <div role="status" className="mx-6 mb-2 flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] text-amber-900 lg:mx-8">
             <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-            <p><strong>Coordinate verification warning:</strong> The project can still be published. Its public page will be visible, but the map pin will not be marked as Verified Pin. Click <strong>Publish anyway</strong> to continue.</p>
+            <div><p className="font-bold">Review these unavailable or unverified details</p><ul className="mt-1 list-disc space-y-1 pl-4">{publicationWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul><p className="mt-2">The property can still be published. Click <strong>Publish anyway</strong> to continue.</p></div>
           </div>
         )}
         {submitError && <div role="alert" className="mx-6 lg:mx-8 mb-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">{submitError}</div>}
@@ -2169,7 +2184,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   {isSubmitting && submitAction === "publish" ? (
                     <><Loader2 className="w-5 h-5 animate-spin" />{isPublic ? "Submitting..." : "Publishing..."}</>
                   ) : (
-                    <><Sparkles className="w-5 h-5" />{isPublic ? (isResubmission ? "Resubmit Property" : "Submit for Review") : unverifiedCoordinateKey && coordinatePublishAcknowledgement === unverifiedCoordinateKey ? "Publish anyway" : "Publish Property"}</>
+                    <><Sparkles className="w-5 h-5" />{isPublic ? (isResubmission ? "Resubmit Property" : "Submit for Review") : publicationWarningKey && publicationWarningAcknowledgement === publicationWarningKey ? "Publish anyway" : "Publish Property"}</>
                   )}
                 </button>
               </>

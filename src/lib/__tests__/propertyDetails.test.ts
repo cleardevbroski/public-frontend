@@ -33,12 +33,14 @@ describe("Apartment property helpers", () => {
   it("normalizes arbitrary positive BHK tags and rejects invalid tags", () => {
     expect(normalizeBhkLabel(" 4bhk ")).toBe("4 BHK");
     expect(normalizeBhkLabel("3.5 BHK")).toBe("3.5 BHK");
-    expect(normalizeBhkLabel("studio")).toBeNull();
+    expect(normalizeBhkLabel("studio")).toBe("Studio");
+    expect(normalizeBhkLabel("Studio 490 Sq. Ft.")).toBe("Studio");
     expect(normalizeBhkLabel("0 BHK")).toBeNull();
   });
 
   it("creates independent row defaults based on each BHK tag", () => {
     expect(createConfigurationDetail("4 BHK")).toMatchObject({ configuration: "4 BHK", bedrooms: 4, bathrooms: 4, balconies: 0, facings: [] });
+    expect(createConfigurationDetail("Studio")).toMatchObject({ configuration: "Studio", bedrooms: 0, bathrooms: 1 });
   });
 
   it("allows an Apartment draft without a flat floor", () => {

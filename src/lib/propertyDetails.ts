@@ -16,6 +16,7 @@ export const facingOptions = [
 ] as const;
 
 export function normalizeBhkLabel(value: string): string | null {
+  if (/^studio(?:\s+\d+(?:\.\d+)?\s*(?:sq\.?\s*ft\.?|sqft))?$/i.test(value.trim())) return "Studio";
   const match = value.trim().match(/^(\d+(?:\.5)?)\s*bhk$/i);
   if (!match || Number(match[1]) < 1) return null;
   return `${Number(match[1])} BHK`;
@@ -23,14 +24,14 @@ export function normalizeBhkLabel(value: string): string | null {
 
 export function createConfigurationDetail(configuration: string): ConfigurationDetail {
   // A 3.5 BHK still has three bedrooms plus an extra half-room/study.
-  const bedrooms = Math.floor(Number(configuration.match(/^\d+(?:\.5)?/)?.[0] || 1));
+  const bedrooms = configuration === "Studio" ? 0 : Math.floor(Number(configuration.match(/^\d+(?:\.5)?/)?.[0] || 1));
   return {
     configuration,
     price: "",
     carpetArea: "",
     builtUpArea: "",
     bedrooms,
-    bathrooms: bedrooms,
+    bathrooms: Math.max(1, bedrooms),
     balconies: 0,
     facings: [],
   };
@@ -160,7 +161,7 @@ export function validateApartmentDraft(property: Partial<Property>): ApartmentEr
     const prefix = `configuration.${index}`;
     if (!row.price.trim()) errors[`${prefix}.price`] = "Price is required.";
     if (!row.carpetArea.trim()) errors[`${prefix}.carpetArea`] = "Carpet area is required.";
-    if (!Number.isInteger(row.bedrooms) || row.bedrooms < 1) errors[`${prefix}.bedrooms`] = "Enter at least 1 bedroom.";
+    if (!Number.isInteger(row.bedrooms) || (row.configuration === "Studio" ? row.bedrooms !== 0 : row.bedrooms < 1)) errors[`${prefix}.bedrooms`] = row.configuration === "Studio" ? "Studio must use 0 separate bedrooms." : "Enter at least 1 bedroom.";
     if (row.bathrooms === undefined || !Number.isInteger(row.bathrooms) || row.bathrooms < 1) errors[`${prefix}.bathrooms`] = "Enter at least 1 bathroom.";
     if (row.balconies === undefined || !Number.isInteger(row.balconies) || row.balconies < 0) errors[`${prefix}.balconies`] = "Enter the number of balconies, including 0 when there is no balcony.";
     if (row.facings.some((facing) => !facingOptions.some((option) => option === facing))) {
