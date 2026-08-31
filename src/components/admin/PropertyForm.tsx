@@ -319,6 +319,17 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
   const [analyzingLocation, setAnalyzingLocation] = useState(false);
   const [confirmingLocation, setConfirmingLocation] = useState(false);
   const [locationVerificationError, setLocationVerificationError] = useState("");
+  const [coordinatePublishAcknowledgement, setCoordinatePublishAcknowledgement] = useState("");
+
+  const latitude = Number(formData.locality?.latitude);
+  const longitude = Number(formData.locality?.longitude);
+  const hasProjectCoordinates = Number.isFinite(latitude) && Number.isFinite(longitude);
+  const locationVerificationMatches = formData.locationVerification?.status === "admin_verified"
+    && Math.abs(Number(formData.locationVerification.inputLatitude) - latitude) < 0.0000001
+    && Math.abs(Number(formData.locationVerification.inputLongitude) - longitude) < 0.0000001;
+  const unverifiedCoordinateKey = hasProjectCoordinates && !locationVerificationMatches
+    ? `${latitude.toFixed(7)},${longitude.toFixed(7)}`
+    : "";
 
   const buildPropertyPayload = () => compactPropertyPayload({
     ...formData,
@@ -818,6 +829,11 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     if (action === "publish" && formData.reraRegistered && (!formData.reraPhases?.length || formData.reraPhases.some((phase) => !phase.name.trim() || !/^[A-Za-z0-9/._-]{8,50}$/.test(phase.reraNumber.trim())))) {
       setValidationErrors((previous) => ({ ...previous, reraPhases: "Every phase needs a name and a valid 8–50 character RERA registration number." }));
       setCurrentStep(1);
+      return;
+    }
+    if (!isPublic && action === "publish" && unverifiedCoordinateKey && coordinatePublishAcknowledgement !== unverifiedCoordinateKey) {
+      setCoordinatePublishAcknowledgement(unverifiedCoordinateKey);
+      setSubmitError("");
       return;
     }
     setIsSubmitting(true);
@@ -2110,6 +2126,12 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
         </div>
 
         {/* Navigation Footer */}
+        {!isPublic && currentStep === 5 && unverifiedCoordinateKey && coordinatePublishAcknowledgement === unverifiedCoordinateKey && (
+          <div role="status" className="mx-6 mb-2 flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] text-amber-900 lg:mx-8">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <p><strong>Coordinate verification warning:</strong> The project can still be published. Its public page will be visible, but the map pin will not be marked as Verified Pin. Click <strong>Publish anyway</strong> to continue.</p>
+          </div>
+        )}
         {submitError && <div role="alert" className="mx-6 lg:mx-8 mb-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">{submitError}</div>}
         <div className="px-6 lg:px-8 py-4 bg-[#F8F7FA]/50 border-t border-[#F3F1F5] flex items-center justify-between">
           <button
@@ -2147,7 +2169,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   {isSubmitting && submitAction === "publish" ? (
                     <><Loader2 className="w-5 h-5 animate-spin" />{isPublic ? "Submitting..." : "Publishing..."}</>
                   ) : (
-                    <><Sparkles className="w-5 h-5" />{isPublic ? (isResubmission ? "Resubmit Property" : "Submit for Review") : "Publish Property"}</>
+                    <><Sparkles className="w-5 h-5" />{isPublic ? (isResubmission ? "Resubmit Property" : "Submit for Review") : unverifiedCoordinateKey && coordinatePublishAcknowledgement === unverifiedCoordinateKey ? "Publish anyway" : "Publish Property"}</>
                   )}
                 </button>
               </>
