@@ -154,14 +154,14 @@ export default function AdminDashboard() {
           <p className="text-[13px] text-[#68646F]">Pending Approval</p>
         </div>
 
-        <Link href="/admin/recheck-properties" className="block bg-white rounded-2xl p-5 shadow-sm border border-[#E4E0E7]/30 hover:shadow-md transition-shadow group">
+        <Link href="/admin/review-folder" className="block bg-white rounded-2xl p-5 shadow-sm border border-[#E4E0E7]/30 hover:shadow-md transition-shadow group">
           <div className="flex items-center justify-between mb-3">
             <div className="w-11 h-11 bg-gradient-to-br from-[#EEF4FF] to-[#DFE9FF] rounded-xl flex items-center justify-center group-hover:shadow-md transition-all">
               <Archive className="w-5 h-5 text-blue-700" />
             </div>
           </div>
           <p className="text-[28px] font-bold text-[#121B35]">{counts.recheck}</p>
-          <p className="text-[13px] text-[#68646F]">Recheck Properties</p>
+          <p className="text-[13px] text-[#68646F]">Review Folder</p>
         </Link>
       </div>
 

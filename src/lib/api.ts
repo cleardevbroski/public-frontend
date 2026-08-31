@@ -1,4 +1,5 @@
 import { correctedFile, detectFileType } from "./fileTypeDetection";
+import type { LocationVerification } from "@/components/acres/mock-data";
 
 /**
  * API URLs are configured per frontend deployment.  People commonly paste the
@@ -496,6 +497,18 @@ export async function reviewRecheckProperty(id: string, action: "move_to_pending
   return normalizePropertyResponse(data);
 }
 
+export async function fetchPropertyImportBatches() {
+  return readJson(await apiFetch("/api/property-import-batches"), "Failed to load batch reports");
+}
+
+export async function fetchPropertyImportBatch(id: string) {
+  return readJson(await apiFetch(`/api/property-import-batches/${encodeURIComponent(id)}`), "Failed to load batch report");
+}
+
+export async function fetchPropertyImportReraConflicts() {
+  return readJson(await apiFetch("/api/property-import-batches/rera-conflicts"), "Failed to load RERA conflicts");
+}
+
 /** Fetch one listing with its complete media and workflow data for admin editing. */
 export async function fetchAdminProperty(id: string) {
   const data = await readJson(
@@ -612,6 +625,30 @@ export async function resolveNearbyPlaceLocation(input: { query: string; latitud
     body: JSON.stringify(input),
   }), "Failed to resolve nearby place") as { place: ResolvedNearbyPlace };
   return data.place;
+}
+
+export type ProjectLocationAnalysisInput = {
+  geocode?: string;
+  latitude?: number;
+  longitude?: number;
+  locality?: { address?: string; landmark?: string; city?: string; pinCode?: string };
+  reraAddresses?: string[];
+};
+
+export async function analyzeProjectLocation(input: ProjectLocationAnalysisInput): Promise<LocationVerification> {
+  const data = await readJson(await apiFetch("/api/geocoding/project-location/analyze", {
+    method: "POST",
+    body: JSON.stringify(input),
+  }), "Failed to analyze project location") as { analysis: LocationVerification };
+  return data.analysis;
+}
+
+export async function confirmProjectLocation(analysis: LocationVerification): Promise<LocationVerification> {
+  const data = await readJson(await apiFetch("/api/geocoding/project-location/confirm", {
+    method: "POST",
+    body: JSON.stringify({ analysis }),
+  }), "Failed to confirm project location") as { verification: LocationVerification };
+  return data.verification;
 }
 
 export type PropertyVerificationPurpose = "company-pan" | "company-rera" | "company-registration" | "individual-pan" | "individual-aadhaar" | "individual-ownership";

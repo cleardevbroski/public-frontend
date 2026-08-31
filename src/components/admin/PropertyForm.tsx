@@ -30,6 +30,7 @@ import {
   FileText,
   CheckSquare,
   Square,
+  AlertTriangle,
 } from "lucide-react";
 import MediaUploader from "./MediaUploader";
 import HeroImageUploader from "./HeroImageUploader";
@@ -43,8 +44,8 @@ import PgDetailsFields from "./PgDetailsFields";
 import PropertyQuickFill from "./PropertyQuickFill";
 import ReraPhasesEditor, { KARNATAKA_RERA_URL } from "./ReraPhasesEditor";
 import BulkPropertyMediaImporter from "./BulkPropertyMediaImporter";
-import { addProperty, updateProperty } from "@/lib/propertyStore";
-import { createPropertyDraft, createPublicProperty, fetchBuilders, resolveNearbyPlaceLocation, resubmitProperty, uploadPropertyMedia } from "@/lib/api";
+import { addProperty, setPropertyStatus, updateProperty } from "@/lib/propertyStore";
+import { analyzeProjectLocation, confirmProjectLocation, createPropertyDraft, createPublicProperty, fetchBuilders, resolveNearbyPlaceLocation, resubmitProperty, uploadPropertyMedia } from "@/lib/api";
 import { trackAnalytics } from "@/lib/analytics";
 import type { ConfigurationDetail, FacilityDetail, NearbyPlace, PlotDetails, Property, VillaConfigurationDetail } from "@/components/acres/mock-data";
 import {
@@ -312,6 +313,12 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
   const [uploadInProgress, setUploadInProgress] = useState(false);
   const [resolvingNearby, setResolvingNearby] = useState("");
   const [nearbyResolveErrors, setNearbyResolveErrors] = useState<Record<string, string>>({});
+  const [geocodeInput, setGeocodeInput] = useState(() => Number.isFinite(initialData?.locality?.latitude) && Number.isFinite(initialData?.locality?.longitude)
+    ? `${initialData?.locality?.latitude}, ${initialData?.locality?.longitude}`
+    : "");
+  const [analyzingLocation, setAnalyzingLocation] = useState(false);
+  const [confirmingLocation, setConfirmingLocation] = useState(false);
+  const [locationVerificationError, setLocationVerificationError] = useState("");
 
   const buildPropertyPayload = () => compactPropertyPayload({
     ...formData,
@@ -400,6 +407,93 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
         },
       };
     });
+  };
+
+  const clearResolvedNearbyPlaces = (details: FormData["nearbyDetails"]) => details
+    ? Object.fromEntries(Object.entries(details).map(([category, detail]) => [category, detail ? {
+        ...detail,
+        places: detail.places?.map(({ latitude, longitude, osmId, mapUrl, resolvedAddress, approximateDistanceMeters, ...place }) => place),
+      } : detail])) as FormData["nearbyDetails"]
+    : details;
+
+  const updateProjectCoordinates = (latitude?: number, longitude?: number) => {
+    setFormData((previous) => ({
+      ...previous,
+      locality: { ...previous.locality, latitude, longitude },
+      locationVerification: undefined,
+      nearbyDetails: clearResolvedNearbyPlaces(previous.nearbyDetails),
+    }));
+    if (Number.isFinite(latitude) && Number.isFinite(longitude)) setGeocodeInput(`${latitude}, ${longitude}`);
+    setLocationVerificationError("");
+  };
+
+  const updateLocationTextField = (key: "address" | "landmark" | "city" | "pinCode", value: string) => {
+    setFormData((previous) => ({
+      ...previous,
+      locality: { ...previous.locality, [key]: value },
+      locationVerification: undefined,
+    }));
+    setLocationVerificationError("");
+  };
+
+  const analyzeLocation = async () => {
+    setAnalyzingLocation(true);
+    setLocationVerificationError("");
+    try {
+      const analysis = await analyzeProjectLocation({
+        geocode: geocodeInput,
+        latitude: Number.isFinite(formData.locality?.latitude) ? formData.locality?.latitude : undefined,
+        longitude: Number.isFinite(formData.locality?.longitude) ? formData.locality?.longitude : undefined,
+        locality: formData.locality,
+        reraAddresses: (formData.reraPhases || []).map((phase) => phase.officialDetails?.registeredAddress || "").filter(Boolean),
+      });
+      setGeocodeInput(`${analysis.inputLatitude}, ${analysis.inputLongitude}`);
+      setFormData((previous) => {
+        const coordinatesChanged = previous.locality?.latitude !== analysis.inputLatitude || previous.locality?.longitude !== analysis.inputLongitude;
+        return {
+          ...previous,
+          locality: { ...previous.locality, latitude: analysis.inputLatitude, longitude: analysis.inputLongitude },
+          locationVerification: analysis,
+          nearbyDetails: coordinatesChanged ? clearResolvedNearbyPlaces(previous.nearbyDetails) : previous.nearbyDetails,
+        };
+      });
+    } catch (cause) {
+      setLocationVerificationError(cause instanceof Error ? cause.message : "Could not analyze this project location.");
+    } finally {
+      setAnalyzingLocation(false);
+    }
+  };
+
+  const confirmLocation = async () => {
+    if (!formData.locationVerification) return;
+    setConfirmingLocation(true);
+    setLocationVerificationError("");
+    try {
+      const verification = await confirmProjectLocation(formData.locationVerification);
+      setFormData((previous) => ({ ...previous, locationVerification: verification }));
+    } catch (cause) {
+      setLocationVerificationError(cause instanceof Error ? cause.message : "Could not confirm this project location.");
+    } finally {
+      setConfirmingLocation(false);
+    }
+  };
+
+  const applyResolvedLocation = () => {
+    const verification = formData.locationVerification;
+    if (!verification) return;
+    const components = verification.components || {};
+    setFormData((previous) => ({
+      ...previous,
+      locality: {
+        ...previous.locality,
+        address: verification.resolvedAddress || previous.locality?.address,
+        landmark: components.neighbourhood || components.suburb || previous.locality?.landmark,
+        city: components.city || previous.locality?.city,
+        pinCode: /^\d{6}$/.test(components.pinCode || "") ? components.pinCode : previous.locality?.pinCode,
+      },
+      locationVerification: undefined,
+    }));
+    setLocationVerificationError("Resolved details applied. Analyze again to compare and confirm the updated address.");
   };
 
   const addNearbyPlace = (category: NearbyCategory) => {
@@ -762,12 +856,20 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
             publishedAt: _publishedAt,
             rejectionReason: _rejectionReason,
             reviewMessages: _reviewMessages,
+            reviewReadiness: _reviewReadiness,
+            workflowHistory: _workflowHistory,
             createdAt: _createdAt,
             updatedAt: _updatedAt,
             __v: _version,
             ...editablePayload
           } = propertyPayload as Record<string, unknown>;
-          property = await updateProperty(submissionId!, { ...editablePayload, status: action === "pending" ? "pending" : "approved", published: action === "publish" });
+          property = await updateProperty(submissionId!, editablePayload);
+          const currentStatus = String(initialData?.status || (initialData?.published === false ? "pending" : "approved"));
+          if (action === "publish" && !["approved", "published"].includes(currentStatus)) {
+            property = await setPropertyStatus(submissionId!, "approved");
+          } else if (action === "pending" && currentStatus !== "pending") {
+            property = await setPropertyStatus(submissionId!, "pending");
+          }
         } else {
           property = await addProperty({ ...propertyPayload, status: action === "pending" ? "pending" : "approved", published: action === "publish" } as any);
         }
@@ -1428,13 +1530,13 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                         <span className="ml-2 rounded-full bg-[#F3F1F5] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#68646F]">Optional</span>
                         <p className="mt-1 text-[10px] leading-4 text-[#68646F]">Shown beside the logo in the public Developer Profile section.</p>
                       </div>
-                      <span className="shrink-0 text-[9px] text-[#8A8690]">{(formData.developerDescription || "").length}/3000</span>
+                      <span className="shrink-0 text-[9px] text-[#8A8690]">{(formData.developerDescription || "").length}/5000</span>
                     </div>
                     <textarea
                       id="developer-description"
                       value={formData.developerDescription || ""}
                       onChange={(event) => updateField("developerDescription", event.target.value)}
-                      maxLength={3000}
+                      maxLength={5000}
                       rows={6}
                       placeholder="Enter a verified introduction, history, expertise, and notable achievements of the developer."
                       className="mt-3 min-h-28 w-full resize-y rounded-lg border border-[#E4E0E7] bg-[#F8F7FA] px-3 py-2.5 text-[11px] leading-5 text-[#121B35] outline-none focus:border-[#DDAA42] focus:bg-white"
@@ -1575,7 +1677,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                     <input
                       type="text"
                       value={formData.locality?.city || ""}
-                      onChange={(e) => updateNestedField("locality", "city", e.target.value)}
+                      onChange={(e) => updateLocationTextField("city", e.target.value)}
                       placeholder="e.g. Bangalore"
                       className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                     />
@@ -1585,7 +1687,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                     <input
                       type="text"
                       value={formData.locality?.address || ""}
-                      onChange={(e) => updateNestedField("locality", "address", e.target.value)}
+                      onChange={(e) => updateLocationTextField("address", e.target.value)}
                       placeholder="Street, area or full address"
                       className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42]"
                     />
@@ -1608,25 +1710,77 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                     <input
                       type="text"
                       value={formData.locality?.landmark || ""}
-                      onChange={(e) => updateNestedField("locality", "landmark", e.target.value)}
+                      onChange={(e) => updateLocationTextField("landmark", e.target.value)}
                       placeholder="e.g. Near Whitefield Metro"
                       className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                     />
                   </div>
                   {isStructuredType(formData.propertyType) && <div>
                     <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">PIN Code</label>
-                    <input inputMode="numeric" maxLength={6} value={formData.locality?.pinCode || ""} onChange={(e) => updateNestedField("locality", "pinCode", e.target.value.replace(/\D/g, ""))} placeholder="e.g. 560066" className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
+                    <input inputMode="numeric" maxLength={6} value={formData.locality?.pinCode || ""} onChange={(e) => updateLocationTextField("pinCode", e.target.value.replace(/\D/g, ""))} placeholder="e.g. 560066" className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
                     {validationErrors.pinCode && <p className="text-[12px] text-red-600 mt-1">{validationErrors.pinCode}</p>}
                   </div>}
                   {isStructuredType(formData.propertyType) && <div>
                     <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Property Latitude</label>
-                    <input type="number" step="any" min={-90} max={90} value={formData.locality?.latitude ?? ""} onChange={(event) => setFormData((previous) => ({ ...previous, locality: { ...previous.locality, latitude: event.target.value === "" ? undefined : Number(event.target.value) } }))} placeholder="e.g. 12.9716" className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
+                    <input type="number" step="any" min={-90} max={90} value={formData.locality?.latitude ?? ""} onChange={(event) => updateProjectCoordinates(event.target.value === "" ? undefined : Number(event.target.value), formData.locality?.longitude)} placeholder="e.g. 12.9716" className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
                   </div>}
                   {isStructuredType(formData.propertyType) && <div>
                     <label className="block text-[13px] font-semibold text-[#3F3D46] mb-2">Property Longitude</label>
-                    <input type="number" step="any" min={-180} max={180} value={formData.locality?.longitude ?? ""} onChange={(event) => setFormData((previous) => ({ ...previous, locality: { ...previous.locality, longitude: event.target.value === "" ? undefined : Number(event.target.value) } }))} placeholder="e.g. 77.5946" className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
+                    <input type="number" step="any" min={-180} max={180} value={formData.locality?.longitude ?? ""} onChange={(event) => updateProjectCoordinates(formData.locality?.latitude, event.target.value === "" ? undefined : Number(event.target.value))} placeholder="e.g. 77.5946" className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px]" />
                   </div>}
                 </div>
+
+                {!isPublic && isStructuredType(formData.propertyType) && (
+                  <section className="mb-7 overflow-hidden rounded-2xl border border-[#D8DDE8] bg-white">
+                    <div className="border-b border-[#E7EAF0] bg-[#F7F8FB] p-4 md:flex md:items-start md:justify-between md:gap-5">
+                      <div>
+                        <h3 className="flex items-center gap-2 text-[15px] font-bold text-[#121B35]"><MapPin className="size-4 text-[#DDAA42]" />Project Geocode Verification</h3>
+                        <p className="mt-1 max-w-3xl text-[11px] leading-5 text-[#68646F]">Paste latitude/longitude or a Google Maps URL containing coordinates. Automatic resolution finds the nearest mapped address; an admin must inspect the pin before it becomes verified.</p>
+                      </div>
+                      <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-[10px] font-bold md:mt-0 ${formData.locationVerification?.status === "admin_verified" ? "bg-emerald-100 text-emerald-800" : formData.locationVerification?.status === "mismatch" ? "bg-red-100 text-red-700" : formData.locationVerification ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}`}>
+                        {formData.locationVerification?.status === "admin_verified" ? "ADMIN VERIFIED" : formData.locationVerification?.status === "mismatch" ? "MISMATCH FOUND" : formData.locationVerification ? "RESOLVED — CONFIRM REQUIRED" : "NOT CHECKED"}
+                      </span>
+                    </div>
+                    <div className="space-y-4 p-4">
+                      <div className="flex flex-col gap-2 md:flex-row">
+                        <input value={geocodeInput} onChange={(event) => { setGeocodeInput(event.target.value); setFormData((previous) => ({ ...previous, locationVerification: undefined })); setLocationVerificationError(""); }} placeholder="12.971600, 77.594600 or paste a Google Maps URL" className="min-w-0 flex-1 rounded-xl border border-[#D8DDE8] px-4 py-3 text-[13px] focus:border-[#DDAA42] focus:outline-none" />
+                        <button type="button" onClick={() => void analyzeLocation()} disabled={analyzingLocation || !geocodeInput.trim()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#121B35] px-5 py-3 text-[12px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">
+                          {analyzingLocation ? <Loader2 className="size-4 animate-spin" /> : <MapPin className="size-4" />}Analyze location
+                        </button>
+                      </div>
+                      {locationVerificationError && <p className={`text-[11px] ${locationVerificationError.startsWith("Resolved details applied") ? "text-amber-700" : "text-red-600"}`}>{locationVerificationError}</p>}
+
+                      {formData.locationVerification && (
+                        <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+                          <div className="space-y-3 rounded-xl border border-[#E4E7ED] bg-[#FAFBFC] p-4">
+                            <div>
+                              <p className="text-[10px] font-bold uppercase tracking-wide text-[#85808A]">Resolved address</p>
+                              <p className="mt-1 text-[13px] font-semibold leading-5 text-[#273559]">{formData.locationVerification.resolvedAddress}</p>
+                              <p className="mt-1 text-[10px] text-[#68646F]">Pin: {formData.locationVerification.inputLatitude}, {formData.locationVerification.inputLongitude} · Match score: {formData.locationVerification.matchScore}%</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-[11px] md:grid-cols-4">
+                              <div><span className="block text-[#85808A]">Locality</span><strong className="text-[#273559]">{formData.locationVerification.components?.neighbourhood || formData.locationVerification.components?.suburb || "—"}</strong></div>
+                              <div><span className="block text-[#85808A]">City</span><strong className="text-[#273559]">{formData.locationVerification.components?.city || "—"}</strong></div>
+                              <div><span className="block text-[#85808A]">District</span><strong className="text-[#273559]">{formData.locationVerification.components?.district || "—"}</strong></div>
+                              <div><span className="block text-[#85808A]">PIN code</span><strong className="text-[#273559]">{formData.locationVerification.components?.pinCode || "—"}</strong></div>
+                            </div>
+                            {(formData.locationVerification.comparisons || []).length > 0 && <div className="space-y-1.5 border-t border-[#E4E7ED] pt-3">{formData.locationVerification.comparisons?.map((comparison) => <div key={comparison.key} className="flex items-start justify-between gap-3 text-[10px]"><span className="text-[#68646F]">{comparison.label}</span><span className={`font-bold ${comparison.passed ? "text-emerald-700" : comparison.strong ? "text-red-600" : "text-amber-700"}`}>{comparison.passed ? "MATCH" : comparison.strong ? "MISMATCH" : "CHECK MANUALLY"}</span></div>)}</div>}
+                            {(formData.locationVerification.warnings || []).map((warning) => <p key={warning} className="flex gap-2 text-[10px] leading-4 text-amber-700"><AlertTriangle className="mt-0.5 size-3 shrink-0" />{warning}</p>)}
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              <button type="button" onClick={applyResolvedLocation} className="rounded-lg border border-[#CCD2DE] bg-white px-3 py-2 text-[10px] font-bold text-[#273559]">Apply resolved address</button>
+                              {formData.locationVerification.mapUrl && <a href={formData.locationVerification.mapUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-[#CCD2DE] bg-white px-3 py-2 text-[10px] font-bold text-[#273559]">Open exact pin</a>}
+                              {formData.locationVerification.status !== "admin_verified" && <button type="button" onClick={() => void confirmLocation()} disabled={confirmingLocation || formData.locationVerification.status === "mismatch"} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-[10px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">{confirmingLocation ? <Loader2 className="size-3 animate-spin" /> : <Verified className="size-3" />}Confirm exact project location</button>}
+                            </div>
+                          </div>
+                          <div className="overflow-hidden rounded-xl border border-[#E4E7ED] bg-[#F1F3F6]">
+                            <iframe title="Project coordinate preview" loading="lazy" className="h-64 w-full border-0" src={`https://www.openstreetmap.org/export/embed.html?bbox=${formData.locationVerification.inputLongitude - 0.005}%2C${formData.locationVerification.inputLatitude - 0.003}%2C${formData.locationVerification.inputLongitude + 0.005}%2C${formData.locationVerification.inputLatitude + 0.003}&layer=mapnik&marker=${formData.locationVerification.inputLatitude}%2C${formData.locationVerification.inputLongitude}`} />
+                            <p className="px-3 py-2 text-[9px] text-[#68646F]">Map data © OpenStreetMap contributors. Confirm the project entrance or parcel using official project/RERA records.</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                )}
 
                 <h3 className="text-[15px] font-semibold text-[#3F3D46] mb-3">Nearby Amenities</h3>
                 {isStructuredType(formData.propertyType) ? <div className="grid grid-cols-1 gap-4">
@@ -1688,6 +1842,25 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   <p className="text-[13px] text-[#68646F]">Verify all details before publishing</p>
                 </div>
               </div>
+
+              {isAdminEdit && formData.reviewReadiness && (
+                <div className={`mb-6 rounded-2xl border p-4 ${formData.reviewReadiness.canPublish ? "border-emerald-200 bg-emerald-50" : "border-red-200 bg-red-50"}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div><p className={`flex items-center gap-2 text-[13px] font-bold ${formData.reviewReadiness.canPublish ? "text-emerald-800" : "text-red-800"}`}>{formData.reviewReadiness.canPublish ? <Check className="size-4" /> : <AlertTriangle className="size-4" />}Saved review readiness</p><p className="mt-1 text-[11px] text-[#68646F]">Based on the last saved version. Saving changes recalculates this report.</p></div>
+                    <span className={`rounded-full px-3 py-1.5 text-[12px] font-bold ${formData.reviewReadiness.canPublish ? "bg-emerald-700 text-white" : "bg-red-700 text-white"}`}>{formData.reviewReadiness.score}%</span>
+                  </div>
+                  {formData.reviewReadiness.blockers.length > 0 && <p className="mt-3 text-[11px] font-semibold text-red-800">Required: {formData.reviewReadiness.blockers.join(", ")}</p>}
+                  {formData.reviewReadiness.warnings.length > 0 && <p className="mt-1 text-[11px] text-amber-800">Recommended: {formData.reviewReadiness.warnings.join(", ")}</p>}
+                  <p className="mt-2 text-[10px] text-[#68646F]">{formData.reviewReadiness.configurationCount} configurations · {formData.reviewReadiness.phaseCount} RERA phases · {formData.reviewReadiness.documentCount} documents · {formData.reviewReadiness.photoCount} photos</p>
+                </div>
+              )}
+
+              {isAdminEdit && (formData.workflowHistory?.length || 0) > 0 && (
+                <div className="mb-6 rounded-2xl border border-[#E4E0E7] bg-white p-4">
+                  <p className="text-[13px] font-bold text-[#121B35]">Workflow history</p>
+                  <div className="mt-2 space-y-2">{formData.workflowHistory!.slice(-5).reverse().map((entry, index) => <div key={`${entry.at || index}-${entry.action}`} className="flex flex-wrap items-center gap-2 text-[10px]"><span className="rounded-md bg-[#F3F1F5] px-2 py-1 font-bold text-[#3F3D46]">{entry.fromStatus} → {entry.toStatus}</span><span className="font-semibold text-[#68646F]">{entry.action.replace(/_/g, " ")}</span>{entry.at && <span className="ml-auto text-[#8A8690]">{new Date(entry.at).toLocaleString("en-IN")}</span>}</div>)}</div>
+                </div>
+              )}
 
               {isStructuredType(formData.propertyType) && (
                 <div className="mt-6">

@@ -5,10 +5,14 @@ import { reportApplicationError } from "@/lib/api";
 type Props = { children: ReactNode; resetKey: string; source?: string };
 type State = { error: Error | null };
 
+export function reloadLatestVersion(reload: () => void = () => window.location.reload()) {
+  reload();
+}
+
 export default class SectionErrorBoundary extends Component<Props, State> {
   state: State = { error: null };
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error) {
     return { error };
   }
 
@@ -27,6 +31,13 @@ export default class SectionErrorBoundary extends Component<Props, State> {
     }
   }
 
+  retry = () => {
+    // Retrying the existing React tree can immediately throw the same error,
+    // especially when a previous deployment's lazy chunk is no longer present.
+    // Reload the application so every section uses the current deployment.
+    reloadLatestVersion();
+  };
+
   render() {
     if (!this.state.error) return this.props.children;
     return (
@@ -35,7 +46,7 @@ export default class SectionErrorBoundary extends Component<Props, State> {
           <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-[#FFF1EF] text-[#B33A2E]"><AlertTriangle className="size-6" /></div>
           <h2 className="mt-4 text-xl font-bold text-[#121B35]">Sorry, this section couldn&apos;t be displayed.</h2>
           <p className="mt-2 text-sm leading-6 text-[#68646F]">The rest of the website is still available. Our admin team has automatically been notified about this problem.</p>
-          <button onClick={() => this.setState({ error: null })} className="mt-5 inline-flex h-10 items-center gap-2 rounded-xl bg-[#121B35] px-4 text-sm font-bold text-white hover:bg-[#273559]"><RefreshCw className="size-4" /> Retry section</button>
+          <button onClick={this.retry} className="mt-5 inline-flex h-10 items-center gap-2 rounded-xl bg-[#121B35] px-4 text-sm font-bold text-white hover:bg-[#273559]"><RefreshCw className="size-4" /> Reload latest version</button>
         </div>
       </section>
     );

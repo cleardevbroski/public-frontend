@@ -31,6 +31,7 @@ import {
   Handshake,
   Activity,
   Archive,
+  FileWarning,
 } from "lucide-react";
 import { isAdminAuthed, adminLogin, adminLogout, getAdminLoginError } from "@/lib/adminAuth";
 import { fetchSystemNotifications, markAllSystemNotificationsRead, markSystemNotificationRead } from "@/lib/api";
@@ -65,7 +66,9 @@ const navItems = [
   { label: "Lawyers", href: "/admin/lawyers", icon: Scale },
   { label: "Insights", href: "/admin/insights", icon: TrendingUp },
   { label: "Post Property", href: "/admin/post", icon: PlusCircle },
-  { label: "Recheck Properties", href: "/admin/recheck-properties", icon: Archive },
+  { label: "Review Folder", href: "/admin/review-folder", icon: Archive },
+  { label: "Batch Reports", href: "/admin/batch-reports", icon: FileText },
+  { label: "RERA Conflicts", href: "/admin/rera-conflicts", icon: FileWarning },
   { label: "Public Submissions", href: "/admin/property-submissions", icon: ClipboardCheck },
   { label: "Hero Showcase", href: "/admin/hero", icon: Images },
   { label: "Homepage Placement", href: "/admin/homepage-placements", icon: LayoutGrid },

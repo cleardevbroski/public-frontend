@@ -15,6 +15,7 @@ import {
   Star,
   UserRound,
   Pencil,
+  ClipboardCheck,
 } from "lucide-react";
 import { deleteProperty, toggleFeatured, setPropertyStatus } from "@/lib/propertyStore";
 import StatusControls from "@/components/admin/StatusControls";
@@ -107,6 +108,19 @@ export default function PropertyTable({
       await onPropertyDeleted();
     } catch (cause) {
       setWorkflowError(cause instanceof Error ? cause.message : "Unable to update this Recheck property.");
+    } finally {
+      setWorkflowBusy(null);
+    }
+  };
+
+  const handleStatus = async (id: string, status: "pending" | "approved" | "rejected") => {
+    setWorkflowBusy(id);
+    setWorkflowError("");
+    try {
+      await setPropertyStatus(id, status);
+      await onPropertyDeleted();
+    } catch (cause) {
+      setWorkflowError(cause instanceof Error ? cause.message : "Unable to update the property workflow.");
     } finally {
       setWorkflowBusy(null);
     }
@@ -232,6 +246,8 @@ export default function PropertyTable({
                     {property.configs?.length > 0 && (
                       <p className="truncate text-[11px] text-[#68646F]" title={property.configs.join(", ")}>{property.configs.join(", ")}</p>
                     )}
+                    {property.bulkImport?.packageName && <p className="mt-0.5 truncate text-[10px] text-blue-700" title={property.bulkImport.packageName}>{property.bulkImport.packageName}</p>}
+                    {property.reviewReadiness && <p title={[...property.reviewReadiness.blockers, ...property.reviewReadiness.warnings].join(", ")} className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold ${property.reviewReadiness.canPublish ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}><ClipboardCheck className="size-3" />Review {property.reviewReadiness.score}%{property.reviewReadiness.canPublish ? " · Ready" : ` · ${property.reviewReadiness.blockers.length} required`}</p>}
                   </div>
                 </div>
 
@@ -279,11 +295,18 @@ export default function PropertyTable({
                 <div className="min-w-0">
                   <StatusControls
                     status={property.status || (property.published !== false ? "approved" : "pending")}
-                    onChange={(s) => setPropertyStatus(property.id, s).then(onPropertyDeleted)}
+                    onChange={(status) => void handleStatus(property.id, status)}
+                    disabled={workflowBusy === property.id}
+                    allowedStatuses={property.status === "rejected"
+                      ? ["pending"]
+                      : property.status === "pending"
+                        ? [...(property.reviewReadiness?.canPublish === false ? [] : ["approved" as const]), "rejected"]
+                        : ["pending", "rejected"]}
+                    publishBlockedReason={property.reviewReadiness?.blockers.length ? `Correct before publishing: ${property.reviewReadiness.blockers.join(", ")}` : undefined}
                   />
                   {property.status === "recheck" && <div className="mt-1.5 flex flex-wrap gap-1">
                     <button type="button" disabled={workflowBusy === property.id} onClick={() => void handleRecheck(property.id, "move_to_pending")} className="rounded-md bg-amber-50 px-2 py-1 text-[9px] font-bold text-amber-800 disabled:opacity-50">Mark correct → Pending</button>
-                    <button type="button" disabled={workflowBusy === property.id} onClick={() => void handleRecheck(property.id, "publish")} className="rounded-md bg-emerald-50 px-2 py-1 text-[9px] font-bold text-emerald-700 disabled:opacity-50">Publish</button>
+                    <button type="button" disabled={workflowBusy === property.id || property.reviewReadiness?.canPublish === false} title={property.reviewReadiness?.canPublish === false ? `Correct before publishing: ${property.reviewReadiness.blockers.join(", ")}` : "Publish this verified property"} onClick={() => void handleRecheck(property.id, "publish")} className="rounded-md bg-emerald-50 px-2 py-1 text-[9px] font-bold text-emerald-700 disabled:opacity-50">Publish</button>
                   </div>}
                   {property.featured && (
                     <p className="text-[10px] text-[#DDAA42] font-bold mt-0.5 flex items-center gap-0.5">

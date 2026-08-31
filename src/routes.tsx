@@ -27,6 +27,8 @@ const AdminLawyers = lazy(() => import("@/pages/admin/AdminLawyers"));
 const AdminInsights = lazy(() => import("@/pages/admin/AdminInsights"));
 const AdminPropertySubmissions = lazy(() => import("@/pages/admin/AdminPropertySubmissions"));
 const AdminRecheckProperties = lazy(() => import("@/pages/admin/AdminRecheckProperties"));
+const AdminBatchReports = lazy(() => import("@/pages/admin/AdminBatchReports"));
+const AdminReraConflicts = lazy(() => import("@/pages/admin/AdminReraConflicts"));
 const AdminAdvertisements = lazy(() => import("@/pages/admin/AdminAdvertisements"));
 const AdminLoginReports = lazy(() => import("@/pages/admin/AdminLoginReports"));
 const AdminHomepagePlacements = lazy(() => import("@/pages/admin/AdminHomepagePlacements"));
@@ -61,7 +63,10 @@ export const router = createBrowserRouter([
       { path: "/admin/lawyers", element: <AdminLawyers /> },
       { path: "/admin/insights", element: <AdminInsights /> },
       { path: "/admin/property-submissions", element: <AdminPropertySubmissions /> },
-      { path: "/admin/recheck-properties", element: <AdminRecheckProperties /> },
+      { path: "/admin/recheck-properties", element: <Navigate to="/admin/review-folder" replace /> },
+      { path: "/admin/review-folder", element: <AdminRecheckProperties /> },
+      { path: "/admin/batch-reports", element: <AdminBatchReports /> },
+      { path: "/admin/rera-conflicts", element: <AdminReraConflicts /> },
       { path: "/admin/advertisements", element: <AdminAdvertisements /> },
       { path: "/admin/login-reports", element: <AdminLoginReports /> },
       { path: "/admin/homepage-placements", element: <AdminHomepagePlacements /> },

@@ -516,9 +516,12 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     (property.nearbyDetails && Object.values(property.nearbyDetails).some((item) => item && (item.places?.length || item.count !== undefined || item.distance)))
   );
   const hasDetailedNearbyPlaces = Boolean(property.nearbyDetails && Object.values(property.nearbyDetails).some((item) => item?.places?.length));
+  const hasVerifiedCoordinates = property.locationVerification?.status === "admin_verified"
+    && Number.isFinite(property.locality?.latitude)
+    && Number.isFinite(property.locality?.longitude);
   const hasLocalityContent = Boolean(
     property.localityMapImageUrl ||
-    (Number.isFinite(property.locality?.latitude) && Number.isFinite(property.locality?.longitude)) ||
+    hasVerifiedCoordinates ||
     property.locality?.address ||
     hasNearbyPlaces
   );
@@ -1314,10 +1317,10 @@ const whyHighlights = (property.description || "")
 
             {/* Locality Guide */}
             {hasLocalityContent && <div ref={setSectionRef("locality")} className="bg-white rounded-3xl p-5 md:p-6 shadow-md border border-[#E4E0E7]/30 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-[20px] font-bold text-[#121B35] flex items-center gap-2"><div className="w-1.5 h-6 bg-[#DDAA42] rounded-full" /> Map &amp; Nearby Landmarks</h2><a href={Number.isFinite(property.locality?.latitude) && Number.isFinite(property.locality?.longitude) ? `https://www.google.com/maps/search/?api=1&query=${property.locality?.latitude},${property.locality?.longitude}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.locality?.address || property.subtitle)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#172039] px-4 py-2.5 text-[12px] font-bold text-white"><MapPin className="size-4" /> View on Map</a></div>
-              <div className={`grid gap-5 ${hasNearbyPlaces && (Number.isFinite(property.locality?.latitude) || property.localityMapImageUrl || property.locality?.address) ? "md:grid-cols-[1.2fr_0.8fr]" : "grid-cols-1"}`}>
-              {(Number.isFinite(property.locality?.latitude) || property.localityMapImageUrl || property.locality?.address) && <div className="space-y-3">
-              {Number.isFinite(property.locality?.latitude) && Number.isFinite(property.locality?.longitude) ? <LocalityMap property={property} /> : property.localityMapImageUrl && <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden border border-[#E4E0E7]/50 bg-white">
+              <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-[20px] font-bold text-[#121B35] flex items-center gap-2"><div className="w-1.5 h-6 bg-[#DDAA42] rounded-full" /> Map &amp; Nearby Landmarks {hasVerifiedCoordinates && <span className="rounded-full bg-emerald-100 px-2 py-1 text-[9px] font-bold text-emerald-800">VERIFIED PIN</span>}</h2><a href={hasVerifiedCoordinates ? `https://www.google.com/maps/search/?api=1&query=${property.locality?.latitude},${property.locality?.longitude}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.locality?.address || property.subtitle)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#172039] px-4 py-2.5 text-[12px] font-bold text-white"><MapPin className="size-4" /> View on Map</a></div>
+              <div className={`grid gap-5 ${hasNearbyPlaces && (hasVerifiedCoordinates || property.localityMapImageUrl || property.locality?.address) ? "md:grid-cols-[1.2fr_0.8fr]" : "grid-cols-1"}`}>
+              {(hasVerifiedCoordinates || property.localityMapImageUrl || property.locality?.address) && <div className="space-y-3">
+              {hasVerifiedCoordinates ? <LocalityMap property={property} /> : property.localityMapImageUrl && <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden border border-[#E4E0E7]/50 bg-white">
                 <img src={property.localityMapImageUrl} alt={`${property.subtitle} locality map`} className="h-full w-full object-contain bg-white" />
               </div>}
               {property.locality?.address && (

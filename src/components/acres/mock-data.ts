@@ -229,6 +229,47 @@ export type NearbyDetail = {
   places?: NearbyPlace[];
 };
 
+export type LocationVerificationComparison = {
+  key: string;
+  label: string;
+  expected: string;
+  actual: string;
+  passed: boolean;
+  strong: boolean;
+  weight: number;
+};
+
+export type LocationVerification = {
+  status: "not_checked" | "resolved" | "mismatch" | "admin_verified";
+  coordinateSource: "manual" | "map_url" | "imported";
+  inputLatitude: number;
+  inputLongitude: number;
+  resolvedLatitude?: number;
+  resolvedLongitude?: number;
+  resolvedAddress: string;
+  components?: {
+    road?: string;
+    neighbourhood?: string;
+    suburb?: string;
+    city?: string;
+    district?: string;
+    state?: string;
+    pinCode?: string;
+    country?: string;
+  };
+  osmId?: string;
+  mapUrl?: string;
+  provider: "nominatim";
+  matchScore: number;
+  matches?: Record<string, boolean>;
+  comparisons?: LocationVerificationComparison[];
+  mismatchFields?: string[];
+  warnings?: string[];
+  analyzedAt: string;
+  verifiedBy?: string;
+  verifiedAt?: string;
+};
+
 export type ProjectNarrative = {
   introduction?: string[];
   usps?: string[];
@@ -259,6 +300,18 @@ export type ProjectFaq = {
   question: string;
   answer: string;
   order?: number;
+};
+
+export type PropertyReviewReadiness = {
+  score: number;
+  canPublish: boolean;
+  blockers: string[];
+  warnings: string[];
+  checks: Array<{ key: string; label: string; passed: boolean; severity: "blocker" | "warning" }>;
+  configurationCount: number;
+  phaseCount: number;
+  documentCount: number;
+  photoCount: number;
 };
 
 export type Property = {
@@ -340,6 +393,7 @@ export type Property = {
     latitude?: number;
     longitude?: number;
   };
+  locationVerification?: LocationVerification;
   nearbyAmenities?: {
     schools?: string;
     colleges?: string;
@@ -388,6 +442,8 @@ export type Property = {
   publishedAt?: string;
   rejectionReason?: string;
   reviewMessages?: Array<{ _id?: string; senderRole: "admin" | "user"; message: string; createdAt?: string }>;
+  reviewReadiness?: PropertyReviewReadiness;
+  workflowHistory?: Array<{ fromStatus: string; toStatus: string; action: string; note?: string; actor?: string; at?: string }>;
   source?: "admin" | "mock" | "public";
   submittedBy?: "user" | "admin";
   bulkImport?: {

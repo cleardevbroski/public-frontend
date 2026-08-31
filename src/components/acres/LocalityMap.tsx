@@ -24,9 +24,10 @@ export default function LocalityMap({ property }: { property: Property }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const latitude = property.locality?.latitude;
   const longitude = property.locality?.longitude;
+  const verifiedCoordinates = property.locationVerification?.status === "admin_verified";
 
   useEffect(() => {
-    if (!containerRef.current || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+    if (!verifiedCoordinates || !containerRef.current || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
     const propertyLatitude = latitude as number;
     const propertyLongitude = longitude as number;
     const map = L.map(containerRef.current, { scrollWheelZoom: false }).setView([propertyLatitude, propertyLongitude], 14);
@@ -70,8 +71,8 @@ export default function LocalityMap({ property }: { property: Property }) {
     return () => {
       map.remove();
     };
-  }, [latitude, longitude, property]);
+  }, [latitude, longitude, property, verifiedCoordinates]);
 
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  if (!verifiedCoordinates || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
   return <div ref={containerRef} className="h-[360px] w-full overflow-hidden rounded-2xl border border-[#E4E0E7]/50 bg-[#EEF1F4]" aria-label={`${property.title} interactive locality map`} />;
 }

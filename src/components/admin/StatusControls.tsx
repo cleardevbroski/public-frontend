@@ -19,9 +19,15 @@ const META: Record<WorkflowStatus, { label: string; badge: string; icon: typeof 
 export default function StatusControls({
   status,
   onChange,
+  disabled = false,
+  allowedStatuses,
+  publishBlockedReason,
 }: {
   status?: string;
   onChange: (s: Status) => void;
+  disabled?: boolean;
+  allowedStatuses?: Status[];
+  publishBlockedReason?: string;
 }) {
   const current = (status as WorkflowStatus) in META ? (status as WorkflowStatus) : "approved";
   const Badge = META[current].icon;
@@ -33,13 +39,15 @@ export default function StatusControls({
       {["pending", "approved", "rejected"].includes(current) && <div className="flex gap-1">
         {(["approved", "pending", "rejected"] as Status[]).map((s) => {
           const Icon = META[s].icon;
+          const allowed = !allowedStatuses || allowedStatuses.includes(s);
+          const blocked = disabled || current === s || !allowed;
           return (
             <button
               key={s}
               onClick={() => onChange(s)}
-              disabled={current === s}
-              title={`Mark ${META[s].label}`}
-              className={`w-7 h-7 rounded-lg flex items-center justify-center border transition-colors ${current === s ? "opacity-40 cursor-default border-transparent" : "hover:bg-[#F8F7FA] border-[#E4E0E7]/40"}`}
+              disabled={blocked}
+              title={!allowed && s === "approved" && publishBlockedReason ? publishBlockedReason : allowed ? `Mark ${META[s].label}` : `Move through the required review step first`}
+              className={`w-7 h-7 rounded-lg flex items-center justify-center border transition-colors ${blocked ? "opacity-40 cursor-default border-transparent" : "hover:bg-[#F8F7FA] border-[#E4E0E7]/40"}`}
             >
               <Icon className="w-3.5 h-3.5" />
             </button>

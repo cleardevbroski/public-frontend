@@ -210,7 +210,16 @@ export async function togglePublish(id: string, currentState?: boolean): Promise
 }
 
 export async function setPropertyStatus(id: string, status: string): Promise<Property | null> {
-  const data = await apiUpdatePropertyWorkflow(id, { status });
+  const actions: Record<string, string> = {
+    approved: "publish",
+    published: "publish",
+    pending: "move_to_pending",
+    recheck: "move_to_recheck",
+    rejected: "reject",
+  };
+  const action = actions[status];
+  if (!action) throw new Error("Unsupported admin property status");
+  const data = await apiUpdatePropertyWorkflow(id, { action });
   await cache.refresh();
   return data.property as Property;
 }
