@@ -90,6 +90,21 @@ export default function ProjectContentEditor(props: Props) {
       {showMedia && <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-3">
           <h4 className="text-[13px] font-bold text-[#121B35]">Master plan</h4>
+          {masterPlan.imageUrl ? (
+            <div className="overflow-hidden rounded-xl border border-[#D9D2BF] bg-white">
+              <img src={masterPlan.imageUrl} alt="Imported master plan" className="max-h-80 w-full bg-[#F5F3F5] object-contain" />
+              <div className="flex items-center justify-between gap-3 p-3">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-emerald-700">Master-plan image imported</p>
+                  <p className="truncate text-[9px] text-[#68646F]">Stored with this property</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a href={masterPlan.imageUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg bg-[#121B35] px-3 py-2 text-[9px] font-bold text-white">Open image <ExternalLink className="size-3" /></a>
+                  <button type="button" onClick={() => props.onMasterPlanChange({ ...masterPlan, imageUrl: "" })} className="inline-flex size-8 items-center justify-center rounded-lg bg-red-50 text-red-600" title="Remove master-plan image"><Trash2 className="size-3.5" /></button>
+                </div>
+              </div>
+            </div>
+          ) : <p className="rounded-xl border border-dashed border-[#D9D2BF] bg-white px-3 py-4 text-[10px] text-[#68646F]">No master-plan image was imported for this property.</p>}
           <input className={input} value={masterPlan.title || ""} onChange={(event) => props.onMasterPlanChange({ ...masterPlan, title: event.target.value })} placeholder="Master plan section title" />
           <textarea className={`${input} resize-y`} rows={5} value={masterPlan.summary || ""} onChange={(event) => props.onMasterPlanChange({ ...masterPlan, summary: event.target.value })} placeholder="Verified master-plan description" />
           <div className="flex items-center justify-between"><span className="text-[11px] font-bold text-[#68646F]">Detail sections</span><button type="button" onClick={() => props.onMasterPlanChange({ ...masterPlan, sections: [...(masterPlan.sections || []), { heading: "", body: "" }] })} className="inline-flex items-center gap-1 text-[10px] font-bold text-[#9A741E]"><Plus className="size-3" /> Add</button></div>
@@ -101,7 +116,7 @@ export default function ProjectContentEditor(props: Props) {
           <div className="rounded-xl border border-[#D9D2BF] bg-[#FFFDF7] p-3 text-[10px] font-semibold text-[#795A18]">Project Brochure · linked from the saved RERA project document</div>
           {(() => {
             const current = props.downloads?.find((row) => row.kind === "master-plan");
-            return <div className="mt-2 flex items-center gap-3 rounded-xl border border-[#E4E0E7] bg-white p-3"><div className="min-w-0 flex-1"><p className="text-[12px] font-bold text-[#121B35]">Master Plan</p><p className="truncate text-[10px] text-[#68646F]">{current?.fileName || "Not uploaded"}</p></div>{current && <button type="button" onClick={() => props.onDownloadsChange((props.downloads || []).filter((row) => row.kind !== "master-plan"))} className="text-[10px] font-bold text-red-600">Remove</button>}<label className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-[#121B35] px-3 py-2 text-[10px] font-bold text-white">{uploading === "master-plan" ? <Loader2 className="size-3 animate-spin" /> : <Upload className="size-3" />}{current ? "Replace" : "Upload"}<input type="file" accept="application/pdf,.pdf" className="hidden" onChange={(event) => void uploadDownload(event.target.files?.[0])} /></label></div>;
+            return <div className="mt-2 flex items-center gap-3 rounded-xl border border-[#E4E0E7] bg-white p-3"><div className="min-w-0 flex-1"><p className="text-[12px] font-bold text-[#121B35]">Master Plan PDF</p><p className="truncate text-[10px] text-[#68646F]">{current?.fileName || (masterPlan.imageUrl ? "Image imported above; PDF not supplied" : "Not uploaded")}</p></div>{current && <button type="button" onClick={() => props.onDownloadsChange((props.downloads || []).filter((row) => row.kind !== "master-plan"))} className="text-[10px] font-bold text-red-600">Remove</button>}<label className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-[#121B35] px-3 py-2 text-[10px] font-bold text-white">{uploading === "master-plan" ? <Loader2 className="size-3 animate-spin" /> : <Upload className="size-3" />}{current ? "Replace" : "Upload PDF"}<input type="file" accept="application/pdf,.pdf" className="hidden" onChange={(event) => void uploadDownload(event.target.files?.[0])} /></label></div>;
           })()}
           <div className="mt-3 rounded-xl border border-[#E4E0E7] bg-white p-3">
             <label className="text-[12px] font-bold text-[#121B35]">YouTube walkthrough link</label>

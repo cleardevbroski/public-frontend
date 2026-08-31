@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { FileText, Loader2, Plus, Save, Trash2, Upload } from "lucide-react";
+import { ExternalLink, FileText, Loader2, Plus, Save, Trash2, Upload } from "lucide-react";
 import { uploadPropertyMedia } from "@/lib/api";
 import type { ReraDocument, ReraPhase } from "@/components/acres/mock-data";
 import BulkReraDocumentUploader from "./BulkReraDocumentUploader";
-import { PROJECT_DOCUMENT_DEFINITIONS, RERA_DOCUMENT_DEFINITIONS, type ReraDocumentDefinition } from "@/lib/reraBulkUpload";
+import { classifyReraFileName, PROJECT_DOCUMENT_DEFINITIONS, RERA_DOCUMENT_DEFINITIONS, type ReraDocumentDefinition } from "@/lib/reraBulkUpload";
 import { PROPERTY_DOCUMENT_MAX_BYTES, PROPERTY_DOCUMENT_MAX_MB } from "@/lib/propertyMediaLimits";
 
 export const KARNATAKA_RERA_URL = "https://rera.karnataka.gov.in/viewAllProjects";
@@ -24,6 +24,14 @@ type Props = {
   error?: string;
   onUploadingChange?: (uploading: boolean) => void;
 };
+
+function matchesDefinition(document: ReraDocument, definition: ReraDocumentDefinition) {
+  if (document.key === definition.key) return true;
+  return [document.key, document.label, document.fileName].some((value) => {
+    const match = classifyReraFileName(value);
+    return match.definition?.group === definition.group && match.definition.key === definition.key;
+  });
+}
 
 function DocumentRows({
   definitions,
@@ -65,7 +73,7 @@ function DocumentRows({
         mimeType: file.type as ReraDocument["mimeType"],
         fileSize: file.size,
       };
-      onChange([...documents.filter((item) => item.key !== definition.key), next]);
+      onChange([...documents.filter((item) => !matchesDefinition(item, definition)), next]);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Document upload failed.");
     } finally {
@@ -76,7 +84,8 @@ function DocumentRows({
   return (
     <div className="space-y-2">
       {definitions.map((definition) => {
-        const document = documents.find((item) => item.key === definition.key);
+        const matchingDocuments = documents.filter((item) => matchesDefinition(item, definition));
+        const document = matchingDocuments[0];
         return (
           <div key={definition.key} className="rounded-xl border border-[#E4E0E7] bg-white p-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -85,7 +94,7 @@ function DocumentRows({
                   type="checkbox"
                   checked={Boolean(document)}
                   onChange={(event) => {
-                    if (!event.target.checked) onChange(documents.filter((item) => item.key !== definition.key));
+                    if (!event.target.checked) onChange(documents.filter((item) => !matchesDefinition(item, definition)));
                     else window.document.getElementById(`rera-upload-${definition.key}`)?.click();
                   }}
                   className="mt-1"
@@ -94,6 +103,7 @@ function DocumentRows({
                   <span className="block text-[12px] font-bold text-[#121B35]">{definition.label}</span>
                   {definition.annexure && <span className="text-[10px] text-[#68646F]">{definition.annexure}</span>}
                   {document && <span className="block max-w-sm truncate text-[10px] text-green-700">{document.fileName}</span>}
+                  {matchingDocuments.length > 1 && <span className="block text-[9px] text-[#68646F]">{matchingDocuments.length} saved parts</span>}
                 </span>
               </label>
               <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#121B35] px-3 py-2 text-[11px] font-bold text-white">
@@ -112,6 +122,27 @@ function DocumentRows({
           </div>
         );
       })}
+      {documents.length > 0 && (
+        <div className="mt-4 rounded-xl border border-[#D8C88F] bg-[#FFFDF7] p-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] font-bold text-[#121B35]">All saved documents</p>
+            <span className="rounded-full bg-[#F0E6C7] px-2 py-1 text-[9px] font-bold text-[#795A18]">{documents.length} files</span>
+          </div>
+          <div className="mt-2 space-y-2">
+            {documents.map((document, index) => (
+              <div key={document._id || `${document.key}-${document.fileName}-${index}`} className="flex items-center gap-2 rounded-lg border border-[#E5E0D2] bg-white p-2.5">
+                <FileText className="size-4 shrink-0 text-[#DDAA42]" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[10px] font-bold text-[#121B35]">{document.label || document.fileName}</p>
+                  <p className="truncate text-[9px] text-[#68646F]">{document.fileName}</p>
+                </div>
+                {document.fileUrl && <a href={document.fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md bg-[#121B35] px-2 py-1.5 text-[9px] font-bold text-white">Open <ExternalLink className="size-3" /></a>}
+                <button type="button" onClick={() => onChange(documents.filter((_, itemIndex) => itemIndex !== index))} className="inline-flex size-7 items-center justify-center rounded-md bg-red-50 text-red-600" title="Remove document"><Trash2 className="size-3.5" /></button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {error && <p className="text-[11px] text-red-600">{error}</p>}
     </div>
   );
