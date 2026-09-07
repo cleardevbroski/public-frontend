@@ -6,4 +6,5 @@
 :root {
   --font-open-sans: "Open Sans Variable", "Open Sans", ui-sans-serif, system-ui, sans-serif;
   --font-outfit: "Open Sans Variable", "Open Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display Variable", Georgia, serif;
 }

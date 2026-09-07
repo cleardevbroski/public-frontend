@@ -5,18 +5,18 @@ import { ScrollText, ShieldCheck, Handshake, ChevronRight } from "lucide-react";
 const reasons = [
   {
     icon: ScrollText,
-    title: "100% Clear Title",
-    desc: "All properties are verified for clear titles and documentation before listing.",
+    title: "Evidence in view",
+    desc: "RERA references, project documents and verified coordinates are shown when they are present in the project record.",
   },
   {
     icon: ShieldCheck,
-    title: "Expert Legal Guidance",
-    desc: "Experienced legal advisors ensure your property purchase is completely risk-free.",
+    title: "Missing means missing",
+    desc: "Important gaps stay visible, so a buyer knows what still needs confirmation before making a decision.",
   },
   {
     icon: Handshake,
-    title: "Hassle-Free Process",
-    desc: "A seamless buying experience with full transparency from start to finish.",
+    title: "Decide together",
+    desc: "Shortlist projects, compare costs and discuss the decision with family before sharing contact details.",
   },
 ];
 
@@ -25,12 +25,13 @@ export default function WhyChooseClearTitle() {
     <section className="bg-white py-12">
       <div className="max-w-[1100px] mx-auto px-5">
         <div className="text-center mb-12">
-          <h2 className="text-[30px] md:text-[40px] font-bold text-[#121B35]">
-            Why <span className="text-gold-gradient">Choose Cleartitleone</span>
+          <p className="public-page-hero__eyebrow">A clearer buying process</p>
+          <h2 className="display-heading mt-3 text-[32px] md:text-[44px] text-[#121B35]">
+            Trust should be <span className="text-gold-gradient">visible</span>
           </h2>
           <div className="gold-divider mx-auto mt-4" />
           <p className="text-[15px] text-[#68646F] mt-4">
-            Your Trusted Partner in Bangalore Real Estate
+            Project facts, calculation assumptions and information gaps are labelled where buyers need them.
           </p>
         </div>
 

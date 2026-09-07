@@ -78,7 +78,10 @@ import FavoriteButton from "./FavoriteButton";
 import VillaPropertyInformationCard from "./VillaPropertyInformationCard";
 import VillaLocationPriceComparison from "./VillaLocationPriceComparison";
 import ExactLoanCalculator from "./ExactLoanCalculator";
+import AskProjectAssistant from "./AskProjectAssistant";
+import FamilyWorkspaceButton from "./FamilyWorkspaceButton";
 import LocalityMap from "./LocalityMap";
+import PropertyTrustSummary from "./PropertyTrustSummary";
 
 type Pools = {
   recommended: Property[];
@@ -487,7 +490,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     const detail = property.nearbyDetails?.[key];
     if (detail?.places?.length) return `${detail.places.length} nearby`;
     if (detail && (detail.count !== undefined || detail.distance)) {
-      return [detail.count !== undefined ? `${detail.count}` : "", detail.distance].filter(Boolean).join(" Ã‚Â· ");
+      return [detail.count !== undefined ? `${detail.count}` : "", detail.distance].filter(Boolean).join(" · ");
     }
     return legacy || "";
   };
@@ -613,7 +616,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
 
   const bedrooms = property.bedrooms || property.configs?.[0]?.split(" ")[0] || "";
   const formatCurrency = (value?: number) =>
-    value !== undefined && Number.isFinite(value) && value >= 0 ? `Ã¢â€šÂ¹${value.toLocaleString("en-IN")}` : "";
+    value !== undefined && Number.isFinite(value) && value >= 0 ? `₹${value.toLocaleString("en-IN")}` : "";
   const formatDate = (value?: string) => {
     if (!value) return "";
     const parsed = new Date(`${value}T00:00:00`);
@@ -627,9 +630,9 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     { label: "Plot Facing", val: property.villaDetails.plotFacing },
     { label: "Corner Plot", val: property.villaDetails.cornerPlot === true ? "Yes" : property.villaDetails.cornerPlot === false ? "No" : "" },
     { label: "Road Width Facing", val: property.villaDetails.roadWidthFacing },
-    { label: "Private Garden", val: property.villaDetails.privateGarden === true ? `Yes${property.villaDetails.privateGardenArea ? ` Ã‚Â· ${property.villaDetails.privateGardenArea}` : ""}` : property.villaDetails.privateGarden === false ? "No" : "" },
+    { label: "Private Garden", val: property.villaDetails.privateGarden === true ? `Yes${property.villaDetails.privateGardenArea ? ` · ${property.villaDetails.privateGardenArea}` : ""}` : property.villaDetails.privateGarden === false ? "No" : "" },
     { label: "Private Pool", val: property.villaDetails.privatePool === true ? "Yes" : property.villaDetails.privatePool === false ? "No" : "" },
-    { label: "Terrace", val: property.villaDetails.terrace === true ? `Yes${property.villaDetails.terraceDetails ? ` Ã‚Â· ${property.villaDetails.terraceDetails}` : ""}` : property.villaDetails.terrace === false ? "No" : "" },
+    { label: "Terrace", val: property.villaDetails.terrace === true ? `Yes${property.villaDetails.terraceDetails ? ` · ${property.villaDetails.terraceDetails}` : ""}` : property.villaDetails.terrace === false ? "No" : "" },
     { label: "Gated Community", val: property.villaDetails.gatedCommunity === true ? "Yes" : property.villaDetails.gatedCommunity === false ? "No" : "" },
     { label: "Transaction", val: property.transactionType },
     { label: "Listing", val: property.listingType },
@@ -682,7 +685,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   ].filter((item) => item.val) : [];
   const leaseOverviewFacts = property.leaseDetails ? [
     { label: "Monthly lease rent", val: formatCurrency(property.leaseDetails.leaseRent) },
-    { label: "Rent per sq ft", val: property.leaseDetails.rentPerSqft ? `Ã¢â€šÂ¹${property.leaseDetails.rentPerSqft.toLocaleString("en-IN")} / sq ft` : "" },
+    { label: "Rent per sq ft", val: property.leaseDetails.rentPerSqft ? `₹${property.leaseDetails.rentPerSqft.toLocaleString("en-IN")} / sq ft` : "" },
     { label: "Lease use", val: property.leaseDetails.leasePropertyType },
     { label: "Available from", val: formatDate(property.leaseDetails.availableFrom) },
     { label: "Carpet area", val: property.leaseDetails.carpetArea },
@@ -837,6 +840,7 @@ const whyHighlights = (property.description || "")
         onRequestCallback={() => { setShowGovernmentCharges(false); setVerifiedAction("enquiry"); }}
       />
       <Header />
+      <PropertyTrustSummary property={property} onRera={hasReraPhases ? () => scrollToSection("rera-details") : undefined} onLocation={hasLocalityContent ? () => scrollToSection("locality") : undefined} />
 
       <section className="property-detail-intro mx-auto max-w-[1440px] px-4 pb-4 pt-3 md:px-5 md:pb-5">
         <nav className="mb-3 hidden items-center gap-2 overflow-hidden text-[12px] font-medium text-[#77717E] md:flex">
@@ -965,7 +969,7 @@ const whyHighlights = (property.description || "")
           </div>
           {whyHighlights.length > 0 && <aside className="flex flex-col border-t border-[#DDE2EA] bg-[#FCFCFD] lg:border-l lg:border-t-0">
             <div className="flex-1 px-5 py-4"><h2 className="text-[17px] font-extrabold text-[#172039]">Why you should consider {property.title}?</h2><ul className="mt-3 space-y-2.5">{whyHighlights.map((highlight) => <li key={highlight} className="flex gap-2 text-[12px] leading-5 text-[#4C566A]"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#172039]" />{highlight}</li>)}</ul><button type="button" onClick={() => scrollToSection("overview")} className="mt-3 text-[12px] font-bold text-[#172039] underline underline-offset-4">View More</button></div>
-            <button type="button" onClick={() => setVerifiedAction("enquiry")} className="m-3 inline-flex items-center justify-center gap-2 rounded-lg bg-[#E3A815] px-4 py-3 text-[13px] font-extrabold text-[#241B09]"><Phone className="size-4" /> Request More Information or a Callback</button>
+            <button type="button" onClick={() => setVerifiedAction("enquiry")} className="m-3 inline-flex items-center justify-center gap-2 rounded-lg bg-[#E3A815] px-4 py-3 text-[13px] font-extrabold text-[#241B09]"><MessageCircle className="size-4" /> Request project information</button>
           </aside>}
         </div>}
       </section>
@@ -1026,12 +1030,12 @@ const whyHighlights = (property.description || "")
             <MapPin className="size-4.5 text-[#F2C052]" /> {property.subtitle}
           </p>}
 
-          {(property.price || possessionLabel !== "Ã¢â‚¬â€") && <div className="mt-4 flex flex-wrap items-end gap-5">
+          {(property.price || possessionLabel !== "—") && <div className="mt-4 flex flex-wrap items-end gap-5">
             {property.price && <div>
               <span className="text-[11px] text-white/50 uppercase font-bold tracking-wider block">Starting Price</span>
               <span className="text-[30px] font-extrabold leading-none text-gold-gradient md:text-[36px]">{priceWithCharges(property.price)}</span>
             </div>}
-            {possessionLabel !== "Ã¢â‚¬â€" && <div className="flex flex-wrap gap-3 text-white">
+            {possessionLabel !== "—" && <div className="flex flex-wrap gap-3 text-white">
               <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-xl px-4 py-2.5 flex items-center gap-2">
                 <Clock className="size-4.5 text-[#F2C052]" />
                 <span className="text-[13px] font-bold">{possessionLabel}</span>
@@ -1265,11 +1269,11 @@ const whyHighlights = (property.description || "")
                             <p className="text-[15px] font-extrabold">{row.sharingType}</p>
                             <p className="mt-1 text-[10px] font-semibold text-white/55">{row.bedsAvailable} bedroom spaces currently available</p>
                           </div>
-                          <p className="text-[17px] font-extrabold text-[#F2C052]">Ã¢â€šÂ¹{row.rentPerBed.toLocaleString("en-IN")}</p>
+                          <p className="text-[17px] font-extrabold text-[#F2C052]">₹{row.rentPerBed.toLocaleString("en-IN")}</p>
                         </div>
                         <div className="flex items-center justify-between px-4 py-3 text-[12px]">
                           <span className="font-semibold text-[#77717E]">Refundable deposit</span>
-                          <span className="font-extrabold text-[#121B35]">Ã¢â€šÂ¹{row.deposit.toLocaleString("en-IN")}</span>
+                          <span className="font-extrabold text-[#121B35]">₹{row.deposit.toLocaleString("en-IN")}</span>
                         </div>
                       </article>
                     ))}
@@ -1364,7 +1368,7 @@ const whyHighlights = (property.description || "")
                 </div>
                 <div>
                   <h4 className="line-clamp-2 text-[12px] font-bold leading-4 text-[#F2C052]">{property.builder}</h4>
-                  <p className="text-[10px] text-white/50">Verified Lister</p>
+                  <p className="text-[10px] text-[#D9DDE8]">Project developer</p>
                 </div>
               </div>}
 
@@ -1403,12 +1407,14 @@ const whyHighlights = (property.description || "")
 
               {(property.verified || hasReraPhases) && <div className="relative z-10 mt-4 space-y-3 border-t border-white/10 pt-4">
                 {property.verified && <div className="flex items-center gap-2.5 text-[12.5px] text-[#F2C052]">
-                  <Scale className="w-4 h-4 shrink-0" /> <span className="font-extrabold">Title deed audited by Legal Panel</span>
+                  <ShieldCheck className="w-4 h-4 shrink-0" /> <span className="font-extrabold">Project information reviewed by admin</span>
                 </div>}
                 {hasReraPhases && <div className="rounded-lg border border-[#F2C052]/25 bg-white/[.06] p-3"><div className="flex items-center justify-between gap-2"><span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#F2C052]"><Shield className="size-3.5" />RERA record</span><span className="text-[9px] text-white/45">{property.reraPhases?.length} phase{property.reraPhases?.length === 1 ? "" : "s"}</span></div><p className="mt-2 truncate text-[11px] font-bold tabular-nums text-white">{property.reraPhases?.[0]?.reraNumber || property.reraNumber}</p><div className={`mt-3 grid gap-2 ${hasProjectDocuments ? "grid-cols-2" : "grid-cols-1"}`}><button type="button" onClick={() => scrollToSection("rera-details")} className="min-h-8 rounded-md bg-[#DDAA42] px-2 text-[9px] font-bold text-[#121B35]">RERA details</button>{hasProjectDocuments && <button type="button" onClick={() => scrollToSection("project-details")} className="min-h-8 rounded-md border border-white/15 px-2 text-[9px] font-bold text-white">Project details</button>}</div></div>}
               </div>}
             </div>
 
+            {!property.id.startsWith("blr-") && <AskProjectAssistant propertyId={property.id} propertyTitle={property.title} />}
+            {!property.id.startsWith("blr-") && <FamilyWorkspaceButton propertyId={property.id} />}
             <ExactLoanCalculator key={property.id} property={property} />
           </aside>
         </div>

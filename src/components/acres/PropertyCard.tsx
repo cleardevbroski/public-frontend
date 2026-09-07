@@ -9,6 +9,13 @@ import FavoriteButton from "./FavoriteButton";
 const isBase64 = (src: string) => src.startsWith("data:");
 
 export default function PropertyCard({ p }: { p: Property }) {
+  const trustLabel = p.verified
+    ? "Admin verified"
+    : p.locationVerification?.status === "admin_verified"
+      ? "Verified pin"
+      : p.reraRegistered
+        ? "RERA details available"
+        : "Project information";
   return (
     <Link
       href={`/property/${p.id}`}
@@ -28,8 +35,8 @@ export default function PropertyCard({ p }: { p: Property }) {
 
         <div className="absolute left-2.5 top-2.5 z-10 flex flex-wrap gap-1.5">
           <span className="flex items-center gap-1 rounded-lg bg-white/95 px-2 py-1 shadow-sm backdrop-blur-sm">
-            <ShieldCheck className="size-3.5 text-[#1E7A46]" strokeWidth={2.4} />
-            <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#121B35]">Clear Title Verified</span>
+            <ShieldCheck className={`size-3.5 ${p.verified ? "text-[#14633F]" : "text-[#805A0B]"}`} strokeWidth={2.4} />
+            <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#121B35]">{trustLabel}</span>
           </span>
           {p.reraRegistered && (
             <span className="rounded-lg bg-white/95 px-2 py-1 text-[9.5px] font-bold uppercase tracking-wide text-[#121B35] shadow-sm backdrop-blur-sm">
@@ -53,13 +60,15 @@ export default function PropertyCard({ p }: { p: Property }) {
 
       {/* Body */}
       <div className="p-3.5">
-        {p.title && <h3 className="text-[15.5px] font-bold text-[#121B35] truncate group-hover:text-[#DDAA42] transition-colors">
+        {p.builder && <p className="mb-1 truncate text-[9.5px] font-bold uppercase tracking-[0.12em] text-[#68646F]">{p.builder}</p>}
+        {p.title && <h3 className="text-[15.5px] font-bold text-[#121B35] truncate group-hover:text-[#805A0B] transition-colors">
           {p.title}
         </h3>}
         {p.subtitle && <p className="text-[12px] text-[#68646F] truncate mt-0.5 flex items-center gap-1">
           <MapPin className="size-3.5 text-[#DDAA42] shrink-0" />
           {p.subtitle}
         </p>}
+        <div className="mt-3 flex items-center justify-between border-t border-[#EEECEF] pt-2.5 text-[10.5px]"><span className="font-semibold text-[#3F3D46]">{p.configs?.slice(0, 2).join(" · ") || "Configuration pending"}</span><span className="font-bold text-[#805A0B]">View project</span></div>
       </div>
     </Link>
   );

@@ -418,8 +418,9 @@ export async function fetchPropertyById(id: string) {
 
 export type LocationPriceComparison = {
   comparisonMetric?: "pricePerSqft" | "monthlyRentPerBed";
+  comparisonBasis?: "verified_nearby_localities" | "nearby_data_unavailable";
   currentLocation: string;
-  comparisons: Array<{ key: string; location: string; averagePricePerSqft: number; projectCount: number }>;
+  comparisons: Array<{ key: string; location: string; averagePricePerSqft: number; projectCount: number; distanceKm?: number }>;
 };
 
 export async function fetchLocationPriceComparison(id: string): Promise<LocationPriceComparison> {
@@ -541,6 +542,252 @@ export async function saveFavoriteProperty(propertyId: string) {
 
 export async function removeFavoriteProperty(propertyId: string) {
   return readJson(await customerApiFetch(`/api/favorites/${encodeURIComponent(propertyId)}`, { method: "DELETE" }), "Failed to remove saved property");
+}
+
+export type AffordabilitySettings = {
+  defaultInterestRate: number;
+  defaultTenureYears: number;
+  comfortableIncomeRatioMin: number;
+  comfortableIncomeRatioMax: number;
+  defaultState: string;
+  disclaimer: string;
+};
+
+export type AffordabilityRule = {
+  _id?: string;
+  id?: string;
+  name: string;
+  code: string;
+  state: string;
+  city?: string;
+  propertyTypes: string[];
+  possessionStatuses: string[];
+  calculationType: "percentage" | "fixed" | "per_sqft" | "slab";
+  basis: "base_price" | "agreement_value" | "built_up_area";
+  rate: number;
+  fixedAmount: number;
+  slabs: Array<{ minValue: number; maxValue: number | null; rate: number; fixedAmount: number }>;
+  minPropertyValue: number;
+  maxPropertyValue: number | null;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+  sourceLabel?: string;
+  sourceUrl?: string;
+  notes?: string;
+  priority: number;
+  active: boolean;
+};
+
+export type AffordabilityLine = {
+  code: string;
+  label: string;
+  amount: number | null;
+  sourceType: "exact_project_value" | "developer_supplied" | "government_rule_estimate" | "user_assumption" | "missing";
+  sourceNote?: string;
+  sourceUrl?: string;
+  timing?: string;
+  optional?: boolean;
+  calculationType?: string;
+};
+
+export type AffordabilityResult = {
+  available: boolean;
+  configurationName?: string;
+  basePrice?: number;
+  basePriceSourceType?: "exact_project_value" | "developer_supplied";
+  priceUpdatedAt?: string | null;
+  area?: number;
+  projectCharges?: AffordabilityLine[];
+  governmentCharges?: AffordabilityLine[];
+  monthlyCharges?: AffordabilityLine[];
+  lineItems?: AffordabilityLine[];
+  totalCharges?: number;
+  totalPurchaseCost?: number;
+  initialPayment?: number;
+  loanAmount?: number;
+  interestRate?: number;
+  tenureYears?: number;
+  monthlyEmi?: number;
+  suggestedMonthlyIncome?: { min: number; max: number } | null;
+  assumptions?: Record<string, number | string>;
+  disclaimer?: string;
+  missing?: string[];
+};
+
+export async function fetchAffordabilitySettings(): Promise<AffordabilitySettings> {
+  const data = await readJson(await apiFetch("/api/affordability/settings"), "Unable to load affordability settings");
+  return data.settings;
+}
+
+export async function saveAffordabilitySettings(settings: AffordabilitySettings) {
+  return readJson(await apiFetch("/api/affordability/settings", { method: "PUT", body: JSON.stringify(settings) }), "Unable to save affordability settings");
+}
+
+export async function fetchAffordabilityRules(): Promise<AffordabilityRule[]> {
+  const data = await readJson(await apiFetch("/api/affordability/rules"), "Unable to load affordability rules");
+  return data.rules;
+}
+
+export async function createAffordabilityRule(rule: AffordabilityRule) {
+  return readJson(await apiFetch("/api/affordability/rules", { method: "POST", body: JSON.stringify(rule) }), "Unable to create affordability rule");
+}
+
+export async function updateAffordabilityRule(id: string, rule: AffordabilityRule) {
+  return readJson(await apiFetch(`/api/affordability/rules/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(rule) }), "Unable to update affordability rule");
+}
+
+export async function deactivateAffordabilityRule(id: string) {
+  return readJson(await apiFetch(`/api/affordability/rules/${encodeURIComponent(id)}`, { method: "DELETE" }), "Unable to deactivate affordability rule");
+}
+
+export async function calculatePropertyAffordability(propertyId: string, input: Record<string, unknown>): Promise<AffordabilityResult> {
+  const data = await readJson(await apiFetch(`/api/affordability/properties/${encodeURIComponent(propertyId)}/calculate`, { method: "POST", body: JSON.stringify(input) }), "Unable to calculate complete affordability");
+  return data.affordability;
+}
+
+export type HomeFinderInput = {
+  purpose: "self_use" | "family_upgrade" | "investment" | "rental";
+  destination: { query: string; resolvedAddress?: string; latitude?: number; longitude?: number };
+  maxMonthlyEmi: number;
+  downPayment: number;
+  bhk: number;
+  deadline: string;
+};
+
+export async function resolveBuyerDestination(query: string) {
+  const data = await readJson(await apiFetch("/api/home-finder/destination", { method: "POST", body: JSON.stringify({ query }) }), "Unable to locate destination");
+  return data.destination as { latitude: number; longitude: number; resolvedAddress: string; provider: string };
+}
+
+export async function findHomeRecommendations(input: HomeFinderInput) {
+  const data = await readJson(await apiFetch("/api/home-finder/recommendations", { method: "POST", body: JSON.stringify(input) }), "Unable to find matching homes");
+  return normalizePropertyResponse(data);
+}
+
+function workspaceFetch(endpoint: string, token: string, options: RequestInit = {}) {
+  return apiFetch(endpoint, { ...options, headers: { ...(options.headers as Record<string, string>), "X-Workspace-Token": token } });
+}
+
+function workspaceParticipantFetch(endpoint: string, token: string, participantId: string, options: RequestInit = {}) {
+  return workspaceFetch(endpoint, token, { ...options, headers: { ...(options.headers as Record<string, string>), "X-Participant-Id": participantId } });
+}
+
+export async function createDecisionWorkspace(propertyIds: string[] = []) {
+  return readJson(await apiFetch("/api/decision-workspaces", { method: "POST", body: JSON.stringify({ propertyIds }) }), "Unable to create family workspace");
+}
+
+export async function fetchDecisionWorkspace(id: string, token: string) {
+  const data = await readJson(await workspaceFetch(`/api/decision-workspaces/${encodeURIComponent(id)}`, token), "Unable to load family workspace");
+  return normalizePropertyResponse(data);
+}
+
+export async function addDecisionWorkspaceProperty(id: string, token: string, propertyId: string) {
+  const data = await readJson(await workspaceFetch(`/api/decision-workspaces/${encodeURIComponent(id)}/properties`, token, { method: "POST", body: JSON.stringify({ propertyId }) }), "Unable to add property to workspace");
+  return normalizePropertyResponse(data);
+}
+
+export async function removeDecisionWorkspaceProperty(id: string, token: string, propertyId: string) {
+  const data = await readJson(await workspaceFetch(`/api/decision-workspaces/${encodeURIComponent(id)}/properties/${encodeURIComponent(propertyId)}`, token, { method: "DELETE" }), "Unable to remove property from workspace");
+  return normalizePropertyResponse(data);
+}
+
+export async function updateDecisionWorkspaceProperty(id: string, token: string, propertyId: string, input: { note?: string; questions?: string[] }) {
+  const data = await readJson(await workspaceFetch(`/api/decision-workspaces/${encodeURIComponent(id)}/properties/${encodeURIComponent(propertyId)}`, token, { method: "PATCH", body: JSON.stringify(input) }), "Unable to update workspace notes");
+  return normalizePropertyResponse(data);
+}
+
+export async function voteInDecisionWorkspace(id: string, token: string, propertyId: string, input: { participantId: string; nickname: string; vote: "prefer" | "maybe" | "not_preferred" }) {
+  const data = await readJson(await workspaceFetch(`/api/decision-workspaces/${encodeURIComponent(id)}/properties/${encodeURIComponent(propertyId)}/votes`, token, { method: "POST", body: JSON.stringify(input) }), "Unable to save family vote");
+  return normalizePropertyResponse(data);
+}
+
+export async function fetchDecisionWorkspaceSummary(id: string, token: string) {
+  return readJson(await workspaceFetch(`/api/decision-workspaces/${encodeURIComponent(id)}/summary`, token), "Unable to prepare comparison summary");
+}
+
+export type DecisionWorkspaceMessage = {
+  id: string;
+  nickname: string;
+  message: string;
+  propertyId: string;
+  propertyTitle: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+  isMine: boolean;
+  canDelete: boolean;
+};
+
+export async function fetchDecisionWorkspaceMessages(id: string, token: string, participantId: string, after = "") {
+  return readJson(await workspaceParticipantFetch(`/api/decision-workspaces/${encodeURIComponent(id)}/messages${toQuery({ after })}`, token, participantId), "Unable to load family chat");
+}
+
+export async function sendDecisionWorkspaceMessage(id: string, token: string, participantId: string, input: { nickname: string; message: string; propertyId?: string }) {
+  return readJson(await workspaceParticipantFetch(`/api/decision-workspaces/${encodeURIComponent(id)}/messages`, token, participantId, { method: "POST", body: JSON.stringify(input) }), "Unable to send family message");
+}
+
+export async function deleteDecisionWorkspaceMessage(id: string, token: string, participantId: string, messageId: string) {
+  return readJson(await workspaceParticipantFetch(`/api/decision-workspaces/${encodeURIComponent(id)}/messages/${encodeURIComponent(messageId)}`, token, participantId, { method: "DELETE" }), "Unable to remove family message");
+}
+
+export async function askProject(propertyId: string, question: string) {
+  return readJson(await apiFetch(`/api/project-assistant/${encodeURIComponent(propertyId)}/ask`, { method: "POST", body: JSON.stringify({ question }) }), "Unable to answer this project question");
+}
+
+export async function reportProjectAnswer(propertyId: string, questionId: string, reason = "") {
+  return readJson(await apiFetch(`/api/project-assistant/${encodeURIComponent(propertyId)}/feedback`, { method: "POST", body: JSON.stringify({ questionId, reason }) }), "Unable to report this answer");
+}
+
+export async function fetchAssistantLearningStats() {
+  return readJson(await apiFetch("/api/project-assistant/admin/stats"), "Unable to load assistant review totals");
+}
+
+export async function fetchAssistantQuestions(params: Record<string, unknown> = {}) {
+  return readJson(await apiFetch(`/api/project-assistant/admin/questions${toQuery(params)}`), "Unable to load project questions");
+}
+
+export async function dismissAssistantQuestion(id: string) {
+  return readJson(await apiFetch(`/api/project-assistant/admin/questions/${encodeURIComponent(id)}/dismiss`, { method: "PATCH" }), "Unable to dismiss question");
+}
+
+export async function fetchProjectAssistantEvidence(propertyId: string) {
+  return readJson(await apiFetch(`/api/project-assistant/admin/properties/${encodeURIComponent(propertyId)}/evidence`), "Unable to load project evidence");
+}
+
+export async function resolveAssistantQuestion(id: string, input: { canonicalQuestion: string; aliases: string[]; answer: string; evidenceIds: string[] }) {
+  return readJson(await apiFetch(`/api/project-assistant/admin/questions/${encodeURIComponent(id)}/resolve`, { method: "POST", body: JSON.stringify(input) }), "Unable to approve answer");
+}
+
+export async function fetchProjectKnowledge(params: Record<string, unknown> = {}) {
+  return readJson(await apiFetch(`/api/project-assistant/admin/knowledge${toQuery(params)}`), "Unable to load approved answers");
+}
+
+export async function updateProjectKnowledge(id: string, input: { canonicalQuestion: string; aliases: string[]; answer: string; evidenceIds: string[] }) {
+  return readJson(await apiFetch(`/api/project-assistant/admin/knowledge/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(input) }), "Unable to update approved answer");
+}
+
+export async function deactivateProjectKnowledge(id: string) {
+  return readJson(await apiFetch(`/api/project-assistant/admin/knowledge/${encodeURIComponent(id)}`, { method: "DELETE" }), "Unable to deactivate approved answer");
+}
+
+export async function fetchDocumentExtractions(params: Record<string, unknown> = {}) {
+  return readJson(await apiFetch(`/api/project-assistant/admin/documents${toQuery(params)}`), "Unable to load document extractions");
+}
+
+export async function fetchDocumentExtraction(id: string) {
+  return readJson(await apiFetch(`/api/project-assistant/admin/documents/${encodeURIComponent(id)}`), "Unable to load extracted document text");
+}
+
+export async function discoverPropertyDocuments(propertyId: string) {
+  return readJson(await apiFetch("/api/project-assistant/admin/documents/discover", { method: "POST", body: JSON.stringify({ propertyId }) }), "Unable to discover project documents");
+}
+
+export async function processDocumentExtraction(id: string) {
+  return readJson(await apiFetch(`/api/project-assistant/admin/documents/${encodeURIComponent(id)}/process`, { method: "POST" }), "Unable to extract document text");
+}
+
+export async function reviewDocumentExtraction(id: string, action: "approve" | "reject", pages?: Array<{ pageNumber: number; text: string }>) {
+  return readJson(await apiFetch(`/api/project-assistant/admin/documents/${encodeURIComponent(id)}/review`, { method: "PATCH", body: JSON.stringify({ action, pages }) }), "Unable to review extracted text");
 }
 
 export async function createProperty(propertyData: Record<string, unknown>) {
@@ -866,6 +1113,15 @@ export async function fetchLoginReports(params: Record<string, unknown> = {}) {
 export async function fetchLeads(params: Record<string, unknown> = {}) {
   return readJson(await apiFetch(`/api/leads${toQuery(params)}`), "Failed to fetch leads");
 }
+export async function fetchLeadMetrics(params: Record<string, unknown> = {}) {
+  return readJson(await apiFetch(`/api/leads/metrics${toQuery(params)}`), "Failed to fetch lead metrics");
+}
+export async function fetchLead(id: string) {
+  return readJson(await apiFetch(`/api/leads/${id}`), "Failed to fetch lead details");
+}
+export async function importLeads(rows: Record<string, unknown>[]) {
+  return readJson(await apiFetch("/api/leads/import", { method: "POST", body: JSON.stringify({ rows }) }), "Failed to import leads");
+}
 export async function submitContactLead(data: Record<string, unknown>) {
   return readJson(await apiFetch("/api/leads/contact", { method: "POST", body: JSON.stringify(data) }), "Failed to submit enquiry");
 }
@@ -988,6 +1244,12 @@ export async function deleteInsight(id: string) {
 // ─── Leads: status + delete ────────────────────────────────────
 export async function updateLeadStatus(id: string, status: string) {
   return readJson(await apiFetch(`/api/leads/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }), "Failed to update lead status");
+}
+export async function updateLeadQualification(id: string, data: { score: number; level: string; reasons?: string[] }) {
+  return readJson(await apiFetch(`/api/leads/${id}/qualification`, { method: "PATCH", body: JSON.stringify(data) }), "Failed to update lead qualification");
+}
+export async function updateLeadFollowUp(id: string, data: { note: string; assignedTo?: string }) {
+  return readJson(await apiFetch(`/api/leads/${id}/follow-up`, { method: "PATCH", body: JSON.stringify(data) }), "Failed to save follow-up note");
 }
 export async function deleteLead(id: string) {
   return readJson(await apiFetch(`/api/leads/${id}`, { method: "DELETE" }), "Failed to delete lead");

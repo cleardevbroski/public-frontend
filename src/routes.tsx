@@ -35,6 +35,11 @@ const AdminHomepagePlacements = lazy(() => import("@/pages/admin/AdminHomepagePl
 const AdminChannelPartners = lazy(() => import("@/pages/admin/AdminChannelPartners"));
 const AdminCPClients = lazy(() => import("@/pages/admin/AdminCPClients"));
 const AdminClientActivity = lazy(() => import("@/pages/admin/AdminClientActivity"));
+const AdminAffordabilityRules = lazy(() => import("@/pages/admin/AdminAffordabilityRules"));
+const AdminAssistantLearning = lazy(() => import("@/pages/admin/AdminAssistantLearning"));
+const FindMyHome = lazy(() => import("@/pages/FindMyHome"));
+const FamilyWorkspace = lazy(() => import("@/pages/FamilyWorkspace"));
+const Legal = lazy(() => import("@/pages/Legal"));
 
 export const router = createBrowserRouter([
   {
@@ -44,6 +49,10 @@ export const router = createBrowserRouter([
       { path: "/", element: <Home /> },
       { path: "/account", element: <Account /> },
       { path: "/account/saved-properties", element: <SavedProperties /> },
+      { path: "/find-my-home", element: <FindMyHome /> },
+      { path: "/family-workspace/:id", element: <FamilyWorkspace /> },
+      { path: "/privacy-policy", element: <Legal kind="privacy" /> },
+      { path: "/terms", element: <Legal kind="terms" /> },
       { path: "/dealers", element: <Dealers /> },
       { path: "/postproperty", element: <PostProperty /> },
       { path: "/channel-partner", element: <ChannelPartners /> },
@@ -72,6 +81,8 @@ export const router = createBrowserRouter([
       { path: "/admin/homepage-placements", element: <AdminHomepagePlacements /> },
       { path: "/admin/channel-partners", element: <AdminChannelPartners /> },
       { path: "/admin/cp-clients", element: <AdminCPClients /> },
+      { path: "/admin/affordability-rules", element: <AdminAffordabilityRules /> },
+      { path: "/admin/assistant-learning", element: <AdminAssistantLearning /> },
       { path: "/property/:id", element: <Property /> },
       { path: "/dealer/:slug", element: <Dealer /> },
       { path: "/builder/:slug", element: <Builder /> },

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Link from "@/components/Link";
-import { Building2, MapPin, ArrowLeft, ShieldCheck } from "lucide-react";
+import { Building2, MapPin, ArrowLeft, BookOpen } from "lucide-react";
 import Header from "@/components/acres/Header";
 import Footer from "@/components/acres/Footer";
 import PropertyCard from "@/components/acres/PropertyCard";
@@ -29,7 +29,7 @@ export default function BuilderPage() {
       <Header />
 
       {/* Builder hero */}
-      <section className="relative bg-[#0B1328] py-11 overflow-hidden">
+      <section className="public-page-hero relative py-11">
         <div className="absolute inset-0 opacity-[0.07] bg-[radial-gradient(circle_at_15%_20%,#DDAA42_0,transparent_40%),radial-gradient(circle_at_85%_70%,#273559_0,transparent_45%)]" />
         <div className="relative z-10 max-w-[1200px] mx-auto px-5">
           <Link href="/" className="inline-flex items-center gap-2 text-white/60 hover:text-[#F2C052] text-[13px] font-semibold mb-6 transition-colors">
@@ -45,10 +45,10 @@ export default function BuilderPage() {
               <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.18em] uppercase text-[#DDAA42]">
                 <Building2 className="size-3.5" /> Developer
               </span>
-              <h1 className="text-[32px] md:text-[44px] font-bold text-white capitalize leading-tight">{name}</h1>
+              <h1 className="display-heading text-[36px] text-white capitalize md:text-[50px]">{name}</h1>
               <p className="text-[14px] text-white/65 mt-1 flex items-center gap-2">
-                <ShieldCheck className="size-4 text-[#F2C052]" />
-                {mounted ? properties.length : "—"} verified clear-title{" "}
+                <BookOpen className="size-4 text-[#F2C052]" />
+                {mounted ? properties.length : "—"} published{" "}
                 {properties.length === 1 ? "project" : "projects"} · Bangalore
               </p>
             </div>
@@ -65,7 +65,7 @@ export default function BuilderPage() {
 
           {!mounted ? (
             <div className="flex items-center justify-center h-48">
-              <div className="size-8 border-3 border-[#DDAA42] border-t-transparent rounded-full animate-spin" />
+              <div className="h-48 w-full animate-pulse rounded-2xl bg-white" />
             </div>
           ) : properties.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">

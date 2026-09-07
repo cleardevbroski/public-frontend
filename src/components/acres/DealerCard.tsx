@@ -1,6 +1,6 @@
 "use client";
 import Link from "@/components/Link";
-import { Phone, BadgeCheck, ChevronRight, UserRound } from "lucide-react";
+import { Building2, ChevronRight, UserRound } from "lucide-react";
 import type { Dealer } from "@/lib/dealerStore";
 import { getDealerMatchCount } from "@/lib/dealerStore";
 
@@ -8,9 +8,9 @@ export default function DealerCard({ dealer }: { dealer: Dealer }) {
   const matches = getDealerMatchCount(dealer);
   return (
     <div className="shrink-0 w-[330px] max-w-[88vw] flex flex-col">
-      <div className="bg-white border border-[#E4E0E7]/60 shadow-sm hover:shadow-lg transition-all p-5 relative">
+      <div className="public-surface public-interactive bg-white p-5 relative">
         <p className="flex items-center gap-1.5 text-[11px] font-semibold text-[#68646F]">
-          <Phone className="size-3.5 text-[#DDAA42]" /> {dealer.buyersThisWeek} Buyers this week
+          <Building2 className="size-3.5 text-[#805A0B]" /> Published partner profile
         </p>
         <div className="flex flex-col items-center text-center mt-3">
           <div className="relative">
@@ -20,9 +20,6 @@ export default function DealerCard({ dealer }: { dealer: Dealer }) {
               ) : (
                 <UserRound className="size-12 text-[#9AA0B0]" />
               )}
-            </span>
-            <span className="absolute -bottom-1 -right-1 size-8 rounded-full bg-gradient-to-br from-[#F2C052] to-[#DDAA42] flex items-center justify-center shadow">
-              <BadgeCheck className="size-4 text-[#121B35]" />
             </span>
           </div>
           <p className="text-[11px] font-bold tracking-wider uppercase text-[#68646F] mt-3">{dealer.agency}</p>
@@ -34,8 +31,8 @@ export default function DealerCard({ dealer }: { dealer: Dealer }) {
             ))}
           </div>
         </div>
-        <Link href={`/dealer/${dealer.slug}`} className="mt-4 w-full h-11 rounded-xl border border-[#DDAA42] text-[#DDAA42] font-bold text-[14px] flex items-center justify-center hover:bg-[#DDAA42] hover:text-[#0B1328] transition-colors">
-          Contact Dealer
+        <Link href={`/dealer/${dealer.slug}`} className="mt-4 w-full h-11 rounded-xl border border-[#DDAA42] text-[#805A0B] font-bold text-[14px] flex items-center justify-center hover:bg-[#DDAA42] hover:text-[#0B1328] transition-colors">
+          View partner profile
         </Link>
       </div>
       <Link href={`/dealer/${dealer.slug}`} className="mt-1.5 flex items-center justify-between bg-[#F8F7FA] hover:bg-[#F3F1F5] rounded-xl px-3 py-2.5 transition-colors border border-[#E4E0E7]/50">

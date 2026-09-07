@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import PropertyCard from "@/components/acres/PropertyCard";
 
 describe("public property card content", () => {
-  it("shows only the approved compact summary and hides secondary property details", () => {
+  it("shows a factual trust label and the primary configuration", () => {
     const markup = renderToStaticMarkup(
       <MemoryRouter>
         <PropertyCard p={{
@@ -25,13 +25,31 @@ describe("public property card content", () => {
 
     expect(markup).toContain("Century Jakkur");
     expect(markup).toContain("Jakkur, Bengaluru");
-    expect(markup).toContain("Clear Title Verified");
+    expect(markup).toContain("RERA details available");
     expect(markup).toContain("RERA");
     expect(markup).toContain("Save property");
-    expect(markup).not.toContain("3 BHK");
+    expect(markup).toContain("3 BHK");
     expect(markup).not.toContain("1,650 sq.ft");
     expect(markup).not.toContain("9,500 / sq.ft");
     expect(markup).not.toContain("Ready to Move");
     expect(markup).not.toContain("New Launch");
+  });
+
+  it("uses the admin-verified label only when the record is verified", () => {
+    const markup = renderToStaticMarkup(
+      <MemoryRouter>
+        <PropertyCard p={{
+          id: "64b7f3f3f3f3f3f3f3f3f3f4",
+          title: "Verified Project",
+          subtitle: "Bangalore",
+          price: "₹ 1 Cr",
+          configs: ["2 BHK"],
+          area: "",
+          image: "",
+          verified: true,
+        }} />
+      </MemoryRouter>,
+    );
+    expect(markup).toContain("Admin verified");
   });
 });

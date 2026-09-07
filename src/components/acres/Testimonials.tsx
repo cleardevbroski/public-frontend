@@ -1,18 +1,21 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Quote, Star, Sparkles } from "lucide-react";
-import { testimonials as fallbackTestimonials } from "./mock-data";
 import { fetchTestimonials } from "@/lib/api";
+
+type Testimonial = { _id?: string; name: string; role: string; quote: string; rating: number };
 
 export default function Testimonials() {
   const ref = useRef<HTMLDivElement>(null);
   const scrollBy = (d: 1 | -1) => ref.current?.scrollBy({ left: d * 360, behavior: "smooth" });
-  const [items, setItems] = useState(fallbackTestimonials);
+  const [items, setItems] = useState<Testimonial[]>([]);
   useEffect(() => {
     fetchTestimonials({ status: "approved" })
       .then((rows: any[]) => { if (Array.isArray(rows) && rows.length) setItems(rows); })
       .catch(() => {});
   }, []);
+
+  if (items.length === 0) return null;
 
   return (
     <section className="bg-gradient-to-b from-white to-[#F8F7FA]/25 py-10">

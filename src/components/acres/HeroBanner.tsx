@@ -49,6 +49,8 @@ export default function HeroBanner() {
     let path = "/property-in-bangalore-ffid";
     if (activeKind === "Commercial") {
       path = "/commercial-property-in-bangalore-ffid";
+    } else if (activeKind === "Villas") {
+      path = "/independent-house-in-bangalore-ffid";
     } else if (activeKind === "Plots") {
       path = "/residential-land-in-bangalore-ffid";
     } else if (activeKind === "PG/Co-living") {
@@ -91,6 +93,7 @@ export default function HeroBanner() {
             className="absolute inset-0 z-10"
           />
         )}
+        {!slide && <div className="public-container relative z-10 flex h-full items-center"><div className="max-w-[680px] px-1"><p className="public-page-hero__eyebrow">Bangalore property decisions</p><h1 className="display-heading mt-3 text-[38px] text-white sm:text-[52px]">Find a home with the important facts in view.</h1><p className="mt-4 max-w-[58ch] text-[13px] leading-6 text-[#D9DDE8] sm:text-[15px]">Compare available configurations, RERA phases, project documents, location information and estimated ownership costs.</p></div></div>}
 
         {slide && (
           <>
@@ -205,9 +208,9 @@ export default function HeroBanner() {
           {/* Trust strip */}
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             {[
-              { icon: ShieldCheck, title: "Verified Properties", sub: "100% Clear Title Guarantee" },
-              { icon: BadgeCheck, title: "Trusted Advisory", sub: "Expert Guidance, No Hidden Costs" },
-              { icon: Compass, title: "Prime Locations", sub: "Top Properties Across Bangalore" },
+              { icon: ShieldCheck, title: "Project records", sub: "Facts and missing fields shown openly" },
+              { icon: BadgeCheck, title: "RERA references", sub: "Phase numbers shown when available" },
+              { icon: Compass, title: "Verified pins", sub: "Only confirmed coordinates receive the badge" },
             ].map(({ icon: Icon, title, sub }) => (
               <div key={title} className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-3.5 rounded-xl">
                 <div className="size-10 bg-[#DDAA42]/20 border border-[#DDAA42]/30 flex items-center justify-center shrink-0 rounded-lg">

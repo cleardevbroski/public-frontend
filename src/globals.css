@@ -24,6 +24,11 @@
   --color-acres-text: #12172B;
   --color-acres-text-muted: #68646F;
   --color-acres-text-body: #3F3D46;
+  --color-acres-text-subtle: #68646F;
+  --color-acres-link: #805A0B;
+  --color-acres-success: #14633F;
+  --color-acres-warning: #8A5B00;
+  --color-acres-danger: #B53A33;
   --color-acres-surface: #F8F7FA;
   --color-acres-surface-2: #F3F1F5;
   --color-acres-border: #E4E0E7;
@@ -169,6 +174,14 @@
   [role="button"],
   select {
     cursor: pointer;
+  }
+  button:active,
+  [role="button"]:active {
+    transform: translateY(1px);
+  }
+  :is(a, button, input, select, textarea):focus-visible {
+    outline: 3px solid rgba(221, 170, 66, 0.58);
+    outline-offset: 3px;
   }
   input,
   select,
@@ -406,12 +419,36 @@
 
 /* ===== Deep Navy + Warm Gold theme helpers ===== */
 .font-serif-display {
-  font-family: var(--font-open-sans), "Open Sans", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-display), Georgia, serif;
 }
 h1, h2, h3 {
   font-family: var(--font-open-sans), "Open Sans", ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.015em;
+  text-wrap: balance;
 }
+p { text-wrap: pretty; }
+.tabular-nums { font-variant-numeric: tabular-nums; }
+.display-heading {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+}
+.skip-to-content {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 200;
+  transform: translateY(-160%);
+  border-radius: 0.75rem;
+  background: #F2C052;
+  color: #0B1328;
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  transition: transform 160ms ease;
+}
+.skip-to-content:focus { transform: translateY(0); }
 .text-gold-gradient {
   background: linear-gradient(100deg, #DDAA42 0%, #F7D987 45%, #F2C052 60%, #DDAA42 100%);
   -webkit-background-clip: text;
@@ -509,7 +546,7 @@ h1, h2, h3 {
 
   .home-main > .scroll-reveal {
     width: min(100%, 1248px);
-    margin: 0 auto 16px;
+    margin: 0 auto 28px;
     padding-inline: 12px;
   }
 
@@ -519,13 +556,23 @@ h1, h2, h3 {
 
   .home-main > .scroll-reveal > section {
     overflow: hidden;
-    border: 1px solid rgba(18, 27, 53, 0.08);
-    border-radius: 20px;
-    background: #FFFFFF;
-    box-shadow:
-      0 1px 2px rgba(18, 27, 53, 0.04),
-      0 10px 28px rgba(18, 27, 53, 0.055);
+    border: 0;
+    border-radius: 22px;
+    background: transparent;
+    box-shadow: none;
     padding-block: 0;
+  }
+
+  .home-main > .scroll-reveal:nth-of-type(4n + 1) > section {
+    border: 1px solid rgba(18, 27, 53, 0.08);
+    background: #FFFFFF;
+    box-shadow: 0 14px 38px rgba(18, 27, 53, 0.05);
+  }
+
+  .buyer-journey {
+    margin-top: -1px;
+    border-bottom: 1px solid rgba(18, 27, 53, 0.08);
+    background: #EEEAE2;
   }
 
   .home-main > .scroll-reveal > section > [class*="max-w-"] {
@@ -542,7 +589,67 @@ h1, h2, h3 {
     background:
       radial-gradient(circle at 92% 4%, rgba(221, 170, 66, 0.06), transparent 24rem),
       #F3F4F6;
+    color: #3F3D46;
   }
+
+  .public-page-shell {
+    min-height: 72vh;
+    background:
+      radial-gradient(circle at 92% 0%, rgba(221, 170, 66, 0.07), transparent 27rem),
+      #F6F5F7;
+    color: #3F3D46;
+  }
+
+  .public-container {
+    width: min(100% - 2rem, 1240px);
+    margin-inline: auto;
+  }
+
+  .public-page-hero {
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 82% 12%, rgba(221, 170, 66, 0.18), transparent 24rem),
+      #0B1328;
+    color: #FFFFFF;
+  }
+
+  .public-page-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.22;
+    background-image: radial-gradient(rgba(255,255,255,0.22) 0.55px, transparent 0.55px);
+    background-size: 5px 5px;
+    mask-image: linear-gradient(90deg, transparent, black 62%, transparent);
+  }
+
+  .public-page-hero__eyebrow {
+    color: #F2C052;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .public-heading { color: #12172B; }
+  .public-body { color: #3F3D46; }
+  .public-muted { color: #68646F; }
+  .public-link { color: #805A0B; font-weight: 650; }
+  .public-link:hover { color: #B98428; }
+
+  .public-surface {
+    border: 1px solid rgba(18, 27, 53, 0.09);
+    background: #FFFFFF;
+    box-shadow: 0 14px 38px rgba(18, 27, 53, 0.055);
+  }
+
+  .public-interactive {
+    transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease, color 180ms ease;
+  }
+  .public-interactive:hover { transform: translateY(-2px); }
+  .public-interactive:active { transform: translateY(0) scale(0.99); }
 
   .public-main > section:not([class*="bg-gradient"]):not([class*="bg-[#0B1328]"]) {
     width: min(100%, 1240px);

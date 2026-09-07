@@ -57,13 +57,15 @@ export default function ProjectAbout({ property, title, facts }: { property: Pro
   const validFacts = facts.filter(({ val }) => hasValue(val));
   const closingFactLabels = new Set(["property type", "transaction", "facing", "rera number", "total project area", "number of units", "security", "water supply", "power backup", "elevators", "visitor parking", "maintenance staff"]);
   const closingFacts = validFacts.filter(({ label }) => closingFactLabels.has(label.trim().toLowerCase()));
-  const visibleFacts = (expanded ? validFacts : validFacts.slice(0, 6)).filter(({ label }) => !closingFactLabels.has(label.trim().toLowerCase()));
+  const detailFacts = validFacts.filter(({ label }) => !closingFactLabels.has(label.trim().toLowerCase()));
+  const collapsedFacts = introductions.length ? [] : detailFacts.slice(0, 3);
+  const visibleFacts = expanded ? detailFacts : collapsedFacts;
   const hasLongIntroduction = introductions.some((paragraph) => paragraph.length > 240 || paragraph.split(/\s+/).length > 42);
   const hasExtendedNarrative = Boolean(
     narrative?.usps?.length || narrative?.keyDetails?.length || narrative?.featureGroups?.length ||
     narrative?.locationAdvantage?.length || narrative?.investmentReasons?.length || introductions.length > 1,
   );
-  const canExpand = validFacts.length > 6 || hasExtendedNarrative || hasLongIntroduction;
+  const canExpand = hasLongIntroduction || hasExtendedNarrative || validFacts.length > collapsedFacts.length;
   if (!introductions.length && !validFacts.length && !hasExtendedNarrative) return null;
 
   return (
@@ -75,9 +77,9 @@ export default function ProjectAbout({ property, title, facts }: { property: Pro
 
       {introductions.length > 0 && (
         <div className="border-b border-[#E6E8EB] px-5 py-3.5">
-          <p className={`whitespace-pre-line text-[13px] leading-6 text-[#59616F] ${expanded ? "" : "line-clamp-3"}`}>{introductions[0]}</p>
+          <p className={`whitespace-pre-line text-[13px] leading-6 text-[#59616F] ${expanded ? "" : "line-clamp-6"}`}>{introductions[0]}</p>
           {expanded && introductions.slice(1).map((paragraph, index) => <p key={index} className="mt-3 whitespace-pre-line text-[13px] leading-6 text-[#59616F]">{paragraph}</p>)}
-          {!expanded && canExpand && <button type="button" onClick={() => setExpanded(true)} className="mt-1 inline-flex items-center text-[12px] font-bold text-[#1D2433] underline underline-offset-4">View More</button>}
+          {!expanded && canExpand && <button type="button" aria-expanded={false} onClick={() => setExpanded(true)} className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-bold text-[#1D2433] underline underline-offset-4">View More<ChevronDown className="size-4" /></button>}
         </div>
       )}
 

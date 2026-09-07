@@ -32,10 +32,10 @@ export default function ClearTitleAdvisor() {
         <div className="text-center mb-12">
           <p className="acres-overline">ClearTitle One Advisor</p>
           <h2 className="text-[28px] font-bold text-[#121B35] mt-1" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
-            Premium Services & Financial Tools
+            Buying support & financial tools
           </h2>
           <p className="text-[14px] text-[#68646F] mt-1">
-            Access our integrated tools, legal assistance, and property financial calculators in one click.
+            Use calculation tools and request specialist assistance while keeping assumptions visible.
           </p>
         </div>
 
@@ -77,7 +77,7 @@ export default function ClearTitleAdvisor() {
               }`}
             >
               <ShieldCheck className="size-5" />
-              <span>ClearTitle Trust Promise</span>
+              <span>Information transparency</span>
             </button>
 
             <div className="mt-auto pt-6 border-t border-[#F3F1F5] hidden lg:block">
@@ -115,10 +115,10 @@ export default function ClearTitleAdvisor() {
 
                   <div className="border border-[#E4E0E7]/30 hover:border-[#DDAA42]/50 p-4.5 rounded-2xl bg-[#F8F7FA]/20 hover:shadow transition-all group">
                     <h4 className="text-[15px] font-bold text-[#121B35] group-hover:text-[#DDAA42] transition-colors">
-                      Zero-Brokerage Owner Ads
+                      Owner property submissions
                     </h4>
                     <p className="text-[12px] text-[#3F3D46]/80 mt-1 leading-relaxed">
-                      List your flats or commercial slots directly to authentic buyers. Zero broker commission, maximum yields.
+                      Submit flats or commercial spaces for admin review before they appear in the public directory.
                     </p>
                     <Link href="/postproperty" className="text-[11px] text-[#DDAA42] font-bold mt-3 inline-flex items-center gap-1 hover:underline">
                       Post free ad <ArrowRight className="size-3" />
@@ -130,7 +130,7 @@ export default function ClearTitleAdvisor() {
                       Design & Renovation Hub
                     </h4>
                     <p className="text-[12px] text-[#3F3D46]/80 mt-1 leading-relaxed">
-                      Collaborate with handpicked interior designers and modular builders to bring your new signature flat to life.
+                      Explore renovation support when an eligible service partner is available for your project.
                     </p>
                     <span className="text-[10px] bg-[#DDAA42]/20 text-[#DDAA42] font-bold px-2 py-0.5 rounded mt-3 inline-block">
                       GOLD PARTNER
@@ -142,7 +142,7 @@ export default function ClearTitleAdvisor() {
                       Commercial Tenant Matching
                     </h4>
                     <p className="text-[12px] text-[#3F3D46]/80 mt-1 leading-relaxed">
-                      Get premium IT firms, co-working suites, and banks to lease your commercial structures across prime corporate zones.
+                      Explore published commercial property records and available leasing information.
                     </p>
                     <Link href="/property-in-bangalore-ffid" className="text-[11px] text-[#DDAA42] font-bold mt-3 inline-flex items-center gap-1 hover:underline">
                       Browse requirements <ArrowRight className="size-3" />
@@ -174,7 +174,7 @@ export default function ClearTitleAdvisor() {
                       <div>
                         <div className="flex justify-between text-[11px] font-bold text-[#3F3D46] mb-1">
                           <span>LOAN AMOUNT</span>
-                          <span className="text-[#DDAA42]">â‚¹ {(loanAmount / 100000).toFixed(1)} Lakhs</span>
+                          <span className="text-[#805A0B]">₹ {(loanAmount / 100000).toFixed(1)} Lakhs</span>
                         </div>
                         <input
                           type="range"
@@ -216,7 +216,7 @@ export default function ClearTitleAdvisor() {
                       <div className="pt-3 border-t border-[#F3F1F5]/60 mt-3 text-center">
                         <span className="text-[10px] text-[#68646F] block font-bold uppercase">Estimated Monthly EMI</span>
                         <span className="text-[24px] font-extrabold text-[#DDAA42] block mt-1">
-                          â‚¹ {calculateEMI().toLocaleString("en-IN")}
+                          ₹ {calculateEMI().toLocaleString("en-IN")}
                         </span>
                       </div>
                     </div>
@@ -275,19 +275,19 @@ export default function ClearTitleAdvisor() {
               <div className="animate-in fade-in duration-300">
                 <h3 className="text-[20px] font-bold text-[#121B35] mb-2 flex items-center gap-2">
                   <ShieldCheck className="text-[#DDAA42] size-5" />
-                  Our 3-Point Security Oath
+                  What the project record tells you
                 </h3>
                 <p className="text-[13px] text-[#68646F] mb-6">
-                  ClearTitle One values security over transaction volumes. Every listing passes rigorous checks.
+                  ClearTitle One keeps available evidence and important information gaps visible on the project page.
                 </p>
 
                 <div className="space-y-4">
                   <div className="flex gap-3.5 p-4 rounded-xl hover:bg-[#F8F7FA]/35 transition-colors">
                     <CheckCircle className="size-6 text-[#DDAA42] shrink-0" />
                     <div>
-                      <h4 className="text-[15px] font-bold text-[#121B35]">100% Encumbered & Title Checked</h4>
+                      <h4 className="text-[15px] font-bold text-[#121B35]">Admin review status</h4>
                       <p className="text-[12px] text-[#3F3D46]/80 mt-1 leading-relaxed">
-                        We screen and cross-reference public deeds to confirm zero outstanding bank pledges or active boundary disputes on registered villas or lands.
+                        Published records can show their admin review state. This does not replace an independent legal title opinion.
                       </p>
                     </div>
                   </div>
@@ -295,9 +295,9 @@ export default function ClearTitleAdvisor() {
                   <div className="flex gap-3.5 p-4 rounded-xl hover:bg-[#F8F7FA]/35 transition-colors">
                     <CheckCircle className="size-6 text-[#DDAA42] shrink-0" />
                     <div>
-                      <h4 className="text-[15px] font-bold text-[#121B35]">RERA Mandatory Validation</h4>
+                      <h4 className="text-[15px] font-bold text-[#121B35]">RERA phase references</h4>
                       <p className="text-[12px] text-[#3F3D46]/80 mt-1 leading-relaxed">
-                        Every multi-story flat and project must host an active RERA verification number. No unapproved developments, zero layout loopholes.
+                        Phase names and RERA numbers appear when they are stored. A missing reference is shown instead of being silently hidden.
                       </p>
                     </div>
                   </div>
@@ -305,9 +305,9 @@ export default function ClearTitleAdvisor() {
                   <div className="flex gap-3.5 p-4 rounded-xl hover:bg-[#F8F7FA]/35 transition-colors">
                     <CheckCircle className="size-6 text-[#DDAA42] shrink-0" />
                     <div>
-                      <h4 className="text-[15px] font-bold text-[#121B35]">Direct-to-Owner Clean Desk</h4>
+                      <h4 className="text-[15px] font-bold text-[#121B35]">Visible calculation assumptions</h4>
                       <p className="text-[12px] text-[#3F3D46]/80 mt-1 leading-relaxed">
-                        We prioritize direct owner listings. By encouraging direct owner connections, we cut intermediary brokerage costs, ensuring clear pricing transparency.
+                        Project values, government-rule estimates, user assumptions and missing charges are labelled separately in affordability results.
                       </p>
                     </div>
                   </div>
@@ -318,7 +318,7 @@ export default function ClearTitleAdvisor() {
             {/* Bottom Tagline */}
             <div className="mt-8 pt-4 border-t border-[#F3F1F5]/60 flex items-center justify-between flex-wrap gap-4 text-[12px]">
               <span className="text-[#68646F]">
-                All data computed matches standard Karnataka/RERA rules.
+                Calculator results are estimates, not bank quotations or legal advice.
               </span>
               <Link href="/property-rates-and-price-trends-in-bangalore-prffid" className="text-[#DDAA42] hover:underline font-bold flex items-center gap-1">
                 Explore Market Rates Trends

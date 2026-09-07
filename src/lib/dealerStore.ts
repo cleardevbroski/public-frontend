@@ -62,11 +62,7 @@ export function getDealerBySlug(slug: string): Dealer | undefined {
 
 /** Count of published properties attributable to a dealer. */
 export function getDealerMatchCount(dealer: Dealer): number {
-  const published = getPublishedProperties();
-  if (dealer.propertyIds?.length) return dealer.propertyIds.length;
-  // Stable pseudo-count derived from the dealer id so curated cards feel real.
-  const hash = dealer.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  return (hash % 70) + Math.min(published.length, 12) + 3;
+  return getDealerProperties(dealer).length;
 }
 
 /** Curated dealer-directory properties. Property listings no longer carry a dealer link. */
@@ -81,9 +77,9 @@ export function getDealerProperties(dealer: Dealer): Property[] {
         (p.subtitle || "").toLowerCase().includes(loc.toLowerCase())
       ),
     );
-    if (matched.length) return matched;
+    return matched;
   }
-  return published.slice(0, 6);
+  return [];
 }
 
 /** Register / upsert a user as a dealer (used by the account page). */

@@ -44,6 +44,7 @@ import PgDetailsFields from "./PgDetailsFields";
 import PropertyQuickFill from "./PropertyQuickFill";
 import ReraPhasesEditor, { KARNATAKA_RERA_URL } from "./ReraPhasesEditor";
 import BulkPropertyMediaImporter from "./BulkPropertyMediaImporter";
+import PropertyChargesFields from "./PropertyChargesFields";
 import { addProperty, setPropertyStatus, updateProperty } from "@/lib/propertyStore";
 import { analyzeProjectLocation, confirmProjectLocation, createPropertyDraft, createPublicProperty, fetchBuilders, resolveNearbyPlaceLocation, resubmitProperty, uploadPropertyMedia } from "@/lib/api";
 import { trackAnalytics } from "@/lib/analytics";
@@ -166,6 +167,9 @@ const initialFormData: FormData = {
   subtitle: "",
   price: "",
   pricePerSqft: "",
+  priceUpdatedAt: undefined,
+  priceSourceType: "developer_supplied",
+  acquisitionCharges: [],
   configs: [],
   configurationDetails: [],
   villaDetails: undefined,
@@ -1219,6 +1223,15 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                   />
                 </div>
               </div>}
+
+              {!isPublic && formData.propertyType !== "PG/Co-living" && <PropertyChargesFields
+                charges={formData.acquisitionCharges || []}
+                priceUpdatedAt={formData.priceUpdatedAt}
+                priceSourceType={formData.priceSourceType}
+                onChargesChange={(value) => updateField("acquisitionCharges", value)}
+                onPriceUpdatedAtChange={(value) => updateField("priceUpdatedAt", value || undefined)}
+                onPriceSourceTypeChange={(value) => updateField("priceSourceType", value)}
+              />}
 
               {/* Bedrooms, Bathrooms, Floor */}
               {!isStructuredType(formData.propertyType) && <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

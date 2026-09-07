@@ -314,12 +314,28 @@ export type PropertyReviewReadiness = {
   photoCount: number;
 };
 
+export type AcquisitionCharge = {
+  name: string;
+  code?: string;
+  calculationType: "fixed" | "percentage" | "per_sqft" | "included" | "not_applicable";
+  value: number;
+  basis: "base_price" | "agreement_value" | "built_up_area";
+  appliesToConfiguration?: string;
+  paymentTiming: "initial" | "monthly" | "at_registration" | "other";
+  sourceType: "exact_project_value" | "developer_supplied";
+  sourceNote?: string;
+  optional?: boolean;
+};
+
 export type Property = {
   id: string;
   title: string;
   subtitle: string;
   price: string;
   pricePerSqft?: string;
+  priceUpdatedAt?: string;
+  priceSourceType?: "exact_project_value" | "developer_supplied";
+  acquisitionCharges?: AcquisitionCharge[];
   configs: string[];
   configurationDetails?: ConfigurationDetail[];
   villaDetails?: VillaDetails;
@@ -778,6 +794,7 @@ export const headerDropdowns: Record<string, DropdownMenu> = {
 };
 
 export const navItems = [
+  { label: "Find My Home", hasDropdown: false, href: "/find-my-home" },
   { label: "For Buyers", hasDropdown: true, href: "/property-in-bangalore-ffid" },
   { label: "For Owners", hasDropdown: true, href: "/postproperty" },
   { label: "For Dealers / Builders", hasDropdown: true, href: "/new-projects-in-bangalore-ffid" },

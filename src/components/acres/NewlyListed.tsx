@@ -29,7 +29,7 @@ export default function NewlyListed() {
               Newly Listed <span className="text-gold-gradient">Properties</span>
             </h2>
             <p className="text-[14px] text-[#68646F] mt-1">
-              Fresh listings added to ClearTitle One â€” be the first to explore.
+              Fresh listings added to ClearTitle One — be the first to explore.
             </p>
           </div>
           <div className="flex gap-2">

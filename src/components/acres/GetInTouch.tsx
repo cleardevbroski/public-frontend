@@ -36,12 +36,13 @@ export default function GetInTouch() {
 
       <div className="relative z-10 max-w-[1100px] mx-auto px-5">
         <div className="text-center mb-12">
-          <h2 className="text-[30px] md:text-[40px] font-bold text-white">
-            Get in <span className="text-gold-gradient">Touch with Us</span>
+          <p className="public-page-hero__eyebrow">Human support</p>
+          <h2 className="display-heading mt-3 text-[34px] text-white md:text-[46px]">
+            Ask our team what the record <span className="text-gold-gradient">doesn&apos;t answer</span>
           </h2>
           <div className="gold-divider mx-auto mt-4" />
           <p className="text-[15px] text-white/65 mt-4">
-            Have questions or need assistance? Our team is here to help!
+            Send a project question or ask for help using ClearTitle One. We will not treat an enquiry as legal approval.
           </p>
         </div>
 
@@ -49,21 +50,17 @@ export default function GetInTouch() {
           {/* Contact info */}
           <div className="flex flex-col justify-center gap-5">
             {[
-              { icon: MapPin, label: "123, MG Road, Bangalore, Karnataka 560001" },
-              { icon: Phone, label: "+91 98765 43210" },
-              { icon: Mail, label: "info@cleartitleone.com" },
-            ].map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl px-5 py-4">
-                <div className="size-11 rounded-xl bg-[#DDAA42]/15 border border-[#DDAA42]/30 flex items-center justify-center shrink-0">
-                  <Icon className="size-5 text-[#F2C052]" />
-                </div>
-                <span className="text-[14px] text-white/85">{label}</span>
-              </div>
-            ))}
+              { icon: MapPin, label: "Bangalore, Karnataka", href: "" },
+              { icon: Phone, label: "1800 41 99099", href: "tel:18004199099" },
+              { icon: Mail, label: "feedback@cleartitleone.com", href: "mailto:feedback@cleartitleone.com" },
+            ].map(({ icon: Icon, label, href }) => {
+              const content = <><div className="size-11 rounded-xl bg-[#DDAA42]/15 border border-[#DDAA42]/30 flex items-center justify-center shrink-0"><Icon className="size-5 text-[#F2C052]" /></div><span className="text-[14px] text-white/85">{label}</span></>;
+              return href ? <a key={label} href={href} className="public-interactive flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-4 hover:border-[#DDAA42]/50">{content}</a> : <div key={label} className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-4">{content}</div>;
+            })}
             <div className="mt-2 rounded-2xl overflow-hidden border border-white/10 h-[160px]">
               <img
                 src="https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=1000&q=80"
-                alt="Office location"
+                alt=""
                 className="w-full h-full object-cover"
               />
             </div>

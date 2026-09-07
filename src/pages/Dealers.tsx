@@ -26,7 +26,7 @@ export default function DealersPage() {
       <Header />
       <main className="public-main flex-1">
         {/* Hero band */}
-        <section className="bg-gradient-to-br from-[#0B1328] via-[#121B35] to-[#273559] text-white">
+        <section className="public-page-hero text-white">
           <div className="max-w-[1200px] mx-auto px-5 py-10">
             <nav className="text-[12px] text-[#E4E0E7]/70 flex items-center gap-1.5">
               <Link href="/" className="hover:text-[#F2C052]">Home</Link>
@@ -37,11 +37,11 @@ export default function DealersPage() {
                 <Award className="size-7" />
               </span>
               <div>
-                <h1 className="text-[32px] md:text-[40px] font-bold">
-                  Verified <span className="text-gold-gradient">Dealers</span> &amp; Channel Partners
+                <h1 className="display-heading text-[36px] text-white md:text-[48px]">
+                  Dealers <span className="text-gold-gradient">&amp; channel partners</span>
                 </h1>
                 <p className="text-[14px] text-[#E4E0E7]/85 mt-1">
-                  Connect with {dealers.length} trusted real-estate dealers across Bangalore.
+                  Browse {dealers.length} admin-published real-estate profiles across Bangalore.
                 </p>
               </div>
             </div>
@@ -68,7 +68,7 @@ export default function DealersPage() {
             Showing <span className="font-bold text-[#121B35]">{filtered.length}</span> dealers
           </p>
           {filtered.length === 0 ? (
-            <div className="text-center py-20 text-[#68646F]">No dealers match your search.</div>
+            <div className="public-surface rounded-2xl py-20 text-center text-[#68646F]">No dealers match your search.</div>
           ) : (
             <div className="flex flex-wrap gap-6 justify-center md:justify-start">
               {filtered.map((d) => (

@@ -4,7 +4,7 @@ import Link from "@/components/Link";
 import { ChevronLeft, ChevronRight, Gift } from "lucide-react";
 import { getPropertiesBySection } from "@/lib/propertyStore";
 import { useLiveProperties } from "@/lib/useLiveProperties";
-import { offerProjects, type Property } from "./mock-data";
+import type { Property } from "./mock-data";
 import { priceWithCharges } from "@/lib/propertyPresentation";
 
 type DisplayProject = {
@@ -24,8 +24,7 @@ export default function OffersForYou() {
     scrollerRef.current?.scrollBy({ left: dir * 560, behavior: "smooth" });
 
   const configuredProjects = useLiveProperties<Property[]>(() => getPropertiesBySection("Offers"), []);
-  const projects: DisplayProject[] = configuredProjects.length
-    ? configuredProjects.map((property) => ({
+  const projects: DisplayProject[] = configuredProjects.map((property) => ({
         id: property.id,
         name: property.title,
         locality: property.subtitle,
@@ -34,12 +33,9 @@ export default function OffersForYou() {
         image: property.image,
         note: property.description || "Limited period offer",
         href: `/property/${property.id}`,
-      }))
-    : offerProjects.map((project) => ({
-        ...project,
-        note: project.note || "Limited period offer",
-        href: "/new-projects-in-bangalore-ffid",
       }));
+
+  if (projects.length === 0) return null;
 
   return (
     <section className="bg-[#F8F7FA] py-8">

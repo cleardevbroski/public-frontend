@@ -1,20 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Scale, CheckCircle2, ShieldCheck, Clock, UserCheck, Star, Send } from "lucide-react";
-import { verifiedLawyers, type Lawyer } from "./mock-data";
+import { Scale, CheckCircle2, ShieldCheck, UserCheck, Star, Send } from "lucide-react";
+import type { Lawyer } from "./mock-data";
 import { submitConsultationLead, fetchLawyers } from "@/lib/api";
 import { trackAnalytics } from "@/lib/analytics";
 
-const liveFeedData = [
-  { text: "Whitefield Survey #43 JDA deeds approved", time: "12 mins ago", lawyer: "Adv. Srinivasan" },
-  { text: "Hebbal Luxury Flat encumbrance certificate cleared", time: "34 mins ago", lawyer: "Adv. Meera Chawla" },
-  { text: "Sarjapur Layout boundary RERA claim settled", time: "1 hr ago", lawyer: "Adv. Amit Verma" },
-  { text: "Koramangala Commercial tenancy agreement audited", time: "2 hrs ago", lawyer: "Adv. Srinivasan" },
-];
-
 export default function LegalConsultationConsole() {
-  const [activeLawyer, setActiveLawyer] = useState<Lawyer>(verifiedLawyers[0]);
-  const [lawyers, setLawyers] = useState<Lawyer[]>(verifiedLawyers);
+  const [activeLawyer, setActiveLawyer] = useState<Lawyer | null>(null);
+  const [lawyers, setLawyers] = useState<Lawyer[]>([]);
   const [query, setQuery] = useState("");
   const [contact, setContact] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -26,21 +19,12 @@ export default function LegalConsultationConsole() {
       .catch(() => {});
   }, []);
   
-  // Rotating live feed ticker index
-  const [feedIndex, setFeedIndex] = useState(0);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFeedIndex((prev) => (prev + 1) % liveFeedData.length);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, []);
-
   const handleQuerySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim() || !contact.trim()) return;
     try {
       await submitConsultationLead({ name: contact, phone: contact, category, message: query });
-      trackAnalytics("legal_query_submitted", { topic: category, lawyerId: activeLawyer.id, lawyerName: activeLawyer.name, source: "home_legal_console" });
+      trackAnalytics("legal_query_submitted", { topic: category, lawyerId: activeLawyer?.id || "", lawyerName: activeLawyer?.name || "", source: "home_legal_console" });
       setSubmitted(true);
       setTimeout(() => { setSubmitted(false); setQuery(""); setContact(""); }, 3500);
     } catch {
@@ -48,7 +32,7 @@ export default function LegalConsultationConsole() {
     }
   };
 
-  const currentFeed = liveFeedData[feedIndex];
+  if (!activeLawyer || lawyers.length === 0) return null;
 
   return (
     <section id="legal-console" className="bg-[#121B35] text-white py-10 scroll-mt-24 relative overflow-hidden">
@@ -62,13 +46,13 @@ export default function LegalConsultationConsole() {
         <div className="text-center mb-12">
           <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#DDAA42] to-[#F2C052] text-[#121B35] text-[11px] font-extrabold px-3 py-1.5 rounded-full shadow-md tracking-[0.2em] uppercase mb-4">
             <Scale className="size-3.5" />
-            CT Legal Shield â€¢ Direct Lawyer Consultations
+            CT Legal Shield · Consultation requests
           </span>
-          <h2 className="text-[32px] md:text-[40px] font-bold tracking-tight leading-none" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
-            Real lawyers. Real verification. Instant queries resolved.
+          <h2 className="display-heading text-[34px] leading-none text-white md:text-[46px]">
+            Ask the right legal questions before you decide.
           </h2>
           <p className="text-[14px] text-white/70 mt-3 max-w-2xl mx-auto font-light">
-            We don&apos;t just list properties â€” we verify them legally. Consult our panel of registered real estate attorneys to audit titles, review agreements, and resolve disputes.
+            Send a consultation request to an admin-published legal professional for title, agreement or RERA-related guidance.
           </p>
         </div>
 
@@ -79,10 +63,10 @@ export default function LegalConsultationConsole() {
           <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-6 md:p-8 flex flex-col justify-between shadow-2xl">
             <div>
               <div className="flex items-center justify-between mb-6">
-                <span className="text-[11px] font-bold tracking-wider text-[#F2C052] uppercase">Active Verification Counsel</span>
+                <span className="text-[11px] font-bold tracking-wider text-[#F2C052] uppercase">Available legal profiles</span>
                 <span className="text-[11px] text-[#DDAA42] font-bold flex items-center gap-1.5 bg-[#DDAA42]/15 px-2.5 py-1 rounded-full border border-[#DDAA42]/25">
                   <UserCheck className="size-3.5" />
-                  Bar Council Registered
+                  Professional details shown
                 </span>
               </div>
 
@@ -140,16 +124,9 @@ export default function LegalConsultationConsole() {
               </div>
             </div>
 
-            {/* Live Feed Ticker */}
-            <div className="mt-8 pt-4 border-t border-white/10 flex items-center gap-3.5 text-[12.5px] min-h-[44px]">
-              <div className="flex items-center gap-1.5 text-[#F2C052] font-bold bg-[#F2C052]/10 border border-[#F2C052]/25 px-3 py-1.5 rounded-xl shrink-0 uppercase text-[10px] tracking-wider">
-                <Clock className="size-3.5 text-[#F2C052] animate-pulse" />
-                Live Deed Audits
-              </div>
-              <p className="text-white/85 text-left italic truncate flex-1 leading-snug">
-                &ldquo;{currentFeed.text}&rdquo; <span className="text-[#DDAA42] not-italic font-bold">({currentFeed.lawyer})</span>
-              </p>
-              <span className="text-[11px] text-white/45 whitespace-nowrap shrink-0">{currentFeed.time}</span>
+            <div className="mt-8 flex min-h-[44px] items-start gap-3 border-t border-white/10 pt-4 text-[12px] leading-5 text-white/65">
+              <ShieldCheck className="mt-0.5 size-4 shrink-0 text-[#F2C052]" />
+              <p>A consultation request is not a completed legal review. Confirm the scope, documents, professional credentials and fee directly before proceeding.</p>
             </div>
           </div>
 
@@ -220,7 +197,7 @@ export default function LegalConsultationConsole() {
                   <h4 className="text-[20px] font-bold text-white">Query Assigned to Lawyer</h4>
                   <p className="text-[13.5px] text-white/70 mt-2 max-w-sm mx-auto leading-relaxed">
                     Your request has been forwarded to <span className="text-[#F2C052] font-semibold">{activeLawyer.name}</span>.
-                    Deed analysis reports and Bar Council reviews are compiled dynamically. Response expected within 2 hours.
+                    The team has received your request. Response timing depends on professional availability and the documents required.
                   </p>
                 </div>
               )}
@@ -229,7 +206,7 @@ export default function LegalConsultationConsole() {
             {/* Bottom Note */}
             <div className="mt-6 pt-4 border-t border-white/10 flex items-center gap-2.5 text-[11px] text-white/60">
               <ShieldCheck className="size-4.5 text-[#DDAA42] shrink-0" />
-              <span>Attorneys verify titles using Karnataka municipal land records registers.</span>
+              <span>Legal conclusions require document review by a qualified professional; a project listing alone is not legal clearance.</span>
             </div>
           </div>
 

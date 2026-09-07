@@ -2,13 +2,14 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Link from "@/components/Link";
-import { Phone, Mail, MapPin, BadgeCheck, Calendar, UserRound, ChevronRight, Building2, ArrowLeft } from "lucide-react";
+import { Phone, Mail, MapPin, Calendar, UserRound, ChevronRight, Building2, ArrowLeft } from "lucide-react";
 import Header from "@/components/acres/Header";
 import Footer from "@/components/acres/Footer";
 import PropertyCard from "@/components/acres/PropertyCard";
 import { useAuth } from "@/components/acres/AuthContext";
 import { getDealerBySlug, getDealerProperties, getDealerMatchCount, type Dealer } from "@/lib/dealerStore";
 import type { Property } from "@/components/acres/mock-data";
+import { PublicPageSkeleton } from "@/components/acres/PublicPageState";
 
 export default function DealerProfilePage() {
   const params = useParams();
@@ -55,7 +56,7 @@ export default function DealerProfilePage() {
     );
   }
 
-  if (!dealer) return null;
+  if (!dealer) return <><Header /><PublicPageSkeleton label="Loading partner profile" /><Footer /></>;
 
   const matches = getDealerMatchCount(dealer);
 
@@ -64,7 +65,7 @@ export default function DealerProfilePage() {
       <Header />
       <main className="public-main flex-1">
         {/* Profile header */}
-        <section className="bg-gradient-to-br from-[#0B1328] via-[#121B35] to-[#273559] text-white">
+        <section className="public-page-hero text-white">
           <div className="max-w-[1200px] mx-auto px-5 py-9">
             <nav className="text-[12px] text-[#E4E0E7]/70 flex items-center gap-1.5 mb-6">
               <Link href="/" className="hover:text-[#F2C052]">Home</Link>
@@ -82,17 +83,13 @@ export default function DealerProfilePage() {
                     <UserRound className="size-14 text-white/70" />
                   )}
                 </span>
-                <span className="absolute -bottom-1 -right-1 size-9 rounded-full bg-gradient-to-br from-[#F2C052] to-[#DDAA42] flex items-center justify-center shadow">
-                  <BadgeCheck className="size-5 text-[#121B35]" />
-                </span>
               </div>
               <div className="flex-1">
                 <p className="text-[12px] font-bold tracking-wider uppercase text-[#F2C052]">{dealer.agency}</p>
-                <h1 className="text-[30px] md:text-[38px] font-bold mt-0.5">{dealer.name}</h1>
+                <h1 className="display-heading mt-1 text-[36px] text-white md:text-[48px]">{dealer.name}</h1>
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[13px] text-[#E4E0E7]/85 mt-2">
                   <span className="flex items-center gap-1.5"><Calendar className="size-4 text-[#DDAA42]" /> Member since {dealer.memberSince}</span>
                   {dealer.operatingSince && <span className="flex items-center gap-1.5"><Building2 className="size-4 text-[#DDAA42]" /> Operating since {dealer.operatingSince}</span>}
-                  <span className="flex items-center gap-1.5"><BadgeCheck className="size-4 text-[#DDAA42]" /> {dealer.buyersThisWeek} buyers this week</span>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3">
                   {dealer.dealsIn.map((d) => (
@@ -148,7 +145,7 @@ export default function DealerProfilePage() {
           {/* Right — contact card */}
           <aside className="bg-white rounded-2xl border border-[#E4E0E7]/60 shadow-md p-6 lg:sticky lg:top-24">
             <h3 className="text-[18px] font-bold text-[#121B35]">Contact {dealer.name.split(" ")[0]}</h3>
-            <p className="text-[13px] text-[#68646F] mt-1">Verified dealer • responds quickly</p>
+            <p className="text-[13px] text-[#68646F] mt-1">Admin-published partner profile. Response time is not guaranteed.</p>
 
             <div className="mt-5 space-y-3">
               <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F8F7FA] border border-[#E4E0E7]/50">

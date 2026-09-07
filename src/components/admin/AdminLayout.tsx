@@ -32,6 +32,8 @@ import {
   Activity,
   Archive,
   FileWarning,
+  Calculator,
+  BrainCircuit,
 } from "lucide-react";
 import { isAdminAuthed, adminLogin, adminLogout, getAdminLoginError } from "@/lib/adminAuth";
 import { fetchSystemNotifications, markAllSystemNotificationsRead, markSystemNotificationRead } from "@/lib/api";
@@ -72,6 +74,8 @@ const navItems = [
   { label: "Public Submissions", href: "/admin/property-submissions", icon: ClipboardCheck },
   { label: "Hero Showcase", href: "/admin/hero", icon: Images },
   { label: "Homepage Placement", href: "/admin/homepage-placements", icon: LayoutGrid },
+  { label: "Affordability Rules", href: "/admin/affordability-rules", icon: Calculator },
+  { label: "Assistant Learning", href: "/admin/assistant-learning", icon: BrainCircuit },
   { label: "Advertisements", href: "/admin/advertisements", icon: Megaphone },
   { label: "Login Reports", href: "/admin/login-reports", icon: FileText },
 ];

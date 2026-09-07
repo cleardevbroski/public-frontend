@@ -74,13 +74,13 @@ export default function AccountPage() {
     <>
       <Header />
       <main className="public-main flex-1">
-        <section className="bg-gradient-to-br from-[#0B1328] via-[#121B35] to-[#273559] text-white">
+        <section className="public-page-hero text-white">
           <div className="max-w-[1000px] mx-auto px-5 py-9 flex items-center gap-5">
             <span className="size-20 rounded-full bg-white/10 border-2 border-[#DDAA42]/50 flex items-center justify-center text-3xl font-bold">
               {user?.name ? user.name.charAt(0).toUpperCase() : <UserRound className="size-9" />}
             </span>
             <div>
-              <h1 className="text-[30px] md:text-[36px] font-bold">{user ? user.name : "Your Account"}</h1>
+              <h1 className="display-heading text-[34px] text-white md:text-[44px]">{user ? user.name : "Your account"}</h1>
               <p className="text-[14px] text-[#E4E0E7]/85 mt-1">
                 {user ? (user.phone ? `+91 ${user.phone}` : user.email) : "Manage your profile and dealer listing"}
               </p>
@@ -108,15 +108,19 @@ export default function AccountPage() {
                   <p className="text-[13px] text-[#68646F]">List yourself in the dealer directory and get buyer enquiries.</p>
                 </div>
               </div>
-              <label className="inline-flex items-center gap-2 cursor-pointer select-none">
-                <span className="text-[13px] font-semibold text-[#3F3D46]">I am a dealer</span>
-                <span
+              <div className="inline-flex items-center gap-2 select-none">
+                <span id="dealer-profile-toggle-label" className="text-[13px] font-semibold text-[#3F3D46]">I am a dealer</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isDealer}
+                  aria-labelledby="dealer-profile-toggle-label"
                   onClick={() => setIsDealer((v) => !v)}
-                  className={`relative w-12 h-7 rounded-full transition-colors ${isDealer ? "bg-[#DDAA42]" : "bg-[#CBD6EE]"}`}
+                  className={`relative h-7 w-12 rounded-full transition-colors ${isDealer ? "bg-[#DDAA42]" : "bg-[#CBD6EE]"}`}
                 >
                   <span className={`absolute top-0.5 size-6 rounded-full bg-white shadow transition-all ${isDealer ? "left-[22px]" : "left-0.5"}`} />
-                </span>
-              </label>
+                </button>
+              </div>
             </div>
 
             {/* Already registered confirmation */}
@@ -209,7 +213,7 @@ export default function AccountPage() {
             <Link href="/dealers" className="bg-white rounded-2xl border border-[#E4E0E7]/60 shadow-sm p-5 hover:shadow-lg hover:border-[#DDAA42]/60 transition-all">
               <Building2 className="size-6 text-[#DDAA42]" />
               <p className="text-[15px] font-bold text-[#121B35] mt-3">Browse Dealers</p>
-              <p className="text-[12px] text-[#68646F]">Find verified channel partners</p>
+              <p className="text-[12px] text-[#68646F]">Find published channel partners</p>
             </Link>
             <Link href="/property-in-bangalore-ffid" className="bg-white rounded-2xl border border-[#E4E0E7]/60 shadow-sm p-5 hover:shadow-lg hover:border-[#DDAA42]/60 transition-all">
               <MapPin className="size-6 text-[#DDAA42]" />

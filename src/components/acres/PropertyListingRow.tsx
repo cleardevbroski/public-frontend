@@ -20,6 +20,13 @@ export default function PropertyListingRow({ p }: { p: Property }) {
   const cover = p.heroImages?.[0] || p.images?.[0] || p.image || "";
   const status = statusOf(p);
   const lister = p.submittedBy === "user" ? "Owner" : p.builder;
+  const trustLabel = p.verified
+    ? "Admin verified"
+    : p.locationVerification?.status === "admin_verified"
+      ? "Verified pin"
+      : p.reraRegistered
+        ? "RERA details available"
+        : "Project information";
   return (
     <Link
       href={`/property/${p.id}`}
@@ -37,7 +44,7 @@ export default function PropertyListingRow({ p }: { p: Property }) {
               <span className="size-5 rounded-full bg-gradient-to-br from-[#F2C052] to-[#DDAA42] flex items-center justify-center">
                 <ShieldCheck className="size-3 text-[#121B35]" strokeWidth={2.5} />
               </span>
-              <span className="text-[9px] font-extrabold tracking-wide text-[#121B35] uppercase">Clear Title Verified</span>
+              <span className="text-[9px] font-extrabold tracking-wide text-[#121B35] uppercase">{trustLabel}</span>
             </span>
             {p.badges?.slice(0, 1).map((tag) => (
               <span key={tag} className="bg-[#DDAA42] text-[#0B1328] text-[9px] font-bold px-2.5 py-1 rounded-md shadow-sm">{tag}</span>
@@ -53,7 +60,7 @@ export default function PropertyListingRow({ p }: { p: Property }) {
                 {p.builder && (
                   <p className="text-[10px] text-[#68646F] font-extrabold uppercase tracking-widest">{p.builder}</p>
                 )}
-                {p.title && <h2 className="text-[18px] font-bold text-[#121B35] mt-1 group-hover:text-[#DDAA42] transition-colors leading-snug">{p.title}</h2>}
+                {p.title && <h2 className="text-[18px] font-bold text-[#121B35] mt-1 group-hover:text-[#805A0B] transition-colors leading-snug">{p.title}</h2>}
                 {p.subtitle && <p className="text-[13px] text-[#3F3D46]/80 mt-1 flex items-center gap-1">
                   <MapPin className="size-4 text-[#DDAA42]" />
                   {p.subtitle}
@@ -69,8 +76,8 @@ export default function PropertyListingRow({ p }: { p: Property }) {
 
             {(p.price || p.area || p.configs?.length || p.possession || p.possessionDetails) && <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5 border-y border-[#F3F1F5]/55 py-3.5 text-left">
               {p.price && <div>
-                <span className="text-[9px] text-[#68646F] font-bold uppercase tracking-wider block">Estimated Price</span>
-                <span className="text-[16px] font-extrabold text-[#DDAA42] block mt-0.5">{priceWithCharges(p.price)}</span>
+                <span className="text-[9px] text-[#68646F] font-bold uppercase tracking-wider block">Price</span>
+                <span className="text-[16px] font-extrabold text-[#805A0B] block mt-0.5">{priceWithCharges(p.price)}</span>
                 {p.pricePerSqft && <span className="text-[11px] text-[#68646F] block mt-0.5">{p.pricePerSqft}</span>}
               </div>}
               {p.area && <div>
@@ -100,10 +107,7 @@ export default function PropertyListingRow({ p }: { p: Property }) {
             {lister && <p className="text-[12px] text-[#68646F]">
               Listed by: <span className="font-bold text-[#121B35]">{lister}</span>
             </p>}
-            <div className="flex gap-2.5 w-full sm:w-auto">
-              <button className="flex-1 sm:flex-none h-10 px-4 rounded-xl border border-[#DDAA42] text-[#DDAA42] hover:bg-[#F3F1F5] text-[13px] font-bold transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>View Number</button>
-              <button className="flex-1 sm:flex-none h-10 px-5 rounded-xl bg-gradient-to-r from-[#DDAA42] to-[#F2C052] hover:from-[#B98428] hover:to-[#DDAA42] text-white text-[13px] font-bold shadow-sm hover:shadow transition-all" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>Submit Enquiry</button>
-            </div>
+            <span className="text-[12px] font-bold text-[#805A0B]">View project details →</span>
           </div>
         </div>
       </article>

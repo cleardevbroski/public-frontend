@@ -35,13 +35,13 @@ export default function PopularBuilders() {
         <div className="flex items-end justify-between mb-8 flex-wrap gap-4">
           <div>
             <span className="inline-flex items-center gap-1.5 text-[12px] font-bold tracking-[0.18em] uppercase text-[#DDAA42]">
-              <Building2 className="size-4" /> Trusted Developers
+              <Building2 className="size-4" /> Published Developers
             </span>
             <h2 className="text-[30px] md:text-[40px] font-bold text-[#121B35] mt-1">
               Popular <span className="text-gold-gradient">Builders</span>
             </h2>
             <p className="text-[14px] text-[#68646F] mt-1">
-              Renowned developers with verified clear-title projects in Bangalore.
+              Developers represented in the projects currently published on ClearTitle One.
             </p>
           </div>
           <div className="flex gap-2">
@@ -93,7 +93,7 @@ export default function PopularBuilders() {
                 <p className="text-[13px] text-[#68646F] mt-1">
                   <span className="font-semibold text-[#3F3D46]">{b.total}</span>{" "}
                   {b.total === 1 ? "Project" : "Projects"} on ClearTitle One
-                  <span className="text-[#DDAA42]"> Â· Bangalore</span>
+                  <span className="text-[#805A0B]"> · Bangalore</span>
                 </p>
               </div>
             </Link>

@@ -2,7 +2,8 @@
 import Image from "@/components/Image";
 import Link from "@/components/Link";
 import { lazy, Suspense, useState, useRef, useEffect } from "react";
-import { ChevronDown, Headset, Menu, MapPin, ChevronRightCircle, X, ChevronUp, ShieldCheck, Phone, Mail, Clock, User } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { ChevronDown, Heart, Menu, MapPin, ChevronRightCircle, X, ChevronUp, ShieldCheck, Phone, Mail, Clock, User, WandSparkles } from "lucide-react";
 import { navItems, headerDropdowns } from "./mock-data";
 import HeaderDropdown from "./HeaderDropdown";
 import { useAuth } from "./AuthContext";
@@ -11,8 +12,9 @@ const AuthModal = lazy(() => import("./AuthModal"));
 const ProfileDrawer = lazy(() => import("./ProfileDrawer"));
 
 export default function Header() {
+  const location = useLocation();
   const { user, isAuthModalOpen, isProfileDrawerOpen, setIsAuthModalOpen, setIsProfileDrawerOpen } = useAuth();
-  const [city, setCity] = useState("Bangalore");
+  const city = "Bangalore";
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
@@ -45,13 +47,15 @@ export default function Header() {
     };
   }, []);
 
+  const isCurrent = (href: string) => location.pathname === href || (href !== "/" && location.pathname.startsWith(href));
+
   return (
     <>
       <header className="site-header sticky top-0 z-50 backdrop-blur-md border-b text-white transition-all duration-300">
         {/* Main Header Bar */}
         <div className="site-header__bar h-[60px] md:h-[64px] w-full flex items-center px-4 gap-3 md:gap-5">
           {/* Logo — gold coin */}
-          <a href="/" className="flex items-center gap-2.5 shrink-0 group">
+          <Link href="/" className="flex items-center gap-2.5 shrink-0 group" aria-label="ClearTitle One home">
             <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-[#DDAA42]/60 group-hover:ring-[#F2C052] transition-all duration-300 group-hover:scale-[1.05] shadow-lg">
               <Image
                 src="/cleartitleone/logo.png"
@@ -66,14 +70,14 @@ export default function Header() {
             <span className="text-[18px] font-bold tracking-tight" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
               Clear<span className="text-[#F2C052]">Title</span><span className="text-[#DDAA42]">One</span>
             </span>
-          </a>
+          </Link>
 
           {/* City selector */}
-          <button className="hidden sm:flex items-center gap-1.5 pl-3 pr-2 h-9 rounded-full hover:bg-white/15 transition-all duration-200 shrink-0 border border-white/10">
+          <Link href="/property-in-bangalore-ffid" className="hidden sm:flex items-center gap-1.5 pl-3 pr-2 h-9 rounded-full hover:bg-white/15 transition-all duration-200 shrink-0 border border-white/10" aria-label="Browse Bangalore properties">
             <MapPin className="size-4" strokeWidth={2.4} />
             <span className="text-[14px] font-semibold">{city}</span>
             <ChevronDown className="size-4" strokeWidth={2.4} />
-          </button>
+          </Link>
 
           {/* Spacer */}
           <div className="flex-1" />
@@ -89,9 +93,10 @@ export default function Header() {
               >
                 <Link
                   href={item.href}
+                  aria-current={isCurrent(item.href) ? "page" : undefined}
                   className={`relative px-3 h-9 flex items-center gap-1 text-[13px] font-semibold rounded-lg transition-all duration-200 ${
-                    activeDropdown === item.label
-                      ? "text-white bg-white/20 shadow-sm"
+                    activeDropdown === item.label || isCurrent(item.href)
+                      ? "text-[#0B1328] bg-[#DDAA42] shadow-sm"
                       : "text-white/90 hover:text-white hover:bg-white/10"
                   }`}
                 >
@@ -118,6 +123,14 @@ export default function Header() {
             </Link>
           </nav>
 
+          <Link href="/find-my-home" aria-current={isCurrent("/find-my-home") ? "page" : undefined} className={`hidden xl:flex h-9 items-center gap-1.5 rounded-lg px-3 text-[12px] font-bold transition ${isCurrent("/find-my-home") ? "bg-[#DDAA42] text-[#0B1328]" : "text-white/90 hover:bg-white/10 hover:text-white"}`}>
+            <WandSparkles className="size-3.5" /> Find my home
+          </Link>
+
+          <Link href="/account/saved-properties" aria-current={isCurrent("/account/saved-properties") ? "page" : undefined} className={`hidden xl:grid size-9 place-items-center rounded-full border transition ${isCurrent("/account/saved-properties") ? "border-[#DDAA42] bg-[#DDAA42] text-[#0B1328]" : "border-white/10 text-white/85 hover:bg-white/15"}`} aria-label="Saved properties">
+            <Heart className="size-4" />
+          </Link>
+
           {/* Post property pill */}
           <Link href="/postproperty" className="ml-2 hidden md:flex items-center gap-2 bg-white text-[#121B35] h-9 pl-4 pr-1.5 rounded-full font-semibold text-[13px] shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 shrink-0">
             <span>Post property</span>
@@ -125,11 +138,6 @@ export default function Header() {
               FREE
             </span>
           </Link>
-
-          {/* Support headset */}
-          <button className="hidden md:flex size-9 items-center justify-center rounded-full hover:bg-white/15 transition-all duration-200 border border-white/10">
-            <Headset className="size-5" strokeWidth={2} />
-          </button>
 
           {/* Login avatar */}
           {user ? (
@@ -322,6 +330,10 @@ export default function Header() {
 
               {/* Extra features inside menu */}
               <div className="pt-4 border-t border-[#DDAA42]/25 mt-6 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Link href="/find-my-home" onClick={() => setIsMenuOpen(false)} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#DDAA42] px-3 text-[12px] font-bold text-[#0B1328]"><WandSparkles className="size-4" /> Find my home</Link>
+                  <Link href="/account/saved-properties" onClick={() => setIsMenuOpen(false)} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 text-[12px] font-bold text-white"><Heart className="size-4 text-[#F2C052]" /> Saved</Link>
+                </div>
                 <Link
                   href="/postproperty"
                   onClick={() => setIsMenuOpen(false)}

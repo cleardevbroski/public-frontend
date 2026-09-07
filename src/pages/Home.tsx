@@ -25,11 +25,12 @@ import CookieBanner from "@/components/acres/CookieBanner";
 import PostPropertyRail from "@/components/acres/PostPropertyRail";
 import ScrollReveal from "@/components/acres/ScrollReveal";
 import { useDocumentTitle } from "@/useDocumentTitle";
+import BuyerJourney from "@/components/acres/BuyerJourney";
 
 export default function Home() {
   useDocumentTitle(
-    "ClearTitle One | Verified Properties & Real Estate in Bangalore",
-    "Explore verified apartments, villas, plots, commercial properties, and PG homes in Bangalore with ClearTitle One.",
+    "ClearTitle One | Property Research & Real Estate in Bangalore",
+    "Explore apartments, villas, plots, commercial properties, and PG homes in Bangalore with visible project records and buying tools.",
     {
       canonical: "/",
       image: "https://cleartitleone.com/cleartitleone/logo.png",
@@ -42,6 +43,8 @@ export default function Home() {
       <main className="home-main flex-1">
         {/* Cinematic navy hero with search */}
         <HeroBanner />
+
+        <BuyerJourney />
 
         {/* Curated recommendations + guest activity sidebar */}
         <ScrollReveal direction="up">

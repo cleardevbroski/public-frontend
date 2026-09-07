@@ -14,11 +14,10 @@ export default function RouteErrorFallback() {
         </div>
         <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-[#D09A2D]">{status ? `Error ${status}` : "ClearTitle One"}</p>
         <h1 id="route-error-title" className="mt-2 text-2xl font-bold text-[#121B35] md:text-3xl">Sorry, something went wrong.</h1>
-        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#68646F]">We couldn&apos;t display this page right now. Your data is safe—please refresh the page or return to the dashboard.</p>
-        <p className="mt-4 text-sm italic text-[#8A7449]">“Every title deserves clarity. We’ll help you get back on track.”</p>
+        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#68646F]">We couldn&apos;t display this page right now. Refresh to load the latest version or return to the homepage.</p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
-          <button onClick={() => window.location.reload()} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#121B35] px-5 text-sm font-bold text-white hover:bg-[#273559]"><RefreshCw className="size-4" /> Try again</button>
-          <Link href="/admin" className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#E4E0E7] px-5 text-sm font-bold text-[#273559] hover:border-[#DDAA42]"><Home className="size-4" /> Dashboard</Link>
+          <button onClick={() => window.location.reload()} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#121B35] px-5 text-sm font-bold text-white hover:bg-[#273559]"><RefreshCw className="size-4" /> Reload latest version</button>
+          <Link href="/" className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#E4E0E7] px-5 text-sm font-bold text-[#273559] hover:border-[#DDAA42]"><Home className="size-4" /> Home</Link>
         </div>
       </section>
     </main>

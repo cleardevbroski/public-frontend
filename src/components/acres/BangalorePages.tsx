@@ -143,7 +143,7 @@ function ListingPage({ route, query = "" }: { route: BangaloreRoute; query?: str
             <div className="flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
               <div>
                 <p className="text-[13px] text-[#68646F] font-semibold">
-                  {route.resultCount || listings.length} Verified results found
+                  {listings.length} available {resultLabel} found
                 </p>
                 <h1 className="text-[28px] font-bold text-[#121B35] mt-1" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
                   {route.title}
@@ -154,7 +154,7 @@ function ListingPage({ route, query = "" }: { route: BangaloreRoute; query?: str
               </div>
               <div className="flex items-center gap-2 bg-[#F3F1F5] border border-[#E4E0E7]/40 px-4 py-2.5 rounded-xl text-[#DDAA42] text-[13px] font-bold shadow-sm">
                 <ShieldCheck className="size-4.5 text-[#DDAA42]" />
-                RERA Title Checks Mandated
+                RERA details shown when available
               </div>
             </div>
 
