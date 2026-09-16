@@ -34,6 +34,9 @@ import {
   FileWarning,
   Calculator,
   BrainCircuit,
+  UserCog,
+  ContactRound,
+  FileSpreadsheet,
 } from "lucide-react";
 import { isAdminAuthed, adminLogin, adminLogout, getAdminLoginError } from "@/lib/adminAuth";
 import { fetchSystemNotifications, markAllSystemNotificationsRead, markSystemNotificationRead } from "@/lib/api";
@@ -63,6 +66,10 @@ const navItems = [
   { label: "Client Activity", href: "/admin/client-activity", icon: Activity },
   { label: "Channel Partners", href: "/admin/channel-partners", icon: Handshake },
   { label: "CP Clients", href: "/admin/cp-clients", icon: Users },
+  { label: "CP Management", href: "/admin/cp-management", icon: ContactRound },
+  { label: "CP Imports", href: "/admin/cp-imports", icon: FileSpreadsheet },
+  { label: "Broker Imports", href: "/admin/broker-imports", icon: ContactRound },
+  { label: "Employees", href: "/admin/employees", icon: UserCog },
   { label: "Analytics", href: "/admin/analytics", icon: LineChart },
   { label: "Testimonials", href: "/admin/testimonials", icon: Quote },
   { label: "Lawyers", href: "/admin/lawyers", icon: Scale },

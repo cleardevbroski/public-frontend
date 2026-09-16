@@ -19,6 +19,7 @@ const CUSTOMER_TOKEN_BACKUP_KEY = "cleartitle_customer_token";
 const ADMIN_TOKEN_KEY = "cleartitle_admin_token";
 const ADMIN_FLAG_KEY = "cleartitle_admin_auth";
 const CHANNEL_PARTNER_TOKEN_KEY = "cleartitle_channel_partner_token";
+const CRM_STAFF_TOKEN_KEY = "cleartitle_crm_staff_token";
 
 /**
  * Get the token for the currently active application area. Admin and customer
@@ -122,6 +123,11 @@ async function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Re
 
 async function customerApiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
   return apiFetchWithToken(endpoint, options, getCustomerToken());
+}
+
+function crmStaffApiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
+  const token = typeof window === "undefined" ? null : localStorage.getItem(CRM_STAFF_TOKEN_KEY);
+  return apiFetchWithToken(endpoint, options, token);
 }
 
 // ─── Channel Partners ─────────────────────────────────────────
@@ -1033,6 +1039,67 @@ export async function adminLogin(username: string, password: string) {
   if (data.token) setAdminToken(data.token);
   return data;
 }
+
+// ─── CP Management CRM ─────────────────────────────────────────
+export async function crmEmployeeLogin(employeeId: string, password: string) {
+  const data = await readJson(await apiFetch("/api/cp-crm/auth/login", { method: "POST", body: JSON.stringify({ employeeId, password }) }), "Employee login failed");
+  if (data.token && typeof window !== "undefined") localStorage.setItem(CRM_STAFF_TOKEN_KEY, data.token);
+  return data;
+}
+export function hasCRMEmployeeSession() { return typeof window !== "undefined" && Boolean(localStorage.getItem(CRM_STAFF_TOKEN_KEY)); }
+export function crmEmployeeLogout() { if (typeof window !== "undefined") localStorage.removeItem(CRM_STAFF_TOKEN_KEY); }
+export async function fetchCRMEmployeeMe() { return readJson(await crmStaffApiFetch("/api/cp-crm/auth/me"), "Unable to load employee session"); }
+export async function fetchCRMEmployees() { return readJson(await apiFetch("/api/cp-crm/admin/employees"), "Unable to load employees"); }
+export async function fetchCRMEmployeeActivity(id: string) { return readJson(await apiFetch(`/api/cp-crm/admin/employees/${encodeURIComponent(id)}/activity`), "Unable to load employee activity"); }
+export async function createCRMEmployee(data: Record<string, unknown>) { return readJson(await apiFetch("/api/cp-crm/admin/employees", { method: "POST", body: JSON.stringify(data) }), "Unable to create employee"); }
+export async function updateCRMEmployee(id: string, data: Record<string, unknown>) { return readJson(await apiFetch(`/api/cp-crm/admin/employees/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }), "Unable to update employee"); }
+export async function deleteCRMEmployee(id: string) { return readJson(await apiFetch(`/api/cp-crm/admin/employees/${encodeURIComponent(id)}`, { method: "DELETE" }), "Unable to delete employee"); }
+export async function resetCRMEmployeePassword(id: string, password: string) { return readJson(await apiFetch(`/api/cp-crm/admin/employees/${encodeURIComponent(id)}/reset-password`, { method: "POST", body: JSON.stringify({ password }) }), "Unable to reset password"); }
+export async function fetchCRMTasks() { return readJson(await apiFetch("/api/cp-crm/admin/tasks"), "Unable to load assignments"); }
+export async function createCRMTask(data: Record<string, unknown>) { return readJson(await apiFetch("/api/cp-crm/admin/tasks", { method: "POST", body: JSON.stringify(data) }), "Unable to assign Channel Partners"); }
+export async function fetchAdminCRMPartners(params: Record<string, unknown> = {}) { return readJson(await apiFetch(`/api/cp-crm/admin/partners${toQuery(params)}`), "Unable to load CP Management"); }
+export async function fetchAdminCRMPartner(id: string) { return readJson(await apiFetch(`/api/cp-crm/admin/partners/${encodeURIComponent(id)}`), "Unable to load CP details"); }
+export async function assignCRMPartner(partnerId: string, employeeId: string) { return readJson(await apiFetch(`/api/cp-crm/admin/partners/${encodeURIComponent(partnerId)}/assign`, { method: "PATCH", body: JSON.stringify({ employeeId: employeeId || null }) }), "Unable to update assignment"); }
+export async function fetchCRMTemplates() { return readJson(await apiFetch("/api/cp-crm/admin/templates"), "Unable to load message templates"); }
+export async function createCRMTemplate(data: Record<string, unknown>) { return readJson(await apiFetch("/api/cp-crm/admin/templates", { method: "POST", body: JSON.stringify(data) }), "Unable to create message template"); }
+export async function updateCRMTemplate(id: string, data: Record<string, unknown>) { return readJson(await apiFetch(`/api/cp-crm/admin/templates/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }), "Unable to update message template"); }
+export async function uploadCRMMaterial(file: File) {
+  const response = await apiFetchWithToken("/api/cp-crm-media", { method: "POST", headers: { "Content-Type": file.type, "X-File-Name": encodeURIComponent(file.name) }, body: file }, getToken());
+  return readJson(response, "Unable to upload project material");
+}
+export async function fetchMyCRMDashboard() { return readJson(await crmStaffApiFetch("/api/cp-crm/mine/dashboard"), "Unable to load CRM dashboard"); }
+export async function fetchMyCRMPartners(params: Record<string, unknown> = {}) { return readJson(await crmStaffApiFetch(`/api/cp-crm/mine/partners${toQuery(params)}`), "Unable to load assigned CPs"); }
+export async function fetchMyCRMPartner(id: string) { return readJson(await crmStaffApiFetch(`/api/cp-crm/mine/partners/${encodeURIComponent(id)}`), "Unable to load CP details"); }
+export async function startCRMCall(partnerId: string) { return readJson(await crmStaffApiFetch(`/api/cp-crm/mine/partners/${encodeURIComponent(partnerId)}/call-start`, { method: "POST" }), "Unable to start call"); }
+export async function saveCRMCallResult(partnerId: string, data: Record<string, unknown>) { return readJson(await crmStaffApiFetch(`/api/cp-crm/mine/partners/${encodeURIComponent(partnerId)}/call-result`, { method: "POST", body: JSON.stringify(data) }), "Unable to save call result"); }
+export async function openCRMWhatsApp(partnerId: string, data: Record<string, unknown>) { return readJson(await crmStaffApiFetch(`/api/cp-crm/mine/partners/${encodeURIComponent(partnerId)}/whatsapp-open`, { method: "POST", body: JSON.stringify(data) }), "Unable to open WhatsApp"); }
+export async function saveCRMWhatsAppResult(partnerId: string, data: Record<string, unknown>) { return readJson(await crmStaffApiFetch(`/api/cp-crm/mine/partners/${encodeURIComponent(partnerId)}/whatsapp-result`, { method: "POST", body: JSON.stringify(data) }), "Unable to save WhatsApp result"); }
+export async function addCRMPartnerNote(partnerId: string, note: string) { return readJson(await crmStaffApiFetch(`/api/cp-crm/mine/partners/${encodeURIComponent(partnerId)}/notes`, { method: "POST", body: JSON.stringify({ note }) }), "Unable to save note"); }
+
+// ─── Imported CP verification ──────────────────────────────────
+export async function fetchCPImportBatches(params: Record<string, unknown> = {}) { return readJson(await apiFetch(`/api/cp-prospects/admin/imports${toQuery(params)}`), "Unable to load CP import batches"); }
+export async function createCPImportBatch(data: Record<string, unknown>) { return readJson(await apiFetch("/api/cp-prospects/admin/imports", { method: "POST", body: JSON.stringify(data) }), "Unable to begin CP import"); }
+export async function uploadCPImportRows(batchId: string, data: Record<string, unknown>) { return readJson(await apiFetch(`/api/cp-prospects/admin/imports/${encodeURIComponent(batchId)}/rows`, { method: "POST", body: JSON.stringify(data) }), "Unable to import spreadsheet rows"); }
+export async function completeCPImportBatch(batchId: string) { return readJson(await apiFetch(`/api/cp-prospects/admin/imports/${encodeURIComponent(batchId)}/complete`, { method: "POST" }), "Unable to complete CP import"); }
+export async function fetchCPProspectAnalytics(params: Record<string, unknown> = {}) { return readJson(await apiFetch(`/api/cp-prospects/admin/analytics${toQuery(params)}`), "Unable to load CP verification analytics"); }
+export async function fetchAdminCPProspects(params: Record<string, unknown> = {}) { return readJson(await apiFetch(`/api/cp-prospects/admin/prospects${toQuery(params)}`), "Unable to load imported CP contacts"); }
+export async function fetchAdminCPProspect(id: string) { return readJson(await apiFetch(`/api/cp-prospects/admin/prospects/${encodeURIComponent(id)}`), "Unable to load imported CP details"); }
+export async function assignCPProspect(id: string, employeeId: string) { return readJson(await apiFetch(`/api/cp-prospects/admin/prospects/${encodeURIComponent(id)}/assign`, { method: "PATCH", body: JSON.stringify({ employeeId: employeeId || null }) }), "Unable to update imported CP assignment"); }
+export async function allocateCPProspects(data: Record<string, unknown>) { return readJson(await apiFetch("/api/cp-prospects/admin/prospects/allocate", { method: "PATCH", body: JSON.stringify(data) }), "Unable to allocate imported CP contacts"); }
+export async function exportCPProspects(params: Record<string, unknown> = {}) {
+  const response = await apiFetch(`/api/cp-prospects/admin/prospects/export${toQuery(params)}`);
+  if (!response.ok) return readJson(response, "Unable to export imported CP contacts");
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a"); link.href = url; link.download = `verified-cp-contacts-${new Date().toISOString().slice(0, 10)}.csv`; link.click();
+  URL.revokeObjectURL(url);
+}
+export async function fetchMyCPProspects(params: Record<string, unknown> = {}) { return readJson(await crmStaffApiFetch(`/api/cp-prospects/mine/prospects${toQuery(params)}`), "Unable to load CP verification queue"); }
+export async function fetchMyCPProspect(id: string) { return readJson(await crmStaffApiFetch(`/api/cp-prospects/mine/prospects/${encodeURIComponent(id)}`), "Unable to load imported CP details"); }
+export async function startCPProspectCall(id: string) { return readJson(await crmStaffApiFetch(`/api/cp-prospects/mine/prospects/${encodeURIComponent(id)}/call-start`, { method: "POST" }), "Unable to start call"); }
+export async function updateCPProspectProfile(id: string, data: Record<string, unknown>) { return readJson(await crmStaffApiFetch(`/api/cp-prospects/mine/prospects/${encodeURIComponent(id)}/profile`, { method: "PATCH", body: JSON.stringify(data) }), "Unable to update CP information"); }
+export async function saveCPProspectVerification(id: string, data: Record<string, unknown>) { return readJson(await crmStaffApiFetch(`/api/cp-prospects/mine/prospects/${encodeURIComponent(id)}/verification`, { method: "POST", body: JSON.stringify(data) }), "Unable to save CP verification"); }
+export async function addCPProspectNote(id: string, note: string) { return readJson(await crmStaffApiFetch(`/api/cp-prospects/mine/prospects/${encodeURIComponent(id)}/notes`, { method: "POST", body: JSON.stringify({ note }) }), "Unable to save note"); }
 
 // ─── Dealers ────────────────────────────────────────────────────
 export async function fetchDealers(params: Record<string, unknown> = {}) {

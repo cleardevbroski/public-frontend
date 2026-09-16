@@ -37,6 +37,14 @@ const AdminCPClients = lazy(() => import("@/pages/admin/AdminCPClients"));
 const AdminClientActivity = lazy(() => import("@/pages/admin/AdminClientActivity"));
 const AdminAffordabilityRules = lazy(() => import("@/pages/admin/AdminAffordabilityRules"));
 const AdminAssistantLearning = lazy(() => import("@/pages/admin/AdminAssistantLearning"));
+const AdminEmployees = lazy(() => import("@/pages/admin/AdminEmployees"));
+const AdminCPManagement = lazy(() => import("@/pages/admin/AdminCPManagement"));
+const AdminCPImports = lazy(() => import("@/pages/admin/AdminCPImports"));
+const AdminBrokerImports = lazy(() => import("@/pages/admin/AdminBrokerImports"));
+const EmployeeLogin = lazy(() => import("@/pages/EmployeeLogin"));
+const CPManagement = lazy(() => import("@/pages/CPManagement"));
+const CPVerification = lazy(() => import("@/pages/CPVerification"));
+const BrokerVerification = lazy(() => import("@/pages/BrokerVerification"));
 const FindMyHome = lazy(() => import("@/pages/FindMyHome"));
 const FamilyWorkspace = lazy(() => import("@/pages/FamilyWorkspace"));
 const Legal = lazy(() => import("@/pages/Legal"));
@@ -83,6 +91,14 @@ export const router = createBrowserRouter([
       { path: "/admin/cp-clients", element: <AdminCPClients /> },
       { path: "/admin/affordability-rules", element: <AdminAffordabilityRules /> },
       { path: "/admin/assistant-learning", element: <AdminAssistantLearning /> },
+      { path: "/admin/employees", element: <AdminEmployees /> },
+      { path: "/admin/cp-management", element: <AdminCPManagement /> },
+      { path: "/admin/cp-imports", element: <AdminCPImports /> },
+      { path: "/admin/broker-imports", element: <AdminBrokerImports /> },
+      { path: "/employee-login", element: <EmployeeLogin /> },
+      { path: "/cp-management", element: <CPManagement /> },
+      { path: "/cp-verification", element: <CPVerification /> },
+      { path: "/broker-verification", element: <BrokerVerification /> },
       { path: "/property/:id", element: <Property /> },
       { path: "/dealer/:slug", element: <Dealer /> },
       { path: "/builder/:slug", element: <Builder /> },
