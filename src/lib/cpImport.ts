@@ -37,18 +37,50 @@ export const cpImportFields: CPImportField[] = [
 ];
 
 const normalized = (value: unknown) => String(value ?? "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+const normalizedPhone = (value: unknown) => {
+  let phone = String(value ?? "").replace(/\D/g, "");
+  if (phone.length === 12 && phone.startsWith("91")) phone = phone.slice(2);
+  if (phone.length === 11 && phone.startsWith("0")) phone = phone.slice(1);
+  return phone;
+};
+const isMobile = (value: unknown) => /^[6-9][0-9]{9}$/.test(normalizedPhone(value));
+
+export function parseCPImportMatrix(matrix: Array<Array<string | number | Date>>) {
+  const firstRow = matrix[0] || [];
+  const aliases = new Set(cpImportFields.flatMap((field) => [field.key, field.label, ...field.aliases]).map(normalized));
+  const hasHeader = firstRow.some((value) => aliases.has(normalized(value)));
+  const width = Math.max(0, ...matrix.map((row) => row.length));
+  const phoneColumn = hasHeader ? -1 : firstRow.findIndex(isMobile);
+  const nameColumn = hasHeader ? -1 : firstRow.findIndex((value, index) => index !== phoneColumn && String(value).trim());
+  const usedHeaders = new Set<string>();
+  const headers = Array.from({ length: width }, (_, index) => {
+    let header = hasHeader
+      ? String(firstRow[index] ?? "").trim() || `Column ${index + 1}`
+      : index === phoneColumn
+        ? "Mobile number"
+        : index === nameColumn
+          ? "Contact person"
+          : `Column ${index + 1}`;
+    if (usedHeaders.has(header)) header = `${header} ${index + 1}`;
+    usedHeaders.add(header);
+    return header;
+  });
+  const dataRows = hasHeader ? matrix.slice(1) : matrix;
+  const rows = dataRows
+    .filter((row) => row.some((value) => String(value).trim()))
+    .map((row) => Object.fromEntries(headers.map((header, index) => [header, String(row[index] ?? "").trim()])));
+  const mapping = Object.fromEntries(cpImportFields.map((field) => {
+    const fieldAliases = new Set([field.key, field.label, ...field.aliases].map(normalized));
+    return [field.key, headers.find((header) => fieldAliases.has(normalized(header))) || ""];
+  }));
+  return { headers, rows, mapping };
+}
 
 export async function readCPImportFile(file: File) {
   const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const matrix = XLSX.utils.sheet_to_json<Array<string | number | Date>>(sheet, { header: 1, defval: "", raw: false });
-  const headers = (matrix[0] || []).map((value) => String(value).trim()).filter(Boolean);
-  const rows = matrix.slice(1).filter((row) => row.some((value) => String(value).trim())).map((row) => Object.fromEntries(headers.map((header, index) => [header, String(row[index] ?? "").trim()])));
-  const mapping = Object.fromEntries(cpImportFields.map((field) => {
-    const aliases = new Set([field.key, field.label, ...field.aliases].map(normalized));
-    return [field.key, headers.find((header) => aliases.has(normalized(header))) || ""];
-  }));
-  return { headers, rows, mapping };
+  return parseCPImportMatrix(matrix);
 }
 
 export function mapCPImportRows(rows: CPImportRow[], mapping: Record<string, string>) {

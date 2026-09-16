@@ -81,7 +81,7 @@ export type CRMFollowUp = {
 };
 
 export type CRMAttachment = { _id?: string; title: string; url: string; mimeType: string; bytes: number };
-export type CRMTemplate = { id: string; name: string; kind: "project" | "follow_up"; projectName: string; body: string; attachments: CRMAttachment[]; isActive: boolean; createdAt: string };
+export type CRMTemplate = { id: string; name: string; kind: "project" | "follow_up"; audience: "all" | "registered_cp" | "imported_cp" | "broker"; projectName: string; body: string; attachments: CRMAttachment[]; isActive: boolean; createdAt: string };
 export type CRMTask = { id: string; title: string; instructions: string; targetCount: number; assignedCount: number; completedCount: number; dueAt: string | null; status: string; employee?: { id: string; employeeId: string; name: string } };
 export type CRMPartnerDetail = { profile: CRMPartner; interactions: CRMInteraction[]; followUps: CRMFollowUp[]; clientsCount: number; templates: CRMTemplate[] };
 

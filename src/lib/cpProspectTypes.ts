@@ -1,4 +1,4 @@
-import type { CRMEmployee } from "./cpCrmTypes";
+import type { CRMEmployee, CRMTemplate } from "./cpCrmTypes";
 
 export type CPVerificationStatus = "pending" | "active" | "inactive" | "callback_requested" | "no_answer" | "busy" | "wrong_number" | "not_channel_partner" | "duplicate" | "do_not_contact" | "other";
 
@@ -17,7 +17,14 @@ export type CPProspect = {
   lastContactedAt: string | null;
   nextFollowUpAt: string | null;
   callAttempts: number;
+  whatsappOpened: number;
+  whatsappSent: number;
   profileCompletion: number;
+  broker: {
+    lastCallOutcome: "" | "answered" | "callback_requested" | "no_answer" | "busy" | "wrong_number";
+    projectInterest: "" | "interested" | "not_interested";
+    followUpAgenda: string;
+  };
   partnerType: "" | "company" | "individual";
   company: { name: string; businessType: string; yearEstablished: string | number; panMasked: string; gstNumber: string; reraNumber: string };
   contact: { name: string; designation: string; mobile: string; alternateMobile: string; email: string };
@@ -30,8 +37,10 @@ export type CPProspect = {
 };
 
 export type CPProspectInteraction = {
-  id: string; action: "call_started" | "verification_result" | "profile_updated" | "note";
-  outcome: string; note: string; callbackAt: string | null; changedFields: string[]; createdAt: string;
+  id: string; action: "call_started" | "verification_result" | "broker_call_result" | "profile_updated" | "whatsapp_opened" | "whatsapp_result" | "note";
+  outcome: string; note: string; messageBody: string; callbackAt: string | null; changedFields: string[];
+  metadata?: { projectInterest?: string; followUpAgenda?: string; areasOfOperation?: string[]; preferredSegments?: string[]; openedInteractionId?: string };
+  createdAt: string;
   employee: { id: string; employeeId: string; name: string } | null;
 };
 
@@ -40,7 +49,7 @@ export type CPProspectFollowUp = {
   completedAt: string | null; createdAt: string; employee: { id: string; employeeId: string; name: string } | null;
 };
 
-export type CPProspectDetail = { prospect: CPProspect; interactions: CPProspectInteraction[]; followUps: CPProspectFollowUp[] };
+export type CPProspectDetail = { prospect: CPProspect; interactions: CPProspectInteraction[]; followUps: CPProspectFollowUp[]; templates: CRMTemplate[] };
 
 export type CPImportBatch = {
   id: string; prospectType: "channel_partner" | "broker"; name: string; originalFileName: string; totalRows: number; processedRows: number;
@@ -52,6 +61,7 @@ export type CPImportBatch = {
 export type CPProspectMetrics = {
   total: number; assigned: number; unassigned: number; pending: number; active: number; inactive: number;
   callback: number; unreachable: number; completed: number; overdue: number;
+  interested: number; notInterested: number; whatsappOpened: number; whatsappSent: number;
 };
 
 export type CPLocationCount = { state: string; city: string; area: string; total: number; active: number; unassigned: number };
