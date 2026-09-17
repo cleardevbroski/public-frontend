@@ -57,11 +57,13 @@ export type CRMPartner = {
   completedCalls: number;
   whatsappOpened: number;
   whatsappSent: number;
+  whatsappMobile: string;
+  whatsappUpdatedAt: string | null;
 };
 
 export type CRMInteraction = {
   id: string;
-  action: "call_started" | "call_result" | "whatsapp_opened" | "whatsapp_result" | "note";
+  action: "call_started" | "call_result" | "whatsapp_number_updated" | "whatsapp_opened" | "whatsapp_result" | "note";
   outcome: string;
   note: string;
   messageBody: string;

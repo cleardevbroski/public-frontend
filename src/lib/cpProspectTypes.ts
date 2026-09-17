@@ -19,6 +19,7 @@ export type CPProspect = {
   callAttempts: number;
   whatsappOpened: number;
   whatsappSent: number;
+  whatsappUpdatedAt: string | null;
   profileCompletion: number;
   broker: {
     lastCallOutcome: "" | "answered" | "callback_requested" | "no_answer" | "busy" | "wrong_number";
@@ -27,7 +28,7 @@ export type CPProspect = {
   };
   partnerType: "" | "company" | "individual";
   company: { name: string; businessType: string; yearEstablished: string | number; panMasked: string; gstNumber: string; reraNumber: string };
-  contact: { name: string; designation: string; mobile: string; alternateMobile: string; email: string };
+  contact: { name: string; designation: string; mobile: string; alternateMobile: string; whatsappMobile: string; email: string };
   address: { line1: string; line2: string; city: string; state: string; pinCode: string };
   business: { areasOfOperation: string[]; currentProjects: string; developerAssociations: string; teamStrength: string; preferredSegments: string[] };
   bank: { accountHolderName: string; bankName: string; branch: string; accountNumberMasked: string; ifscCode: string };
@@ -37,9 +38,9 @@ export type CPProspect = {
 };
 
 export type CPProspectInteraction = {
-  id: string; action: "call_started" | "verification_result" | "broker_call_result" | "profile_updated" | "whatsapp_opened" | "whatsapp_result" | "note";
+  id: string; action: "call_started" | "verification_result" | "broker_call_result" | "profile_updated" | "whatsapp_number_updated" | "whatsapp_opened" | "whatsapp_result" | "note";
   outcome: string; note: string; messageBody: string; callbackAt: string | null; changedFields: string[];
-  metadata?: { projectInterest?: string; followUpAgenda?: string; areasOfOperation?: string[]; preferredSegments?: string[]; openedInteractionId?: string };
+  metadata?: { projectInterest?: string; followUpAgenda?: string; areasOfOperation?: string[]; preferredSegments?: string[]; openedInteractionId?: string; previousNumber?: string; whatsappMobile?: string; usesPrimaryNumber?: boolean; usesAlternateNumber?: boolean };
   createdAt: string;
   employee: { id: string; employeeId: string; name: string } | null;
 };
