@@ -1,3 +1,4 @@
+import ResponsiveTable from "@/components/ResponsiveTable";
 import { ChevronRight, Mail, MapPin, MessageCircle } from "lucide-react";
 import { QualificationBadge, StatusBadge } from "./LeadBadges";
 import { leadId, sourceLabels, type Lead } from "./types";
@@ -28,7 +29,7 @@ function whatsappHref(phone?: string) {
 export default function LeadTable({ leads, busyId, onOpen, onStatus }: Props) {
   return (
     <div className="hidden overflow-x-auto lg:block">
-      <table className="w-full min-w-[1120px] table-fixed text-left">
+      <ResponsiveTable mobile="scroll"><table className="w-full min-w-[1120px] table-fixed text-left">
         <thead>
           <tr className="border-b border-[#E7E5E9] bg-[#FAF9FB] text-[10px] font-bold uppercase tracking-[0.12em] text-[#827D88]">
             <th className="w-[22%] px-5 py-3.5">Customer</th>
@@ -73,7 +74,7 @@ export default function LeadTable({ leads, busyId, onOpen, onStatus }: Props) {
             );
           })}
         </tbody>
-      </table>
+      </table></ResponsiveTable>
     </div>
   );
 }

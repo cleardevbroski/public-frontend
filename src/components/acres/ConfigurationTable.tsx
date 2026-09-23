@@ -1,3 +1,4 @@
+import ResponsiveTable from "@/components/ResponsiveTable";
 import type { ConfigurationDetail } from "./mock-data";
 
 export default function ConfigurationTable({ details }: { details: ConfigurationDetail[] }) {
@@ -17,7 +18,7 @@ export default function ConfigurationTable({ details }: { details: Configuration
   if (!columns.length) return null;
   return (
     <div className="overflow-x-auto rounded-2xl border border-[#E4E0E7]" data-testid="configuration-table">
-      <table className="w-full min-w-[900px] text-left text-[13px]">
+      <ResponsiveTable><table className="w-full min-w-[900px] text-left text-[13px]">
         <thead className="bg-[#121B35] text-white">
           <tr>{columns.map(({ label }) => <th key={label} className="px-4 py-3">{label}</th>)}</tr>
         </thead>
@@ -28,7 +29,7 @@ export default function ConfigurationTable({ details }: { details: Configuration
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></ResponsiveTable>
     </div>
   );
 }

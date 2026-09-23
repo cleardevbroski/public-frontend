@@ -1,5 +1,6 @@
 "use client";
 
+import ResponsiveTable from "@/components/ResponsiveTable";
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, X, Search, Phone, Mail } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -118,7 +119,7 @@ export default function AdminDealers() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[800px]">
+          <ResponsiveTable><table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="bg-[#F8FAFC] border-b border-[#E4E0E7]/50 text-[12px] font-bold text-[#68646F] uppercase tracking-wider">
                 <th className="px-6 py-4 font-medium">Dealer / Agency</th>
@@ -179,7 +180,7 @@ export default function AdminDealers() {
                 </tr>
               )}
             </tbody>
-          </table>
+          </table></ResponsiveTable>
         </div>
       </div>
 

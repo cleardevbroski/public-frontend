@@ -5,6 +5,7 @@ import "@fontsource-variable/open-sans";
 import "@fontsource-variable/playfair-display";
 import "@/globals.css";
 import "@/fonts.css";
+import "@/responsive.css";
 import { router } from "@/routes";
 
 createRoot(document.getElementById("root")!).render(

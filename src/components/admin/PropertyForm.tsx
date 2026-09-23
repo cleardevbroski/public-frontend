@@ -1,5 +1,6 @@
 "use client";
 
+import ResponsiveTable from "@/components/ResponsiveTable";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -1971,19 +1972,19 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
 
                 {formData.propertyType === "Apartment" && (formData.configurationDetails?.length || 0) > 0 && (
                   <div className="overflow-x-auto rounded-xl border border-[#E4E0E7] bg-white">
-                    <table className="w-full min-w-[850px] text-left text-[12px]">
+                    <ResponsiveTable mobile="scroll"><table className="w-full min-w-[850px] text-left text-[12px]">
                       <thead className="bg-[#121B35] text-white"><tr>{["Config", "Price", "Built-up area", "Carpet area", "Bedrooms", "Bathrooms", "Balconies", "Facing (optional)"].map((label) => <th key={label} className="px-3 py-2.5">{label}</th>)}</tr></thead>
                       <tbody>{formData.configurationDetails!.map((row) => <tr key={row.configuration} className="border-t border-[#F3F1F5]"><td className="px-3 py-2 font-bold">{row.configuration}</td><td className="px-3 py-2">{row.price}</td><td className="px-3 py-2">{row.builtUpArea}</td><td className="px-3 py-2">{row.carpetArea}</td><td className="px-3 py-2">{row.bedrooms}</td><td className="px-3 py-2">{row.bathrooms}</td><td className="px-3 py-2">{row.balconies}</td><td className="px-3 py-2">{row.facings.join(", ") || "Not specified"}</td></tr>)}</tbody>
-                    </table>
+                    </table></ResponsiveTable>
                   </div>
                 )}
 
                 {formData.propertyType === "Villa" && (formData.villaDetails?.configurationDetails.length || 0) > 0 && (
                   <div className="overflow-x-auto rounded-xl border border-[#E4E0E7] bg-white">
-                    <table className="w-full min-w-[760px] text-left text-[12px]">
+                    <ResponsiveTable mobile="scroll"><table className="w-full min-w-[760px] text-left text-[12px]">
                       <thead className="bg-[#121B35] text-white"><tr>{["Config", "Price", "Plot area", "Built-up area", "Super area", "Bedrooms", "Bathrooms"].map((label) => <th key={label} className="px-3 py-2.5">{label}</th>)}</tr></thead>
                       <tbody>{formData.villaDetails!.configurationDetails.map((row) => <tr key={row.configuration} className="border-t border-[#F3F1F5]"><td className="px-3 py-2 font-bold">{row.configuration}</td><td className="px-3 py-2">{row.price}</td><td className="px-3 py-2">{row.plotArea}</td><td className="px-3 py-2">{row.builtUpArea}</td><td className="px-3 py-2">{row.superArea}</td><td className="px-3 py-2">{row.bedrooms}</td><td className="px-3 py-2">{row.bathrooms}</td></tr>)}</tbody>
-                    </table>
+                    </table></ResponsiveTable>
                   </div>
                 )}
 

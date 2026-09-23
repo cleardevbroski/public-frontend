@@ -1,3 +1,4 @@
+import PartnerNavigation from "@/components/partners/PartnerNavigation";
 import { useCallback, useRef, useState } from "react";
 import { BadgeCheck, CheckCircle2, Headphones, Loader2, LockKeyhole, Megaphone, Rocket, ShieldCheck, Sparkles } from "lucide-react";
 import DocumentUpload from "@/components/channel-partners/DocumentUpload";
@@ -124,16 +125,11 @@ export default function ChannelPartners() {
     finally { setSubmitting(false); }
   };
 
-  return <div className="min-h-screen bg-[#EFF1F4] text-[#3F3D46]">
-    <header className="bg-[#0B1328] border-b border-[#DDAA42]/25">
-      <div className="max-w-[1120px] mx-auto px-4 py-4 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3"><img src="/cleartitleone/logo.png" alt="ClearTitle One" className="size-11 rounded-full ring-2 ring-[#DDAA42]/60" /><div><p className="text-white text-[17px] font-bold">Clear<span className="text-[#F2C052]">Title</span><span className="text-[#DDAA42]">One</span></p><p className="text-white/50 text-[10px] uppercase tracking-[.14em]">Channel Partner Portal</p></div></div>
-        <div className="flex items-center gap-2 sm:gap-3"><div className="hidden md:block text-right"><p className="text-[10px] uppercase tracking-widest text-white/40">Partner Support</p><p className="text-[11.5px] text-white/80">feedback@cleartitleone.com · 1800 41 99099</p></div><a href="/cp-registration" className="rounded-lg border border-[#DDAA42]/60 px-2.5 sm:px-3 py-2 text-[10px] sm:text-[11px] font-bold text-[#F2C052] hover:bg-white/10">CP Registration</a><a href="/cp-dashboard" className="rounded-lg bg-[#DDAA42] px-2.5 sm:px-3 py-2 text-[10px] sm:text-[11px] font-bold text-[#0B1328] hover:bg-[#F2C052]">CP Dashboard</a></div>
-      </div>
-    </header>
+  return <div className="partner-page min-h-screen bg-[#EFF1F4] text-[#3F3D46]">
+    <PartnerNavigation active="application" />
 
     <main>
-      <section className="public-page-hero text-white"><div className="max-w-[1120px] mx-auto px-4 pt-10 pb-12 relative z-10 text-center"><p className="public-page-hero__eyebrow">Channel Partner</p><h1 className="display-heading mt-3 text-4xl text-white md:text-6xl">Registration form</h1><p className="max-w-2xl mx-auto mt-4 text-[13px] md:text-[15px] leading-6 text-white/70">Complete all required details and uploads. After submission, your account is activated immediately and your unique client-registration code is emailed to you.</p><div className="grid grid-cols-2 md:grid-cols-5 gap-2 mt-7">{benefits.map(({ icon: Icon, label }) => <div key={label} className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 flex flex-col items-center gap-2"><Icon className="size-4 text-[#F2C052]" /><span className="text-[11px] font-semibold leading-4">{label}</span></div>)}</div></div></section>
+      <section className="partner-application-intro mx-auto max-w-[1040px] px-4"><h1 className="font-bold text-[#121B35]">Channel Partner Registration</h1></section>
 
       <section className="max-w-[1040px] mx-auto px-3 md:px-4 py-7 md:py-10">
         {receipt ? <div role="status" aria-live="polite" className="max-w-2xl mx-auto bg-white rounded-3xl border border-[#E4E0E7] p-7 md:p-10 text-center shadow-xl shadow-[#121B35]/5"><span className="size-16 mx-auto rounded-2xl bg-emerald-50 flex items-center justify-center"><CheckCircle2 className="size-8 text-emerald-600" /></span><h2 className="text-2xl font-bold text-[#121B35] mt-5">You have submitted your registration successfully</h2><p className="text-[14px] text-[#68646F] mt-2">Thank you, {receipt.companyName}. Your account is active. {receipt.emailSent ? "The code has been sent to your email." : "We could not deliver the email, so please save the code shown below and contact support if you need help."}</p><div className="my-6 grid gap-3 sm:grid-cols-2"><div className="rounded-2xl bg-[#F7F9FF] py-5"><p className="text-[10px] uppercase tracking-widest text-[#68646F]">Application reference</p><p className="text-lg font-bold text-[#121B35] mt-1">{receipt.applicationNumber}</p></div><div className="rounded-2xl bg-[#0B1328] text-white py-5"><p className="text-[10px] uppercase tracking-widest text-white/50">Partner code</p><p className="text-2xl font-bold tracking-wider text-[#F2C052] mt-1">{receipt.partnerCode}</p></div></div><a href="/cp-registration" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#DDAA42] px-6 text-[13px] font-bold text-[#0B1328]">Go to CP Registration</a><p className="text-[12px] leading-5 text-[#68646F] mt-5">Keep your code private. It is unique to your Channel Partner account.<br />Support: feedback@cleartitleone.com · 1800 41 99099</p></div> : <form onSubmit={submit} noValidate className="bg-white rounded-2xl md:rounded-3xl border border-[#E4E0E7] shadow-xl shadow-[#121B35]/5 overflow-hidden">

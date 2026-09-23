@@ -1,3 +1,4 @@
+import ResponsiveTable from "@/components/ResponsiveTable";
 import type { ApartmentRoom, ConfigurationDetail, PossessionDetails } from "@/components/acres/mock-data";
 import { facingOptions, type ApartmentErrors } from "@/lib/propertyDetails";
 import OptionalMediaField from "./OptionalMediaField";
@@ -84,7 +85,7 @@ export default function ApartmentDetailsFields(props: Props) {
         <div>
           <h3 className="text-[14px] font-bold text-[#121B35] mb-2">Per-configuration details</h3>
           <div className="overflow-x-auto border border-[#E4E0E7] rounded-xl">
-            <table className="w-full min-w-[980px] text-left">
+            <ResponsiveTable mobile="scroll"><table className="w-full min-w-[980px] text-left">
               <thead className="bg-[#121B35] text-white text-[11px] uppercase tracking-wide">
                 <tr>{["Config", "Price", "Built-up area", "Carpet area", "Bedrooms", "Bathrooms", "Balconies", "Facing (optional)"].map((label) => <th key={label} className="px-3 py-3">{label}</th>)}</tr>
               </thead>
@@ -119,7 +120,7 @@ export default function ApartmentDetailsFields(props: Props) {
                   );
                 })}
               </tbody>
-            </table>
+            </table></ResponsiveTable>
           </div>
         </div>
       )}

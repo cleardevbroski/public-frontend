@@ -1,5 +1,6 @@
 "use client";
 
+import ResponsiveTable from "@/components/ResponsiveTable";
 import { useMemo, useState } from "react";
 import { Calculator, ChevronDown } from "lucide-react";
 import type { Property } from "./mock-data";
@@ -106,7 +107,7 @@ export default function ExactLoanCalculator({ property }: { property: Property }
           {(prepaymentAmount || prepaymentMonth) && !prepayment && <p className="mt-3 text-[10px] font-semibold text-red-700">Enter a positive amount and a month before the final payment.</p>}
           {prepayment && <div className="mt-3 grid grid-cols-2 gap-3 rounded-lg border border-[#E7D9B9] bg-[#FFF9EC] p-3 text-[10px]"><p><span className="block text-[#777062]">Interest saved</span><strong className="mt-1 block tabular-nums text-[#172039]">{currency.format(Math.round(prepayment.interestSaved))}</strong></p><p><span className="block text-[#777062]">Payments saved</span><strong className="mt-1 block tabular-nums text-[#172039]">{prepayment.monthsSaved} months</strong></p></div>}
           <div className="mt-3 max-h-52 overflow-auto rounded-lg border border-[#E2DED6] bg-white">
-            <table className="w-full min-w-[360px] text-right text-[9px] tabular-nums"><thead className="sticky top-0 bg-[#F5F3EE] text-[#687080]"><tr><th className="p-2 text-left">Month</th><th className="p-2">Principal</th><th className="p-2">Interest</th><th className="p-2">Balance</th></tr></thead><tbody>{schedule.map((row) => <tr key={row.month} className="border-t border-[#EEEAE2]"><td className="p-2 text-left font-bold">{row.month}</td><td className="p-2">{currency.format(Math.round(row.principal))}</td><td className="p-2">{currency.format(Math.round(row.interest))}</td><td className="p-2">{currency.format(Math.round(row.balance))}</td></tr>)}</tbody></table>
+            <ResponsiveTable><table className="w-full min-w-[360px] text-right text-[9px] tabular-nums"><thead className="sticky top-0 bg-[#F5F3EE] text-[#687080]"><tr><th className="p-2 text-left">Month</th><th className="p-2">Principal</th><th className="p-2">Interest</th><th className="p-2">Balance</th></tr></thead><tbody>{schedule.map((row) => <tr key={row.month} className="border-t border-[#EEEAE2]"><td className="p-2 text-left font-bold">{row.month}</td><td className="p-2">{currency.format(Math.round(row.principal))}</td><td className="p-2">{currency.format(Math.round(row.interest))}</td><td className="p-2">{currency.format(Math.round(row.balance))}</td></tr>)}</tbody></table></ResponsiveTable>
           </div>
         </div>
       </details>

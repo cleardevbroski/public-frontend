@@ -1,3 +1,4 @@
+import ResponsiveTable from "@/components/ResponsiveTable";
 import type { PgDetails, PgSharingDetail } from "@/components/acres/mock-data";
 import { createPgSharing } from "@/lib/pgDetails";
 
@@ -116,7 +117,7 @@ export default function PgDetailsFields({ details, setDetails, errors }: Props) 
         {errors.sharingDetails && <p className="text-[11px] text-red-600">{errors.sharingDetails}</p>}
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[620px] text-[13px]">
+          <ResponsiveTable mobile="scroll"><table className="w-full min-w-[620px] text-[13px]">
             <thead className="bg-[#121B35] text-white">
               <tr>
                 <th className="p-2 text-left">Sharing</th>
@@ -169,7 +170,7 @@ export default function PgDetailsFields({ details, setDetails, errors }: Props) 
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></ResponsiveTable>
         </div>
       </div>
 

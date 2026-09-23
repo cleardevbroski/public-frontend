@@ -41,7 +41,6 @@ import {
 import { isAdminAuthed, adminLogin, adminLogout, getAdminLoginError } from "@/lib/adminAuth";
 import { fetchSystemNotifications, markAllSystemNotificationsRead, markSystemNotificationRead } from "@/lib/api";
 import SectionErrorBoundary from "@/components/SectionErrorBoundary";
-import RefreshPageButton from "@/components/RefreshPageButton";
 import { buildAdminPropertySearchHref } from "@/lib/adminSearch";
 
 interface AdminLayoutProps {
@@ -172,6 +171,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     setHeaderSearch(query);
   }, [location.search, pathname]);
 
+  useEffect(() => { setSidebarOpen(false); setNotificationsOpen(false); }, [pathname]);
+
+  useEffect(() => {
+    const close = (event: KeyboardEvent) => { if (event.key === "Escape") { setSidebarOpen(false); setNotificationsOpen(false); } };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, []);
+
   const submitHeaderSearch = (event: React.FormEvent) => {
     event.preventDefault();
     navigate(buildAdminPropertySearchHref(headerSearch));
@@ -244,8 +251,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Sidebar */}
       <aside
-        className={`admin-sidebar fixed lg:sticky top-0 left-0 h-screen w-[248px] bg-[#121B35] flex flex-col z-50 transition-transform duration-300 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        id="admin-navigation"
+        className={`admin-sidebar fixed lg:sticky top-0 left-0 h-[100dvh] w-[248px] shrink-0 bg-[#121B35] flex flex-col z-50 transition-transform duration-300 ${
+          sidebarOpen ? "visible translate-x-0" : "invisible -translate-x-full lg:visible lg:translate-x-0"
         }`}
       >
         {/* Logo */}
@@ -269,7 +277,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </span>
             </div>
           </Link>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/60 hover:text-white">
+          <button aria-label="Close navigation" onClick={() => setSidebarOpen(false)} className="lg:hidden size-11 grid place-items-center text-white/60 hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -350,14 +358,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {/* Top Bar */}
         <header className="admin-topbar sticky top-0 z-30 backdrop-blur-xl border-b flex items-center px-4 lg:px-6 gap-4">
           <button
+            aria-label="Open navigation"
+            aria-controls="admin-navigation"
+            aria-expanded={sidebarOpen}
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden w-10 h-10 rounded-xl bg-[#F8F7FA] flex items-center justify-center hover:bg-[#F3F1F5] transition-colors"
+            className="lg:hidden shrink-0 w-11 h-11 rounded-xl bg-[#F8F7FA] flex items-center justify-center hover:bg-[#F3F1F5] transition-colors"
           >
             <Menu className="w-5 h-5 text-[#121B35]" />
           </button>
 
           {/* Search */}
-          <form onSubmit={submitHeaderSearch} role="search" className="hidden md:flex flex-1 max-w-md items-center gap-2 bg-[#F8F7FA] rounded-xl px-3 py-2 border border-[#E4E0E7]/30 focus-within:border-[#DDAA42]/40 focus-within:ring-2 focus-within:ring-[#DDAA42]/10 transition-all">
+          <form onSubmit={submitHeaderSearch} role="search" className="flex min-w-0 flex-1 max-w-md items-center gap-2 bg-[#F8F7FA] rounded-xl px-3 py-2 border border-[#E4E0E7]/30 focus-within:border-[#DDAA42]/40 focus-within:ring-2 focus-within:ring-[#DDAA42]/10 transition-all">
             <button type="submit" aria-label="Search properties" className="rounded-md p-1 text-[#68646F] transition-colors hover:bg-white hover:text-[#9A741E]">
               <Search className="w-4 h-4" />
             </button>
@@ -373,14 +384,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </form>
 
           <div className="relative flex items-center gap-3 ml-auto">
-            <RefreshPageButton variant="toolbar" />
             <button onClick={() => { setNotificationsOpen((open) => !open); if (!notificationsOpen) void loadNotifications(); }} aria-label={`System notifications${unreadCount ? `, ${unreadCount} unread` : ""}`} aria-expanded={notificationsOpen} className="relative w-10 h-10 rounded-xl bg-[#F8F7FA] flex items-center justify-center hover:bg-[#F3F1F5] transition-colors border border-[#E4E0E7]/30">
               <Bell className="w-5 h-5 text-[#68646F]" />
               {unreadCount > 0 && <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-[#F2C052] rounded-full text-[#0B1328] text-[10px] font-bold flex items-center justify-center">{unreadCount > 99 ? "99+" : unreadCount}</span>}
             </button>
             {notificationsOpen && <div className="absolute right-0 top-12 z-50 w-[min(92vw,390px)] overflow-hidden rounded-2xl border border-[#E4E0E7] bg-white shadow-2xl">
               <div className="flex items-center justify-between border-b border-[#EEEAF0] px-4 py-3"><div><h2 className="text-sm font-bold text-[#121B35]">System notifications</h2><p className="text-[11px] text-[#85808A]">Website problems reported automatically</p></div>{unreadCount > 0 && <button onClick={() => void readAllNotifications()} className="text-xs font-bold text-[#A66E00] hover:text-[#7B5100]">Mark all read</button>}</div>
-              <div className="max-h-[430px] overflow-y-auto">
+              <div className="max-h-[min(430px,70dvh)] overflow-y-auto">
                 {notificationsLoading && notifications.length === 0 ? <div className="p-8 text-center text-sm text-[#85808A]">Loading notifications…</div> : notifications.length === 0 ? <div className="p-8 text-center"><Bell className="mx-auto size-7 text-[#D8D3DA]" /><p className="mt-2 text-sm font-semibold text-[#68646F]">No system problems reported</p></div> : notifications.map((notification) => <Link key={notification.id} href={notification.path.startsWith("/") ? notification.path : "/admin"} onClick={() => { void readNotification(notification); setNotificationsOpen(false); }} className={`block border-b border-[#F0EDF1] px-4 py-3 hover:bg-[#FAF9FA] ${notification.unread ? "bg-[#FFF9EC]" : "bg-white"}`}>
                   <div className="flex items-start gap-3"><span className={`mt-1 size-2 shrink-0 rounded-full ${notification.unread ? "bg-[#E4A82B]" : "bg-[#D8D3DA]"}`} /><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><p className="text-xs font-bold text-[#121B35]">{notification.title}</p>{notification.occurrences > 1 && <span className="rounded-full bg-[#FFF1EF] px-2 py-0.5 text-[10px] font-bold text-[#A83226]">{notification.occurrences}×</span>}</div><p className="mt-1 line-clamp-2 text-xs text-[#68646F]">{notification.message}</p><div className="mt-1.5 flex items-center justify-between gap-2 text-[10px] text-[#96909A]"><span className="max-w-[220px] truncate">{notification.path}</span><time>{new Date(notification.lastOccurredAt).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</time></div></div></div>
                 </Link>)}

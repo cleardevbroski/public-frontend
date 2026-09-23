@@ -16,21 +16,38 @@ export default function SignaturePad({ onChange }: { onChange: (document?: Partn
     const resize = () => {
       const ratio = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
-      canvas.width = Math.max(1, Math.round(rect.width * ratio));
-      canvas.height = Math.round(150 * ratio);
+      if (!rect.width) return;
+      const width = Math.max(1, Math.round(rect.width * ratio));
+      const height = Math.round(150 * ratio);
+      if (canvas.width === width && canvas.height === height) return;
+      // Preserve existing strokes when the form changes width or the phone rotates.
+      const snapshot = document.createElement("canvas");
+      snapshot.width = canvas.width;
+      snapshot.height = canvas.height;
+      snapshot.getContext("2d")?.drawImage(canvas, 0, 0);
+      canvas.width = width;
+      canvas.height = height;
       const ctx = canvas.getContext("2d");
-      if (ctx) { ctx.scale(ratio, ratio); ctx.lineWidth = 2.2; ctx.lineCap = "round"; ctx.strokeStyle = "#121B35"; }
-      setHasInk(false); onChange(undefined);
+      if (ctx) {
+        ctx.drawImage(snapshot, 0, 0, width, height);
+        ctx.scale(ratio, ratio); ctx.lineWidth = 2.2; ctx.lineCap = "round"; ctx.strokeStyle = "#121B35";
+      }
     };
     resize();
-  }, [onChange]);
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
+    observer?.observe(canvas);
+    window.addEventListener("resize", resize);
+    return () => { observer?.disconnect(); window.removeEventListener("resize", resize); };
+  }, []);
 
   const point = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     return { x: event.clientX - rect.left, y: event.clientY - rect.top };
   };
   const start = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (busy) return;
     drawing.current = true; event.currentTarget.setPointerCapture(event.pointerId);
+    onChange(undefined);
     const ctx = event.currentTarget.getContext("2d"); const p = point(event); ctx?.beginPath(); ctx?.moveTo(p.x, p.y);
   };
   const move = (event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -54,8 +71,8 @@ export default function SignaturePad({ onChange }: { onChange: (document?: Partn
     <p className="text-[12px] font-bold text-[#3F3D46] mb-1.5">Draw signature <span className="text-red-600">*</span></p>
     <canvas ref={canvasRef} className="w-full h-[150px] bg-white border border-[#C9C5CC] rounded-xl touch-none cursor-crosshair" aria-label="Signature drawing area" onPointerDown={start} onPointerMove={move} onPointerUp={() => { drawing.current = false; }} onPointerCancel={() => { drawing.current = false; }} />
     <div className="flex gap-2 mt-2">
-      <button type="button" onClick={clear} className="h-9 px-3 rounded-lg border border-[#E4E0E7] text-[12px] font-bold inline-flex items-center gap-1.5"><Eraser className="size-3.5" /> Clear</button>
-      <button type="button" disabled={!hasInk || busy} onClick={() => void save()} className="h-9 px-3 rounded-lg bg-[#121B35] text-white text-[12px] font-bold inline-flex items-center gap-1.5 disabled:opacity-50">{busy ? <Loader2 className="size-3.5 animate-spin" /> : <PenLine className="size-3.5" />} Use signature</button>
+      <button type="button" disabled={busy} onClick={clear} className="h-11 px-3 rounded-lg border border-[#E4E0E7] text-[12px] font-bold inline-flex items-center gap-1.5"><Eraser className="size-3.5" /> Clear</button>
+      <button type="button" disabled={!hasInk || busy} onClick={() => void save()} className="h-11 px-3 rounded-lg bg-[#121B35] text-white text-[12px] font-bold inline-flex items-center gap-1.5 disabled:opacity-50">{busy ? <Loader2 className="size-3.5 animate-spin" /> : <PenLine className="size-3.5" />} Use signature</button>
     </div>
     <p className="text-[10.5px] text-[#8A8690] mt-1">This is an applicant acknowledgement, not a verified electronic signature.</p>
     {error && <p role="alert" className="text-[11px] text-red-700 mt-1">{error}</p>}

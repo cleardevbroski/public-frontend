@@ -1,5 +1,6 @@
 "use client";
 
+import ResponsiveTable from "@/components/ResponsiveTable";
 import { useCallback, useEffect, useState } from "react";
 import { Activity, ChevronLeft, ChevronRight, Clock3, Eye, Loader2, MousePointerClick, RefreshCw, UserCheck, Users, X } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -176,7 +177,7 @@ export default function AdminClientActivity() {
 
         {error && <div role="alert" className="m-5 rounded-xl bg-[#FFF1EF] px-4 py-3 text-sm font-semibold text-[#A83226]">{error}</div>}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] text-left text-sm">
+          <ResponsiveTable><table className="w-full min-w-[980px] text-left text-sm">
             <caption className="sr-only">Tracked client and anonymous visitor activity</caption>
             <thead className="bg-[#F8F7F9] text-xs uppercase tracking-wide text-[#68646F]">
               <tr><th scope="col" className="px-5 py-3.5">Visitor</th><th scope="col" className="px-4 py-3.5">Visits</th><th scope="col" className="px-4 py-3.5">Active time</th><th scope="col" className="px-4 py-3.5">Top interest</th><th scope="col" className="px-4 py-3.5">Budget</th><th scope="col" className="px-4 py-3.5">Last activity</th><th scope="col" className="px-5 py-3.5 text-right">Details</th></tr>
@@ -198,7 +199,7 @@ export default function AdminClientActivity() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></ResponsiveTable>
         </div>
         <div className="flex items-center justify-between border-t border-[#EEEAF0] px-5 py-4 text-sm text-[#68646F]">
           <span>{pagination.total} matching visitor{pagination.total === 1 ? "" : "s"}</span>
@@ -221,7 +222,7 @@ export default function AdminClientActivity() {
 
                 <section><h3 className="mb-3 flex items-center gap-2 text-base font-bold text-[#121B35]"><Clock3 className="size-4 text-[#D09A2D]" /> Visit history</h3><div className="grid gap-3 md:grid-cols-2">{selected.sessions.map((session) => <article key={session.id} className="rounded-xl border border-[#EAE6EC] bg-white p-4"><div className="flex items-center justify-between"><strong className="text-sm text-[#121B35]">Visit {session.visitNumber}</strong><span className="rounded-full bg-[#F3F1F4] px-2 py-1 text-[11px] font-bold capitalize text-[#68646F]">{session.deviceCategory}</span></div><div className="mt-2 text-xs text-[#68646F]">{formatDate(session.startedAt)}</div><div className="mt-3 flex gap-4 text-xs font-semibold text-[#273559]"><span>{formatDuration(session.activeSeconds)} active</span><span>{session.propertyViewCount} project views</span></div><div className="mt-2 truncate text-xs text-[#85808A]" title={session.landingPath}>Landed on {session.landingPath || "/"}</div></article>)}</div></section>
 
-                <section><h3 className="mb-3 flex items-center gap-2 text-base font-bold text-[#121B35]"><BuildingInterestIcon /> Project interests</h3><div className="overflow-x-auto rounded-xl border border-[#EAE6EC] bg-white"><table className="w-full min-w-[680px] text-left text-sm"><caption className="sr-only">Projects viewed by this visitor</caption><thead className="bg-[#F3F1F4] text-xs uppercase text-[#68646F]"><tr><th scope="col" className="px-4 py-3">Project</th><th scope="col" className="px-4 py-3">Type / budget</th><th scope="col" className="px-4 py-3">Attention</th><th scope="col" className="px-4 py-3">Actions</th></tr></thead><tbody className="divide-y divide-[#EEEAF0]">{selected.engagements.length ? selected.engagements.map((item) => <tr key={item.id}><td className="px-4 py-3"><div className="font-bold text-[#121B35]">{item.propertyTitle || item.propertyId}</div><div className="text-xs text-[#85808A]">{item.location}</div></td><td className="px-4 py-3"><div className="font-semibold text-[#273559]">{item.propertyType || "—"}</div><div className="text-xs text-[#85808A]">{item.budgetBand || "Unknown"}</div></td><td className="px-4 py-3 font-semibold text-[#273559]">{formatDuration(item.activeSeconds)}<div className="text-xs font-normal text-[#85808A]">{item.viewCount} views</div></td><td className="max-w-[220px] px-4 py-3 text-xs text-[#68646F]">{actionSummary(item.actions)}</td></tr>) : <tr><td colSpan={4} className="p-8 text-center text-[#85808A]">No project activity recorded.</td></tr>}</tbody></table></div></section>
+                <section><h3 className="mb-3 flex items-center gap-2 text-base font-bold text-[#121B35]"><BuildingInterestIcon /> Project interests</h3><div className="overflow-x-auto rounded-xl border border-[#EAE6EC] bg-white"><ResponsiveTable><table className="w-full min-w-[680px] text-left text-sm"><caption className="sr-only">Projects viewed by this visitor</caption><thead className="bg-[#F3F1F4] text-xs uppercase text-[#68646F]"><tr><th scope="col" className="px-4 py-3">Project</th><th scope="col" className="px-4 py-3">Type / budget</th><th scope="col" className="px-4 py-3">Attention</th><th scope="col" className="px-4 py-3">Actions</th></tr></thead><tbody className="divide-y divide-[#EEEAF0]">{selected.engagements.length ? selected.engagements.map((item) => <tr key={item.id}><td className="px-4 py-3"><div className="font-bold text-[#121B35]">{item.propertyTitle || item.propertyId}</div><div className="text-xs text-[#85808A]">{item.location}</div></td><td className="px-4 py-3"><div className="font-semibold text-[#273559]">{item.propertyType || "—"}</div><div className="text-xs text-[#85808A]">{item.budgetBand || "Unknown"}</div></td><td className="px-4 py-3 font-semibold text-[#273559]">{formatDuration(item.activeSeconds)}<div className="text-xs font-normal text-[#85808A]">{item.viewCount} views</div></td><td className="max-w-[220px] px-4 py-3 text-xs text-[#68646F]">{actionSummary(item.actions)}</td></tr>) : <tr><td colSpan={4} className="p-8 text-center text-[#85808A]">No project activity recorded.</td></tr>}</tbody></table></ResponsiveTable></div></section>
               </div>
             </>}
           </aside>

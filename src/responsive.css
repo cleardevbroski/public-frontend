@@ -1,0 +1,90 @@
+/* Layout constraints shared by the public, employee and partner workspaces. */
+@layer base {
+  #root, #main-content { min-width: 0; width: 100%; }
+  #main-content :where(main, section, article, aside, form, fieldset, label, .grid > *, .flex > *) { min-width: 0; }
+  #main-content :where(h1, h2, h3, p, label, dd) { overflow-wrap: anywhere; }
+  #main-content :where(input, select, textarea) { max-width: 100%; }
+  #main-content :where(button, a, summary) { touch-action: manipulation; }
+  #main-content :where(img, video, canvas) { max-width: 100%; }
+}
+
+.partner-header { position: sticky; top: 0; z-index: 40; background: #0B1328; border-bottom: 2px solid #7447A8; }
+.partner-header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 66px; max-width: 1440px; margin: auto; padding-inline: 16px; }
+.partner-mobile-nav { position: fixed; bottom: 0; inset-inline: 0; z-index: 40; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; border-top: 1px solid #D8DCE2; background: white; padding: 6px 8px max(6px, env(safe-area-inset-bottom)); }
+.partner-page { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
+.partner-page > main { padding-top: 20px; }
+.partner-page form > .grid, .partner-page form { min-width: 0; }
+.partner-page .partner-application-intro { padding-block: 20px; }
+.partner-page .partner-application-intro h1 { font-size: 28px; line-height: 1.2; }
+.employee-search { position: sticky; top: 66px; z-index: 30; background: #EFF1F4; padding-block: 8px; border-bottom: 1px solid #BCA8D0; }
+.employee-queue { min-width: 0; }
+.employee-queue button { padding: 12px; }
+.employee-queue strong { white-space: normal; overflow-wrap: anywhere; }
+.employee-queue-scroll { max-height: calc(100dvh - 210px); overflow-y: auto; overscroll-behavior-y: contain; }
+.employee-contact-layout { display: grid; gap: 16px; align-items: start; }
+.employee-contact-layout > * { min-width: 0; }
+.employee-menu select { display: block; width: 100%; min-height: 44px; }
+.responsive-table { max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; }
+.responsive-table:focus-visible { outline: 2px solid #805A0B; outline-offset: 2px; }
+.responsive-table th { white-space: nowrap; }
+.responsive-table td { overflow-wrap: anywhere; }
+.admin-record-detail { scroll-margin-top: 80px; }
+.public-family-dock { bottom: calc(88px + env(safe-area-inset-bottom)); }
+.public-family-dock > div { max-height: calc(100dvh - 180px); overflow-y: auto; }
+
+@media (min-width: 768px) {
+  .partner-mobile-nav { display: none; }
+  .partner-page { padding-bottom: 0; }
+  .partner-header-inner { padding-inline: 24px; }
+}
+@media (min-width: 1280px) {
+  .employee-contact-layout { grid-template-columns: minmax(320px, 380px) minmax(0, 1fr); }
+  .employee-queue { position: sticky; top: 136px; }
+}
+@media (max-width: 1279px) {
+  .admin-record-layout:has(.admin-record-detail[data-open="true"]) > :not(.admin-record-detail) { display: none; }
+  .admin-record-detail[data-open="false"] { display: none; }
+}
+@media (max-width: 767px) {
+  /* A readable input size also prevents automatic zoom on focus in mobile browsers. */
+  #main-content :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) { font-size: 16px; }
+  #main-content :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select) { min-height: 44px; }
+  .partner-page main { padding-inline: 12px; }
+  .partner-page main > section { border-radius: 8px; }
+  .partner-page .partner-form-content { padding: 16px; }
+  .partner-page .partner-form-intro { padding: 16px; }
+  .partner-page .partner-form-intro h1 { font-size: 22px; }
+  .partner-page .partner-form-intro h2 { font-size: 18px; }
+  .partner-page .partner-form-intro > div > span { display: none; }
+  .partner-page .partner-summary { padding: 10px; }
+  .partner-page .partner-summary svg { display: none; }
+  .partner-page .partner-summary span { font-size: 11px; }
+  .partner-page .partner-summary p { font-size: 22px; margin-top: 6px; }
+  .partner-page .partner-welcome h1 { font-size: 24px; line-height: 1.3; }
+  .partner-page .partner-welcome { gap: 12px; padding-bottom: 16px; }
+  .partner-page .partner-welcome h1 { font-size: 20px; }
+  .partner-page .partner-welcome h1 + p { display: none; }
+  .partner-page [aria-label="Client summary"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .partner-page .partner-earnings { padding: 16px; gap: 16px; }
+  .employee-queue-scroll { max-height: none; overflow: visible; }
+  .employee-login { align-items: start; }
+  .admin-content { padding: 12px; }
+  .admin-content > :where(section, div) { max-width: 100%; }
+  .admin-content :where(h1) { font-size: 24px; }
+  .admin-content .admin-record-detail { padding: 16px; }
+  .responsive-table[data-mobile="cards"] table { display: block; min-width: 0; width: 100%; }
+  .responsive-table[data-mobile="cards"] thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .responsive-table[data-mobile="cards"] thead:has(:is(input, button, select)) { position: static; width: auto; height: auto; overflow: visible; clip-path: none; display: block; }
+  .responsive-table[data-mobile="cards"] thead:has(:is(input, button, select)) tr { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
+  .responsive-table[data-mobile="cards"] thead:has(:is(input, button, select)) th { display: none; }
+  .responsive-table[data-mobile="cards"] thead:has(:is(input, button, select)) th:has(:is(input, button, select)) { display: flex; align-items: center; min-height: 44px; padding: 0; }
+  .responsive-table[data-mobile="cards"] tbody { display: block; }
+  .responsive-table[data-mobile="cards"] tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; gap: 12px; border-bottom: 1px solid #E4E0E7; }
+  .responsive-table[data-mobile="cards"] tbody td { display: block; padding: 0; min-width: 0; white-space: normal; }
+  .responsive-table[data-mobile="cards"] tbody td:first-child,
+  .responsive-table[data-mobile="cards"] tbody td:last-child { grid-column: 1 / -1; }
+  .responsive-table[data-mobile="cards"] tbody td::before { content: attr(data-label); display: block; margin-bottom: 4px; font-size: 11px; font-weight: 600; color: #68646F; }
+  .responsive-table[data-mobile="cards"] tbody td[data-label=""]::before { display: none; }
+  .responsive-table[data-mobile="cards"] button { min-height: 44px; }
+  .public-family-dock { bottom: calc(112px + env(safe-area-inset-bottom)); }
+}

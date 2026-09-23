@@ -47,6 +47,27 @@ export default function Header() {
     };
   }, []);
 
+  useEffect(() => { setIsMenuOpen(false); setActiveDropdown(null); }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const panel = document.getElementById("public-navigation");
+    panel?.querySelector<HTMLButtonElement>('button[aria-label="Close menu"]')?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsMenuOpen(false);
+      if (event.key !== "Tab") return;
+      const controls = Array.from(panel?.querySelectorAll<HTMLElement>('a[href], button, input, select, [tabindex="0"]') || []).filter((node) => node.getClientRects().length > 0);
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => { document.body.style.overflow = previousOverflow; window.removeEventListener("keydown", onKey); previousFocus?.focus(); };
+  }, [isMenuOpen]);
+
   const isCurrent = (href: string) => location.pathname === href || (href !== "/" && location.pathname.startsWith(href));
 
   return (
@@ -83,7 +104,7 @@ export default function Header() {
           <div className="flex-1" />
 
           {/* Top nav */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden 2xl:flex items-center gap-1">
             {navItems.map((item) => (
               <div
                 key={item.label}
@@ -143,7 +164,8 @@ export default function Header() {
           {user ? (
             <button 
               onClick={() => setIsProfileDrawerOpen(true)}
-              className="size-9 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-all duration-200 border border-white/40 text-white font-bold text-[14px]"
+              aria-label="Open your profile"
+              className="size-11 shrink-0 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-all duration-200 border border-white/40 text-white font-bold text-[14px]"
             >
               {user.name ? user.name.charAt(0).toUpperCase() : <User className="size-4" />}
             </button>
@@ -159,8 +181,10 @@ export default function Header() {
           {/* Menu */}
           <button
             onClick={() => setIsMenuOpen(true)}
-            className="size-9 flex items-center justify-center rounded-full hover:bg-white/15 transition-all duration-200 border border-white/10 cursor-pointer"
+            className="size-11 shrink-0 flex items-center justify-center rounded-full hover:bg-white/15 transition-all duration-200 border border-white/10 cursor-pointer"
             aria-label="Open menu"
+            aria-expanded={isMenuOpen}
+            aria-controls="public-navigation"
           >
             <Menu className="size-5" strokeWidth={2} />
           </button>
@@ -195,7 +219,7 @@ export default function Header() {
           />
 
           {/* Drawer Panel */}
-          <div className="fixed top-0 right-0 h-full w-full max-w-[420px] bg-[#121B35]/95 backdrop-blur-xl border-l border-[#DDAA42]/20 z-[101] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 text-white">
+          <div id="public-navigation" role="dialog" aria-modal="true" aria-label="Site navigation" className="fixed top-0 right-0 h-[100dvh] w-full max-w-[420px] bg-[#121B35]/95 backdrop-blur-xl border-l border-[#DDAA42]/20 z-[101] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 text-white">
             
             {/* Drawer Header */}
             <div className="p-5 border-b border-[#DDAA42]/25 flex items-center justify-between">
@@ -217,7 +241,7 @@ export default function Header() {
               </div>
               <button
                 onClick={() => setIsMenuOpen(false)}
-                className="size-9 rounded-full bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center border border-white/10 cursor-pointer"
+                className="size-11 shrink-0 rounded-full bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center border border-white/10 cursor-pointer"
                 aria-label="Close menu"
               >
                 <X className="size-5" />

@@ -26,7 +26,7 @@ export default function RootLayout() {
             <div id="main-content"><Outlet /></div>
           </SectionErrorBoundary>
         </Suspense>
-        {!location.pathname.startsWith("/admin") && !location.pathname.startsWith("/family-workspace/") && !location.pathname.startsWith("/cp-dashboard") && !location.pathname.startsWith("/cp-management") && !location.pathname.startsWith("/cp-verification") && !location.pathname.startsWith("/broker-verification") && !location.pathname.startsWith("/employee-login") && <FamilyWorkspaceDock />}
+        {!location.pathname.startsWith("/admin") && !location.pathname.startsWith("/family-workspace/") && !location.pathname.startsWith("/channel-partner") && !location.pathname.startsWith("/cp-registration") && !location.pathname.startsWith("/cp-dashboard") && !location.pathname.startsWith("/cp-management") && !location.pathname.startsWith("/cp-verification") && !location.pathname.startsWith("/broker-verification") && !location.pathname.startsWith("/employee-login") && <FamilyWorkspaceDock />}
       </FavoritesProvider>
     </AuthProvider>
   );
