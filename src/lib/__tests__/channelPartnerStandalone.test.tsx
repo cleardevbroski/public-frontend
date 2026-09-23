@@ -78,6 +78,8 @@ describe("standalone channel partner portal", () => {
     expect(host.textContent).toContain("One-page registration");
     expect(host.textContent).toContain("Show partner details");
     expect(host.textContent).toContain("Client details");
+    expect(host.textContent).toContain("Project (optional)");
+    expect(host.textContent).toContain("No specific project / Project not listed");
     expect(host.querySelector('input[placeholder*="CT-0001"]')).toBeTruthy();
     expect(host.textContent).not.toContain("Admin approval");
     await act(async () => { root.unmount(); });

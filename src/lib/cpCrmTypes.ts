@@ -25,6 +25,11 @@ export type CRMMetrics = {
   callbacksDueToday: number;
   callbacksOverdue: number;
   whatsappSent: number;
+  registeredAssigned?: number;
+  importedAssigned?: number;
+  active?: number;
+  inactive?: number;
+  callbackRequested?: number;
 };
 
 export type CRMPartner = {

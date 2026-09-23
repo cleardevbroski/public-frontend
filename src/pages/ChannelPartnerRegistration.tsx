@@ -4,7 +4,7 @@ import { clearChannelPartnerSession, fetchChannelPartnerProfile, fetchChannelPar
 import { useDocumentTitle } from "@/useDocumentTitle";
 
 type Project = { id: string; title: string; area?: string };
-type Client = { id: string; leadNumber: string; clientName: string; mobileMasked: string; projectTitle: string; status: "pending" | "approved" | "successful"; registeredAt: string; ownershipExpiresAt: string };
+type Client = { id: string; leadNumber: string; clientName: string; mobileMasked: string; requirementType: "specific_project" | "general_requirement"; projectTitle: string; preferredLocation: string; propertyType: string; status: "pending" | "approved" | "successful"; registeredAt: string; ownershipExpiresAt: string };
 type RegistrationResult = Client & { emailSent: boolean };
 type Partner = { name: string; type: string; code: string; contactName: string; mobile: string; email: string; city: string; state: string };
 const inputClass = "h-12 w-full rounded-xl border border-[#D8D4DC] bg-white px-4 text-sm text-[#121B35] outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/15 disabled:bg-[#F7F7F8] disabled:text-[#8A8690]";
@@ -24,7 +24,7 @@ export default function ChannelPartnerRegistration() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectSearch, setProjectSearch] = useState("");
   const [clients, setClients] = useState<Client[]>([]);
-  const [form, setForm] = useState({ clientName: "", mobile: "", email: "", projectId: "", budget: "", notes: "", consentAccepted: false });
+  const [form, setForm] = useState({ clientName: "", mobile: "", email: "", projectId: "", preferredLocation: "", propertyType: "", budget: "", notes: "", consentAccepted: false });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<RegistrationResult | null>(null);
@@ -62,14 +62,13 @@ export default function ChannelPartnerRegistration() {
     if (!partner) return setError("Enter and verify the Channel Partner code first.");
     if (!form.clientName.trim()) return setError("Client name is required.");
     if (!/^[6-9][0-9]{9}$/.test(form.mobile)) return setError("Enter a valid 10-digit Indian mobile number.");
-    if (!form.projectId) return setError("Choose a project.");
     if (!form.consentAccepted) return setError("Confirm that the client consented to registration.");
     setBusy(true);
     try {
       const data = await registerChannelPartnerClient(form, idempotencyKey);
       setSuccess({ ...data.client, emailSent: Boolean(data.emailSent) });
       setClients((current) => current.some((item) => item.id === data.client.id) ? current : [data.client, ...current]);
-      setForm({ clientName: "", mobile: "", email: "", projectId: "", budget: "", notes: "", consentAccepted: false });
+      setForm({ clientName: "", mobile: "", email: "", projectId: "", preferredLocation: "", propertyType: "", budget: "", notes: "", consentAccepted: false });
       setIdempotencyKey(crypto.randomUUID());
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to register client."); }
     finally { setBusy(false); }
@@ -91,18 +90,19 @@ export default function ChannelPartnerRegistration() {
             <Field label="Client Name"><input disabled={!partner} value={form.clientName} onChange={(e) => setForm({ ...form, clientName: e.target.value })} className={inputClass} required /></Field>
             <Field label="Mobile Number"><input disabled={!partner} value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, "").slice(0, 10) })} inputMode="numeric" className={inputClass} required /></Field>
             <Field label="Email (optional)"><input disabled={!partner} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} type="email" className={inputClass} /></Field>
-            <Field label="Search published project"><input disabled={!partner} value={projectSearch} onChange={(e) => setProjectSearch(e.target.value)} placeholder="Search by project or location" className={inputClass} /></Field>
-            <Field label="Project"><select disabled={!partner} value={form.projectId} onChange={(e) => setForm({ ...form, projectId: e.target.value })} className={inputClass} required><option value="">{filteredProjects.length ? "Select project" : "No matching project"}</option>{filteredProjects.map((project) => <option key={project.id} value={project.id}>{project.title}{project.area ? ` - ${project.area}` : ""}</option>)}</select><p className="mt-1 text-[10px] text-[#8A8690]">{filteredProjects.length} public project{filteredProjects.length === 1 ? "" : "s"} found</p></Field>
+            <Field label="Search published project (optional)"><input disabled={!partner} value={projectSearch} onChange={(e) => setProjectSearch(e.target.value)} placeholder="Search by project or location" className={inputClass} /></Field>
+            <Field label="Project (optional)"><select disabled={!partner} value={form.projectId} onChange={(e) => setForm({ ...form, projectId: e.target.value })} className={inputClass}><option value="">No specific project / Project not listed</option>{filteredProjects.map((project) => <option key={project.id} value={project.id}>{project.title}{project.area ? ` - ${project.area}` : ""}</option>)}</select><p className="mt-1 text-[10px] text-[#8A8690]">{filteredProjects.length} public project{filteredProjects.length === 1 ? "" : "s"} found</p></Field>
+            {!form.projectId && <><Field label="Preferred location (optional)"><input disabled={!partner} value={form.preferredLocation} onChange={(e) => setForm({ ...form, preferredLocation: e.target.value })} placeholder="Example: Whitefield" className={inputClass} /></Field><Field label="Property type (optional)"><select disabled={!partner} value={form.propertyType} onChange={(e) => setForm({ ...form, propertyType: e.target.value })} className={inputClass}><option value="">Choose property type</option><option value="apartments">Apartments</option><option value="villas">Villas</option><option value="plots">Plots</option><option value="commercial">Commercial</option><option value="rentals">Rentals</option><option value="other">Other</option></select></Field></>}
             <Field label="Budget (optional)"><input disabled={!partner} value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} placeholder="Example: ₹1.2 Cr" className={inputClass} /></Field>
             <Field label="Notes (optional)"><input disabled={!partner} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className={inputClass} /></Field>
             <label className="flex gap-3 rounded-xl border border-[#E4E0E7] p-4 text-xs leading-5 md:col-span-2"><input disabled={!partner} type="checkbox" checked={form.consentAccepted} onChange={(e) => setForm({ ...form, consentAccepted: e.target.checked })} className="mt-0.5 size-4 accent-[#DDAA42]" /><span>I confirm that the client consented to sharing these details with ClearTitle One.</span></label>
             {success && <div className={`rounded-xl border p-4 text-xs md:col-span-2 ${success.emailSent ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}><p className="flex items-center gap-2 font-bold"><CheckCircle2 className="size-4" />Client registered successfully</p><p className="mt-1">{success.leadNumber} - pending until {new Date(success.ownershipExpiresAt).toLocaleDateString()}</p><p className="mt-1">{success.emailSent ? `Confirmation email sent to ${partner?.email}.` : "The confirmation email could not be delivered. An admin can resend it from CP Clients."}</p><a href="/cp-dashboard" className="mt-3 inline-flex items-center gap-2 font-bold underline"><LayoutDashboard className="size-3.5" />Open Dashboard</a></div>}
-            <button disabled={busy || !partner || projects.length === 0} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#DDAA42] font-bold text-[#0B1328] disabled:opacity-50 md:col-span-2">{busy ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}Register Client</button>
-            {partner && projects.length === 0 && <p className="text-center text-xs text-amber-700 md:col-span-2">No published projects are currently available.</p>}
+            <button disabled={busy || !partner} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#DDAA42] font-bold text-[#0B1328] disabled:opacity-50 md:col-span-2">{busy ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}Register Client</button>
+            {partner && projects.length === 0 && <p className="text-center text-xs text-amber-700 md:col-span-2">No published projects are currently available. You can still register a general client requirement.</p>}
           </form>
           <aside className="rounded-2xl border border-[#E4E0E7] bg-[#FCFCFD] p-5">
             <div className="flex items-center justify-between"><div><h2 className="font-bold text-[#121B35]">Your active clients</h2><p className="text-xs text-[#68646F]">Pending, approved, and successful registrations</p></div><span className="flex size-9 items-center justify-center rounded-xl bg-[#F1F4FA] font-bold text-[#121B35]">{clients.length}</span></div>
-            <div className="mt-4 space-y-3">{!partner ? <div className="py-9 text-center"><UsersRound className="mx-auto size-8 text-[#D8D4DC]" /><p className="mt-2 text-xs text-[#68646F]">Partner details will appear after code verification.</p></div> : clients.length === 0 ? <div className="py-9 text-center"><UsersRound className="mx-auto size-8 text-[#D8D4DC]" /><p className="mt-2 text-xs text-[#68646F]">No active clients yet.</p></div> : clients.map((client) => <article key={client.id} className="rounded-xl border border-[#ECE9EF] bg-white p-3"><p className="font-bold text-[#121B35]">{client.clientName}</p><p className="mt-0.5 text-xs text-[#68646F]">{client.mobileMasked} | {client.projectTitle}</p><p className="mt-2 flex items-center gap-1 text-[10px] font-semibold capitalize text-[#8A681F]"><Clock3 className="size-3" />{client.status === "pending" ? `Pending until ${new Date(client.ownershipExpiresAt).toLocaleDateString()}` : client.status}</p></article>)}</div>
+            <div className="mt-4 space-y-3">{!partner ? <div className="py-9 text-center"><UsersRound className="mx-auto size-8 text-[#D8D4DC]" /><p className="mt-2 text-xs text-[#68646F]">Partner details will appear after code verification.</p></div> : clients.length === 0 ? <div className="py-9 text-center"><UsersRound className="mx-auto size-8 text-[#D8D4DC]" /><p className="mt-2 text-xs text-[#68646F]">No active clients yet.</p></div> : clients.map((client) => <article key={client.id} className="rounded-xl border border-[#ECE9EF] bg-white p-3"><p className="font-bold text-[#121B35]">{client.clientName}</p><p className="mt-0.5 text-xs text-[#68646F]">{client.mobileMasked} | {client.projectTitle || "General requirement"}</p>{client.requirementType === "general_requirement" && (client.preferredLocation || client.propertyType) && <p className="mt-1 text-[10px] capitalize text-[#8A8690]">{[client.preferredLocation, client.propertyType].filter(Boolean).join(" | ")}</p>}<p className="mt-2 flex items-center gap-1 text-[10px] font-semibold capitalize text-[#8A681F]"><Clock3 className="size-3" />{client.status === "pending" ? `Pending until ${new Date(client.ownershipExpiresAt).toLocaleDateString()}` : client.status}</p></article>)}</div>
           </aside>
         </div>
       </section>
