@@ -1069,6 +1069,12 @@ export async function uploadCRMMaterial(file: File) {
 }
 export async function fetchMyCRMDashboard() { return readJson(await crmStaffApiFetch("/api/cp-crm/mine/dashboard"), "Unable to load CRM dashboard"); }
 export async function fetchMyCRMPartners(params: Record<string, unknown> = {}) { return readJson(await crmStaffApiFetch(`/api/cp-crm/mine/partners${toQuery(params)}`), "Unable to load assigned CPs"); }
+export async function fetchAllMyCRMPartners(params: Record<string, unknown> = {}) {
+  const first = await fetchMyCRMPartners({ ...params, page: 1, limit: 100 });
+  const pages = Math.max(1, Number(first.pagination?.pages) || 1);
+  const rest = await Promise.all(Array.from({ length: pages - 1 }, (_, index) => fetchMyCRMPartners({ ...params, page: index + 2, limit: 100 })));
+  return { ...first, partners: [first, ...rest].flatMap((page) => page.partners || []) };
+}
 export async function fetchMyCRMPartner(id: string) { return readJson(await crmStaffApiFetch(`/api/cp-crm/mine/partners/${encodeURIComponent(id)}`), "Unable to load CP details"); }
 export async function startCRMCall(partnerId: string) { return readJson(await crmStaffApiFetch(`/api/cp-crm/mine/partners/${encodeURIComponent(partnerId)}/call-start`, { method: "POST" }), "Unable to start call"); }
 export async function saveCRMCallResult(partnerId: string, data: Record<string, unknown>) { return readJson(await crmStaffApiFetch(`/api/cp-crm/mine/partners/${encodeURIComponent(partnerId)}/call-result`, { method: "POST", body: JSON.stringify(data) }), "Unable to save call result"); }
@@ -1096,6 +1102,12 @@ export async function exportCPProspects(params: Record<string, unknown> = {}) {
   URL.revokeObjectURL(url);
 }
 export async function fetchMyCPProspects(params: Record<string, unknown> = {}) { return readJson(await crmStaffApiFetch(`/api/cp-prospects/mine/prospects${toQuery(params)}`), "Unable to load CP verification queue"); }
+export async function fetchAllMyCPProspects(params: Record<string, unknown> = {}) {
+  const first = await fetchMyCPProspects({ ...params, page: 1, limit: 200 });
+  const pages = Math.max(1, Number(first.pagination?.pages) || 1);
+  const rest = await Promise.all(Array.from({ length: pages - 1 }, (_, index) => fetchMyCPProspects({ ...params, page: index + 2, limit: 200 })));
+  return { ...first, prospects: [first, ...rest].flatMap((page) => page.prospects || []) };
+}
 export async function fetchMyCPProspect(id: string) { return readJson(await crmStaffApiFetch(`/api/cp-prospects/mine/prospects/${encodeURIComponent(id)}`), "Unable to load imported CP details"); }
 export async function startCPProspectCall(id: string) { return readJson(await crmStaffApiFetch(`/api/cp-prospects/mine/prospects/${encodeURIComponent(id)}/call-start`, { method: "POST" }), "Unable to start call"); }
 export async function updateCPProspectProfile(id: string, data: Record<string, unknown>) { return readJson(await crmStaffApiFetch(`/api/cp-prospects/mine/prospects/${encodeURIComponent(id)}/profile`, { method: "PATCH", body: JSON.stringify(data) }), "Unable to update CP information"); }

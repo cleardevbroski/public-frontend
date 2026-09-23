@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, ArrowLeft, CalendarClock, CheckCircle2, ChevronRight, Clock3, ExternalLink, FileSpreadsheet, FileText, LayoutList, Loader2, LogOut, MessageCircle, NotebookPen, PhoneCall, Search, Send, UserRoundCheck, UsersRound, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, CalendarClock, CheckCircle2, ChevronRight, Clock3, ExternalLink, FileText, LayoutList, Loader2, MessageCircle, NotebookPen, PhoneCall, Search, Send, UserRoundCheck, UsersRound, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import EmployeeWorkspaceNav from "@/components/crm/EmployeeWorkspaceNav";
+import EmployeeHeader from "@/components/crm/EmployeeHeader";
 import WhatsAppNumberEditor from "@/components/crm/WhatsAppNumberEditor";
-import { addCRMPartnerNote, crmEmployeeLogout, fetchMyCRMDashboard, fetchMyCRMPartner, fetchMyCRMPartners, hasCRMEmployeeSession, openCRMWhatsApp, saveCRMCallResult, saveCRMWhatsAppResult, startCRMCall, updateCRMWhatsAppNumber } from "@/lib/api";
+import { addCRMPartnerNote, crmEmployeeLogout, fetchAllMyCRMPartners, fetchMyCRMDashboard, fetchMyCRMPartner, hasCRMEmployeeSession, openCRMWhatsApp, saveCRMCallResult, saveCRMWhatsAppResult, startCRMCall, updateCRMWhatsAppNumber } from "@/lib/api";
 import { callOutcomeLabels, stageLabels, type CallOutcome, type CRMEmployee, type CRMMetrics, type CRMPartner, type CRMPartnerDetail, type CRMStage, type CRMTask, type CRMTemplate } from "@/lib/cpCrmTypes";
 import { useDocumentTitle } from "@/useDocumentTitle";
 
@@ -48,7 +49,7 @@ export default function CPManagement() {
   }, [handleSessionError]);
   const loadPartners = useCallback(async () => {
     setBusy("partners");
-    try { const data = await fetchMyCRMPartners({ search, stage, due }); setPartners(data.partners || []); }
+    try { const data = await fetchAllMyCRMPartners({ search, stage, due }); setPartners(data.partners || []); }
     catch (reason) { handleSessionError(reason); }
     finally { setBusy(""); }
   }, [search, stage, due, handleSessionError]);
@@ -127,7 +128,7 @@ export default function CPManagement() {
   const completion = useMemo(() => metrics.assigned ? Math.round((metrics.contacted / metrics.assigned) * 100) : 0, [metrics]);
 
   return <div className="min-h-[100dvh] bg-[#EFF1F4] text-[#3F3D46] [&_input]:text-base [&_select]:text-base [&_textarea]:text-base sm:[&_input]:text-xs sm:[&_select]:text-xs sm:[&_textarea]:text-xs">
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0B1328]"><div className="mx-auto flex min-h-16 max-w-[1500px] items-center justify-between gap-2 px-3 py-2 sm:px-4 md:px-6"><div className="flex min-w-0 items-center gap-3"><img src="/cleartitleone/logo.png" alt="ClearTitle One" className="size-9 shrink-0 rounded-full ring-2 ring-[#DDAA42]/60" /><div className="min-w-0"><p className="truncate text-sm font-bold text-white">CP Management</p><p className="truncate text-[10px] text-white/50">{employee ? `${employee.name} · ${employee.employeeId}` : "Employee workspace"}</p></div></div><div className="flex shrink-0 items-center justify-end gap-2"><button onClick={() => navigate("/cp-verification")} className="hidden h-9 items-center gap-2 rounded-md border border-white/15 px-3 text-[11px] font-bold text-white md:inline-flex"><FileSpreadsheet className="size-4" />Imported CPs</button><button onClick={() => navigate("/broker-verification")} className="hidden h-9 items-center gap-2 rounded-md border border-white/15 px-3 text-[11px] font-bold text-white md:inline-flex"><UsersRound className="size-4" />Brokers</button><button onClick={() => { crmEmployeeLogout(); navigate("/employee-login", { replace: true }); }} className="grid size-11 place-items-center rounded-md border border-white/15 text-white md:size-9" title="Sign out" aria-label="Sign out"><LogOut className="size-4" /></button></div></div></header>
+    <EmployeeHeader title="CP Management" employee={employee} />
     <main className="mx-auto max-w-[1500px] space-y-5 px-3 py-4 pb-28 sm:px-4 md:px-6 md:py-6 md:pb-6">
       <section className={`${selected ? "hidden xl:flex" : "flex"} flex-col gap-4 border-b border-[#D6D9DF] pb-5 md:flex-row md:items-end md:justify-between`}><div><p className="text-[10px] font-bold uppercase text-[#805A0B]">Today’s work queue</p><h1 className="mt-1 text-2xl font-bold text-[#121B35] sm:text-[28px]">Channel Partner outreach</h1><p className="mt-1 text-xs text-[#68646F]">Open a partner, make the call, record the result, and complete due callbacks.</p></div><div className="min-w-0 md:min-w-[230px]"><div className="flex justify-between text-[10px] font-bold uppercase text-[#68646F]"><span>Assignment progress</span><span>{completion}%</span></div><div className="mt-2 h-2 overflow-hidden rounded bg-white"><div className="h-full bg-[#DDAA42]" style={{ width: `${completion}%` }} /></div></div></section>
       {error && <div role="alert" className="flex gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-700"><AlertCircle className="size-4" />{error}</div>}{notice && <div role="status" className="flex items-start justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700"><span className="flex gap-2"><CheckCircle2 className="size-4 shrink-0" />{notice}</span><button onClick={() => setNotice("")} aria-label="Dismiss"><X className="size-4" /></button></div>}
