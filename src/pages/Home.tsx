@@ -26,8 +26,20 @@ import PostPropertyRail from "@/components/acres/PostPropertyRail";
 import ScrollReveal from "@/components/acres/ScrollReveal";
 import { useDocumentTitle } from "@/useDocumentTitle";
 import BuyerJourney from "@/components/acres/BuyerJourney";
+import ProjectTrustStrip from "@/components/acres/ProjectTrustStrip";
+import { useSyncExternalStore } from "react";
+
+const mobileQuery = "(max-width: 767px)";
+const isMobileViewport = () => typeof window.matchMedia === "function" && window.matchMedia(mobileQuery).matches;
+const subscribeViewport = (onChange: () => void) => {
+  if (typeof window.matchMedia !== "function") return () => {};
+  const query = window.matchMedia(mobileQuery);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+};
 
 export default function Home() {
+  const mobile = useSyncExternalStore(subscribeViewport, isMobileViewport, () => false);
   useDocumentTitle(
     "ClearTitle One | Property Research & Real Estate in Bangalore",
     "Explore apartments, villas, plots, commercial properties, and PG homes in Bangalore with visible project records and buying tools.",
@@ -42,9 +54,9 @@ export default function Home() {
       <Header />
       <main className="home-main flex-1">
         {/* Cinematic navy hero with search */}
-        <HeroBanner />
+        <HeroBanner showTrustStrip={!mobile} />
 
-        <BuyerJourney />
+        {!mobile && <BuyerJourney />}
 
         {/* Curated recommendations + guest activity sidebar */}
         <ScrollReveal direction="up">
@@ -60,6 +72,9 @@ export default function Home() {
         <ScrollReveal direction="up">
           <PropertyTypeTiles />
         </ScrollReveal>
+
+        {mobile && <ProjectTrustStrip placement="below-properties" />}
+        {mobile && <BuyerJourney />}
 
         {/* Handpicked featured projects */}
         <ScrollReveal direction="up">

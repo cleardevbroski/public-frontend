@@ -31,6 +31,7 @@
 .admin-record-detail { scroll-margin-top: 80px; }
 .public-family-dock { bottom: calc(88px + env(safe-area-inset-bottom)); }
 .public-family-dock > div { max-height: calc(100dvh - 180px); overflow-y: auto; }
+.home-mobile-swipe:focus-visible, .advisor-content:focus-visible { outline: 2px solid #805A0B; outline-offset: 2px; }
 
 @media (min-width: 768px) {
   .partner-mobile-nav { display: none; }
@@ -46,6 +47,29 @@
   .admin-record-detail[data-open="false"] { display: none; }
 }
 @media (max-width: 767px) {
+  .home-project-trust { margin: 0 10px; padding: 4px 16px; background: #fff; border-block: 1px solid #E4E0E7; }
+  .home-project-trust > div + div { border-top: 1px solid #ECEEF1; }
+  .home-main .home-property-types h2, .home-main .home-advisor h2 { font-size: 24px; line-height: 1.25; letter-spacing: 0; }
+  .home-property-types > div > div:first-child { margin-bottom: 20px; }
+  .home-main .home-mobile-swipe {
+    display: flex; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory; scroll-padding-inline: 2px;
+    scrollbar-width: thin; padding: 2px 2px 12px; min-width: 0; max-width: 100%;
+  }
+  .home-mobile-swipe > * { flex: 0 0 calc(100% - 28px); min-width: 0; scroll-snap-align: start; margin-block: 0; border-radius: 8px; }
+  .home-mobile-swipe.property-type-row > * { flex-basis: 176px; min-height: 132px; }
+  .home-advisor .advisor-heading { margin-bottom: 20px; text-align: left; }
+  .home-advisor .advisor-layout { min-height: 0; gap: 16px; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+  .home-advisor .advisor-menu { padding: 0; border: 0; background: transparent; min-width: 0; }
+  .home-advisor .advisor-tabs { flex-direction: row; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; scrollbar-width: thin; }
+  .home-advisor .advisor-tabs button { flex: 0 0 auto; min-height: 44px; padding: 8px 12px; gap: 6px; border-left: 0; border-bottom: 2px solid transparent; border-radius: 6px; font-size: 12px; white-space: nowrap; box-shadow: none; }
+  .home-advisor .advisor-tabs button[aria-selected="true"] { border-bottom-color: #B58427; color: #805A0B; }
+  .home-advisor .advisor-content { padding: 0; min-width: 0; }
+  .home-advisor .advisor-content h3 { font-size: 18px; }
+  .home-advisor .advisor-content > div > p { margin-bottom: 16px; }
+  .home-advisor .home-mobile-swipe > div { padding: 16px; border: 1px solid #E4E0E7; }
+  /* Horizontal input gestures adjust the range instead of scrolling its card row. */
+  .home-advisor input[type="range"] { touch-action: pan-y; min-height: 32px; }
   /* A readable input size also prevents automatic zoom on focus in mobile browsers. */
   #main-content :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) { font-size: 16px; }
   #main-content :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select) { min-height: 44px; }

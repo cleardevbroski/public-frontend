@@ -1,14 +1,15 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import Link from "@/components/Link";
-import { Search, MapPin, ShieldCheck, Compass, BadgeCheck, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, MapPin, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import ProjectTrustStrip from "./ProjectTrustStrip";
 import { bangaloreLocalities } from "./bangalore-data";
 import { getHeroSlides, heroHref, type HeroSlide } from "@/lib/heroStore";
 import { trackAnalytics } from "@/lib/analytics";
 
 const propertyKinds = ["Apartments", "Villas", "Plots", "Commercial", "PG/Co-living"] as const;
 
-export default function HeroBanner() {
+export default function HeroBanner({ showTrustStrip = true }: { showTrustStrip?: boolean }) {
   const [activeKind, setActiveKind] = useState<string>("Apartments");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLocality, setSelectedLocality] = useState("Bangalore, IN");
@@ -206,23 +207,7 @@ export default function HeroBanner() {
           </div>
 
           {/* Trust strip */}
-          <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            {[
-              { icon: ShieldCheck, title: "Project records", sub: "Facts and missing fields shown openly" },
-              { icon: BadgeCheck, title: "RERA references", sub: "Phase numbers shown when available" },
-              { icon: Compass, title: "Verified pins", sub: "Only confirmed coordinates receive the badge" },
-            ].map(({ icon: Icon, title, sub }) => (
-              <div key={title} className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-3.5 rounded-xl">
-                <div className="size-10 bg-[#DDAA42]/20 border border-[#DDAA42]/30 flex items-center justify-center shrink-0 rounded-lg">
-                  <Icon className="size-5 text-[#F2C052]" />
-                </div>
-                <div className="leading-tight">
-                  <p className="text-[13.5px] font-bold text-white">{title}</p>
-                  <p className="text-[11px] text-white/55">{sub}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          {showTrustStrip && <ProjectTrustStrip />}
         </div>
       </div>
     </section>

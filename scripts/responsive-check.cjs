@@ -128,6 +128,75 @@ async function run() {
           await check(path + "-family-corner");
         }
       }
+      async function checkHomepage() {
+        const mobile = width < 768;
+        const layout = await page.evaluate(() => {
+          const trust = document.querySelector('[aria-label="Project information"]');
+          const premium = document.querySelector(".home-property-types").parentElement;
+          const journey = document.querySelector(".buyer-journey");
+          return {
+            trustCount: document.querySelectorAll('[aria-label="Project information"]').length,
+            journeyCount: document.querySelectorAll(".buyer-journey").length,
+            trustInHero: !!trust.closest(".hero-banner"),
+            mobileOrder: premium.nextElementSibling === trust && trust.nextElementSibling === journey,
+            desktopOrder: !!(journey.compareDocumentPosition(premium) & Node.DOCUMENT_POSITION_FOLLOWING),
+          };
+        });
+        assert.equal(layout.trustCount, 1);
+        assert.equal(layout.journeyCount, 1);
+        assert.equal(layout.trustInHero, !mobile);
+        assert.ok(mobile ? layout.mobileOrder : layout.desktopOrder, "homepage section order");
+        const touch = await context.newCDPSession(page);
+        async function drag(locator, start = 0.82, end = 0.18) {
+          await locator.scrollIntoViewIfNeeded();
+          const rect = await locator.boundingBox();
+          const y = Math.max(80, Math.min(height - 100, rect.y + rect.height / 2));
+          await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: rect.x + rect.width * start, y }] });
+          for (let i = 1; i <= 10; i++) {
+            await touch.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: rect.x + rect.width * (start + (end - start) * i / 10), y }] });
+            await page.waitForTimeout(25);
+          }
+          await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+          await page.waitForTimeout(350);
+        }
+        async function swipeRow(selector, name) {
+          const row = page.locator(selector);
+          await row.scrollIntoViewIfNeeded();
+          if (mobile) {
+            assert.ok(await row.evaluate((el) => el.scrollWidth > el.clientWidth), name + " has horizontal cards");
+            await drag(row);
+            assert.ok(await row.evaluate((el) => el.scrollLeft > 10), name + " responds to touch swipe");
+          } else {
+            assert.equal(await row.evaluate((el) => getComputedStyle(el).display), selector === ".advisor-transparency" ? "block" : "grid");
+          }
+          await check(name);
+        }
+        await swipeRow(".property-type-row", "premium-properties");
+        assert.equal(await page.locator(".property-type-row a").count(), 5);
+        await swipeRow(".advisor-services", "advisor-services");
+        await page.getByRole("tab", { name: "Mortgage & Area Tools" }).click();
+        await page.getByLabel("Interest rate (%)", { exact: true }).fill("9.2");
+        await page.getByLabel("Loan tenure (years)", { exact: true }).fill("15");
+        const range = page.getByRole("slider", { name: "Loan amount" });
+        if (mobile) {
+          const before = await range.inputValue();
+          await drag(range, 0.25, 0.75);
+          assert.notEqual(await range.inputValue(), before, "loan amount responds to drag");
+          assert.ok(await page.locator(".advisor-tools").evaluate((el) => el.scrollLeft < 2), "range does not swipe its row");
+        }
+        const loanAmount = await range.inputValue();
+        await swipeRow(".advisor-tools", "advisor-tools");
+        await page.getByLabel("Area in square feet").fill("1800");
+        await page.getByRole("tab", { name: "Information transparency", exact: true }).click();
+        await swipeRow(".advisor-transparency", "advisor-transparency");
+        await page.getByRole("tab", { name: "Mortgage & Area Tools" }).click();
+        assert.equal(await page.getByLabel("Interest rate (%)", { exact: true }).inputValue(), "9.2");
+        assert.equal(await page.getByLabel("Loan tenure (years)", { exact: true }).inputValue(), "15");
+        assert.equal(await range.inputValue(), loanAmount);
+        assert.equal(await page.getByLabel("Area in square feet").inputValue(), "1800");
+        await touch.detach();
+        await page.evaluate(() => window.scrollTo(0, 0));
+      }
       for (const path of routes) {
         errors = [];
         try {
@@ -182,6 +251,7 @@ async function run() {
             await page.keyboard.press("Escape");
             assert.equal(await page.getByRole("dialog", { name: "Site navigation" }).count(), 0);
             await check("home");
+            await checkHomepage();
           } else if (path === "/property/responsive-sample") {
             await page.waitForFunction(() => Array.from(document.images).some((img) => img.alt.includes("photo 1") && img.naturalWidth > 0));
             const overlaps = await page.evaluate(() => {

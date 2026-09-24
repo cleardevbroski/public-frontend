@@ -21,14 +21,14 @@ const propertyTypes: Array<{
 
 export default function PropertyTypeTiles() {
   return (
-    <section className="bg-white py-10">
+    <section className="home-property-types bg-white py-10" aria-labelledby="property-types-heading">
       <div className="max-w-[1200px] mx-auto px-5">
         <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
           <div>
             <span className="inline-flex items-center gap-1.5 text-[12px] font-bold tracking-[0.18em] uppercase text-[#DDAA42] mb-2">
               <Sparkles className="size-4" /> Browse by type
             </span>
-            <h2 className="text-[32px] md:text-[40px] font-bold text-[#121B35] leading-tight">
+            <h2 id="property-types-heading" className="text-[32px] md:text-[40px] font-bold text-[#121B35] leading-tight">
               Explore Premium <span className="text-gold-gradient">Properties</span>
             </h2>
             <p className="text-[15px] text-[#68646F] mt-2 max-w-lg">
@@ -37,7 +37,7 @@ export default function PropertyTypeTiles() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 md:gap-4">
+        <div role="region" aria-label="Property categories" tabIndex={0} className="home-mobile-swipe property-type-row grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 md:gap-4">
           {propertyTypes.map((tile) => {
             const Icon = tile.icon;
             return (

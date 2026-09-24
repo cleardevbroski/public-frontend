@@ -1,12 +1,27 @@
 "use client";
-import { useState } from "react";
+import { useId, useState, type KeyboardEvent } from "react";
 import { Calculator, Hammer, ShieldCheck, Scale, Ruler, Coins, CheckCircle, ArrowRight } from "lucide-react";
 import Link from "@/components/Link";
 
 type TabName = "services" | "calculators" | "trust";
+const tabs = [
+  { id: "services", label: "Services & Offerings", Icon: Scale },
+  { id: "calculators", label: "Mortgage & Area Tools", Icon: Calculator },
+  { id: "trust", label: "Information transparency", Icon: ShieldCheck },
+] as const;
 
 export default function ClearTitleAdvisor() {
   const [activeTab, setActiveTab] = useState<TabName>("services");
+  const advisorId = useId();
+  const moveTab = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const current = tabs.findIndex((tab) => tab.id === activeTab);
+    const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1
+      : (current + (event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1) + tabs.length) % tabs.length;
+    setActiveTab(tabs[next].id);
+    event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+  };
 
   // Calculators State
   const [loanAmount, setLoanAmount] = useState<number>(5000000); // 50 Lakhs
@@ -26,10 +41,10 @@ export default function ClearTitleAdvisor() {
   };
 
   return (
-    <section className="bg-gradient-to-b from-[#F8F7FA]/35 to-white py-10">
+    <section aria-label="ClearTitle One Advisor" className="home-advisor bg-gradient-to-b from-[#F8F7FA]/35 to-white py-10">
       <div className="max-w-[1200px] mx-auto px-4">
         {/* Title Block */}
-        <div className="text-center mb-12">
+        <div className="advisor-heading text-center mb-12">
           <p className="acres-overline">ClearTitle One Advisor</p>
           <h2 className="text-[28px] font-bold text-[#121B35] mt-1" style={{ fontFamily: "var(--font-outfit), Outfit, sans-serif" }}>
             Buying support & financial tools
@@ -40,45 +55,17 @@ export default function ClearTitleAdvisor() {
         </div>
 
         {/* Tab Layout Container */}
-        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 border border-[#E4E0E7]/40 rounded-3xl overflow-hidden bg-white shadow-xl min-h-[460px]">
+        <div className="advisor-layout grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 border border-[#E4E0E7]/40 rounded-3xl overflow-hidden bg-white shadow-xl min-h-[460px]">
           
           {/* Left Menu Tab Selector */}
-          <div className="bg-[#F8F7FA]/55 p-6 flex flex-col gap-3 border-r border-[#F3F1F5]/50">
-            <button
-              onClick={() => setActiveTab("services")}
-              className={`flex items-center gap-3 px-4 py-4 rounded-xl text-[14px] font-bold text-left transition-all ${
-                activeTab === "services"
-                  ? "bg-white text-[#DDAA42] shadow-md border-l-4 border-[#DDAA42]"
-                  : "text-[#3F3D46] hover:bg-white/50"
-              }`}
-            >
-              <Scale className="size-5" />
-              <span>Services & Offerings</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("calculators")}
-              className={`flex items-center gap-3 px-4 py-4 rounded-xl text-[14px] font-bold text-left transition-all ${
-                activeTab === "calculators"
-                  ? "bg-white text-[#DDAA42] shadow-md border-l-4 border-[#DDAA42]"
-                  : "text-[#3F3D46] hover:bg-white/50"
-              }`}
-            >
-              <Calculator className="size-5" />
-              <span>Mortgage & Area Tools</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("trust")}
-              className={`flex items-center gap-3 px-4 py-4 rounded-xl text-[14px] font-bold text-left transition-all ${
-                activeTab === "trust"
-                  ? "bg-white text-[#DDAA42] shadow-md border-l-4 border-[#DDAA42]"
-                  : "text-[#3F3D46] hover:bg-white/50"
-              }`}
-            >
-              <ShieldCheck className="size-5" />
-              <span>Information transparency</span>
-            </button>
+          <div className="advisor-menu bg-[#F8F7FA]/55 p-6 flex flex-col gap-3 border-r border-[#F3F1F5]/50">
+            <div role="tablist" aria-label="Advisor categories" onKeyDown={moveTab} className="advisor-tabs flex flex-col gap-3">
+              {tabs.map(({ id, label, Icon }) => <button key={id} type="button" role="tab" id={`${advisorId}-${id}-tab`} aria-selected={activeTab === id} aria-controls={`${advisorId}-panel`} tabIndex={activeTab === id ? 0 : -1}
+                onClick={() => setActiveTab(id)}
+                className={`flex items-center gap-3 px-4 py-4 rounded-xl text-[14px] font-bold text-left transition-all ${activeTab === id ? "bg-white text-[#DDAA42] shadow-md border-l-4 border-[#DDAA42]" : "text-[#3F3D46] hover:bg-white/50"}`}>
+                <Icon className="size-5 shrink-0" /><span>{label}</span>
+              </button>)}
+            </div>
 
             <div className="mt-auto pt-6 border-t border-[#F3F1F5] hidden lg:block">
               <p className="text-[11px] text-[#68646F] font-semibold leading-relaxed">
@@ -89,7 +76,7 @@ export default function ClearTitleAdvisor() {
           </div>
 
           {/* Right Menu Dynamic Content Panel */}
-          <div className="p-6 md:p-8 flex flex-col justify-between">
+          <div role="tabpanel" id={`${advisorId}-panel`} aria-labelledby={`${advisorId}-${activeTab}-tab`} tabIndex={0} className="advisor-content p-6 md:p-8 flex flex-col justify-between">
             {activeTab === "services" && (
               <div className="animate-in fade-in duration-300">
                 <h3 className="text-[20px] font-bold text-[#121B35] mb-2 flex items-center gap-2">
@@ -100,7 +87,7 @@ export default function ClearTitleAdvisor() {
                   Select premium secondary services to make your purchase or rental transition hassle-free.
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div role="region" aria-label="Buyer services" tabIndex={0} className="home-mobile-swipe advisor-services grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="border border-[#E4E0E7]/30 hover:border-[#DDAA42]/50 p-4.5 rounded-2xl bg-[#F8F7FA]/20 hover:shadow transition-all group">
                     <h4 className="text-[15px] font-bold text-[#121B35] group-hover:text-[#DDAA42] transition-colors">
                       Legal Title Verification
@@ -162,7 +149,7 @@ export default function ClearTitleAdvisor() {
                   Calculate mortgage installments or check unit boundaries instantly using our client tools.
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div role="region" aria-label="Financial tools" tabIndex={0} className="home-mobile-swipe advisor-tools grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Home Loan EMI */}
                   <div className="bg-[#F8F7FA]/25 border border-[#E4E0E7]/30 p-5 rounded-2xl">
                     <h4 className="text-[14px] font-bold text-[#121B35] flex items-center gap-1.5 mb-4">
@@ -178,6 +165,7 @@ export default function ClearTitleAdvisor() {
                         </div>
                         <input
                           type="range"
+                          aria-label="Loan amount"
                           min="1000000"
                           max="20000000"
                           step="500000"
@@ -192,6 +180,7 @@ export default function ClearTitleAdvisor() {
                           <label className="block text-[10px] font-bold text-[#68646F] mb-1">INTEREST RATE (%)</label>
                           <input
                             type="number"
+                            aria-label="Interest rate (%)"
                             min="5"
                             max="20"
                             step="0.1"
@@ -204,6 +193,7 @@ export default function ClearTitleAdvisor() {
                           <label className="block text-[10px] font-bold text-[#68646F] mb-1">TENURE (YEARS)</label>
                           <input
                             type="number"
+                            aria-label="Loan tenure (years)"
                             min="5"
                             max="30"
                             value={loanTenure}
@@ -235,6 +225,7 @@ export default function ClearTitleAdvisor() {
                           <label className="block text-[10px] font-bold text-[#68646F] mb-1">SQ.FT VALUE</label>
                           <input
                             type="number"
+                            aria-label="Area in square feet"
                             value={sqftInput}
                             onChange={(e) => setSqftInput(Number(e.target.value))}
                             className="w-full h-10 border border-[#E4E0E7] rounded-lg px-3 text-[14px] text-[#121B35] font-bold outline-none focus:border-[#DDAA42]"
@@ -281,7 +272,7 @@ export default function ClearTitleAdvisor() {
                   ClearTitle One keeps available evidence and important information gaps visible on the project page.
                 </p>
 
-                <div className="space-y-4">
+                <div role="region" aria-label="Information transparency" tabIndex={0} className="home-mobile-swipe advisor-transparency space-y-4">
                   <div className="flex gap-3.5 p-4 rounded-xl hover:bg-[#F8F7FA]/35 transition-colors">
                     <CheckCircle className="size-6 text-[#DDAA42] shrink-0" />
                     <div>
