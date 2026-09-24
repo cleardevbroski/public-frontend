@@ -1433,7 +1433,7 @@ const whyHighlights = (property.description || "")
       <PopularBuilders />
 
       {/* Sticky bottom action bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#121B35]/95 backdrop-blur-md border-t border-[#DDAA42]/30 shadow-2xl">
+      <div data-public-bottom-bar className="fixed bottom-0 left-0 right-0 z-40 bg-[#121B35]/95 backdrop-blur-md border-t border-[#DDAA42]/30 shadow-2xl">
         <div className="max-w-[1200px] mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider truncate">{property.title}</p>

@@ -37,7 +37,7 @@ export default function PostPropertyRail() {
       {/* Compact floating button on mobile/tablet */}
       <button
         onClick={() => setIsOpen(true)}
-        className="lg:hidden fixed right-4 bottom-24 z-40 size-14 rounded-full bg-[#121B35] text-[#F2C052] border-2 border-[#DDAA42] shadow-2xl flex items-center justify-center active:scale-95 transition-transform"
+        className="public-legal-trigger lg:hidden fixed right-4 bottom-24 z-40 size-14 rounded-full bg-[#121B35] text-[#F2C052] border-2 border-[#DDAA42] shadow-2xl flex items-center justify-center active:scale-95 transition-transform"
         aria-label="Legal Consultation Helpdesk"
       >
         <Scale className="size-6" />

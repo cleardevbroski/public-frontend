@@ -60,7 +60,8 @@ async function run() {
   const failures = [];
   try {
     for (const width of (process.env.WIDTHS || "360,430,768,1280,1440,1920").split(",").map(Number)) {
-      const context = await browser.newContext({ viewport: { width, height: width < 768 ? 800 : 950 }, isMobile: width < 768, hasTouch: width < 768 });
+      const height = Number(process.env.HEIGHT || (width < 768 ? 800 : 950));
+      const context = await browser.newContext({ viewport: { width, height }, isMobile: width < 768 || height < 500, hasTouch: width < 768 || height < 500 });
       await context.addInitScript(() => {
         if (location.pathname !== "/employee-login") localStorage.setItem("cleartitle_crm_staff_token", "responsive-test");
         else localStorage.removeItem("cleartitle_crm_staff_token");
@@ -84,6 +85,48 @@ async function run() {
         assert.deepEqual(errors, [], name + " runtime errors");
         assert.equal(await page.getByText("Sorry, this section couldn't be displayed.", { exact: true }).count(), 0, name + " render boundary");
         await page.screenshot({ path: output + "/" + width + "-" + name.replace(/[^a-z0-9]+/gi, "-") + ".png", animations: "disabled" });
+      }
+      async function checkFamilyDock(path) {
+        const trigger = page.locator(".family-dock-trigger");
+        if (!await trigger.count()) return;
+        const compact = width < 768 || (width < 1024 && height <= 500 && width > height);
+        const geometry = await trigger.evaluate((node) => {
+          const rect = node.getBoundingClientRect();
+          const barHeight = Math.max(0, ...Array.from(document.querySelectorAll("[data-public-bottom-bar]"), (bar) => bar.getBoundingClientRect().height));
+          const legal = document.querySelector(".public-legal-trigger")?.getBoundingClientRect();
+          return { width: rect.width, height: rect.height, right: innerWidth - rect.right, bottom: innerHeight - rect.bottom, barHeight,
+            labelVisible: getComputedStyle(node.querySelector(".family-dock-label")).display !== "none",
+            legalOverlap: legal && legal.width > 0 && rect.left < legal.right && rect.right > legal.left && rect.top < legal.bottom && rect.bottom > legal.top };
+        });
+        if (compact) {
+          assert.equal(geometry.width, 48);
+          assert.equal(geometry.height, 48);
+          assert.equal(geometry.labelVisible, false);
+          assert.ok(Math.abs(geometry.right - 12) <= 1, "dock right edge");
+          assert.ok(Math.abs(geometry.bottom - geometry.barHeight - 12) <= 1, "dock bottom clearance");
+          assert.ok(!geometry.legalOverlap, "dock must not cover Legal Help");
+        } else {
+          assert.ok(geometry.width > 48, "desktop label retained");
+          assert.equal(geometry.labelVisible, true);
+        }
+        await trigger.click();
+        const panel = page.getByRole("region", { name: "Decide together details" });
+        const bounds = await panel.boundingBox();
+        assert.ok(bounds.y >= 0 && bounds.x >= 0 && bounds.x + bounds.width <= width + 1, "panel stays inside viewport");
+        await check(path + "-family-open");
+        await page.getByRole("button", { name: "Close family workspace explanation" }).click();
+        assert.equal(await trigger.getAttribute("aria-expanded"), "false");
+        await trigger.click();
+        await page.keyboard.press("Escape");
+        assert.equal(await trigger.getAttribute("aria-expanded"), "false");
+        const cookie = page.getByRole("button", { name: "Understood", exact: true });
+        if (compact && await cookie.isVisible()) {
+          await cookie.click();
+          await page.waitForFunction(() => document.documentElement.style.getPropertyValue("--public-bottom-bar-height") === "0px");
+          const rect = await trigger.boundingBox();
+          assert.ok(Math.abs(height - rect.y - rect.height - 12) <= 1, "dock returns to corner after cookie dismissal");
+          await check(path + "-family-corner");
+        }
       }
       for (const path of routes) {
         errors = [];
@@ -155,6 +198,7 @@ async function run() {
           } else {
             await check(path);
           }
+          await checkFamilyDock(path);
           console.log("PASS", width, path);
         } catch (error) {
           failures.push(width + " " + path + ": " + error.message);
