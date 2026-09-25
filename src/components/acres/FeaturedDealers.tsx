@@ -1,7 +1,7 @@
 "use client";
 import { useRef } from "react";
 import Link from "@/components/Link";
-import { ChevronLeft, ChevronRight, Award } from "lucide-react";
+import { Award } from "lucide-react";
 import { getPublishedDealers, type Dealer } from "@/lib/dealerStore";
 import { useLiveData } from "@/lib/useLiveProperties";
 import DealerCard from "./DealerCard";
@@ -9,9 +9,6 @@ import DealerCard from "./DealerCard";
 export default function FeaturedDealers() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const dealers = useLiveData(() => getPublishedDealers(), [] as Dealer[], ["cleartitle:dealers-changed"]);
-
-  const scrollBy = (dir: 1 | -1) =>
-    scrollerRef.current?.scrollBy({ left: dir * 700, behavior: "smooth" });
 
   if (dealers.length === 0) return null;
 
@@ -30,17 +27,7 @@ export default function FeaturedDealers() {
               <p className="text-[13px] text-[#68646F]">who are popular amongst Residential Buyers</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Link href="/dealers" className="text-[14px] font-bold text-[#DDAA42] hover:underline">View all</Link>
-            <div className="flex gap-2">
-              <button onClick={() => scrollBy(-1)} className="size-10 rounded-full bg-white border border-[#E4E0E7] flex items-center justify-center shadow-sm hover:border-[#DDAA42] transition-all" aria-label="Scroll left">
-                <ChevronLeft className="size-5 text-[#121B35]" />
-              </button>
-              <button onClick={() => scrollBy(1)} className="size-10 rounded-full bg-white border border-[#E4E0E7] flex items-center justify-center shadow-sm hover:border-[#DDAA42] transition-all" aria-label="Scroll right">
-                <ChevronRight className="size-5 text-[#121B35]" />
-              </button>
-            </div>
-          </div>
+          <Link href="/dealers" className="text-[14px] font-bold text-[#DDAA42] hover:underline">View all</Link>
         </div>
 
         <div ref={scrollerRef} className="flex gap-5 overflow-x-auto no-scrollbar pb-3 scroll-smooth">

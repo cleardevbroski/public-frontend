@@ -1,14 +1,11 @@
 "use client";
 import { useRef } from "react";
 import Link from "@/components/Link";
-import { ChevronLeft, ChevronRight, Star, TrendingUp, MapPin } from "lucide-react";
+import { Star, TrendingUp, MapPin } from "lucide-react";
 import { localityInsights } from "./mock-data";
 
 export default function LocalitiesYouMayLike() {
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const scrollBy = (dir: 1 | -1) =>
-    scrollerRef.current?.scrollBy({ left: dir * 600, behavior: "smooth" });
-
   return (
     <section className="bg-white py-8">
       <div className="max-w-[1200px] mx-auto px-5">
@@ -23,14 +20,6 @@ export default function LocalitiesYouMayLike() {
             <p className="text-[13px] text-[#68646F] mt-1">
               Based on the localities popular in Bangalore East
             </p>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => scrollBy(-1)} className="size-10 rounded-full bg-white border border-[#E4E0E7] flex items-center justify-center shadow-sm hover:border-[#DDAA42] transition-all" aria-label="Scroll left">
-              <ChevronLeft className="size-5 text-[#121B35]" />
-            </button>
-            <button onClick={() => scrollBy(1)} className="size-10 rounded-full bg-white border border-[#E4E0E7] flex items-center justify-center shadow-sm hover:border-[#DDAA42] transition-all" aria-label="Scroll right">
-              <ChevronRight className="size-5 text-[#121B35]" />
-            </button>
           </div>
         </div>
 

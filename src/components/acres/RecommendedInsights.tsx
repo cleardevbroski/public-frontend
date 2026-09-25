@@ -1,14 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "@/components/Link";
-import { ChevronLeft, ChevronRight, Map, BarChart3 } from "lucide-react";
+import { Map, BarChart3 } from "lucide-react";
 import { localityInsights as fallbackInsights } from "./mock-data";
 import { fetchInsights } from "@/lib/api";
 
 export default function RecommendedInsights() {
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const scrollBy = (dir: 1 | -1) =>
-    scrollerRef.current?.scrollBy({ left: dir * 600, behavior: "smooth" });
   const [items, setItems] = useState(fallbackInsights);
 
   useEffect(() => {
@@ -34,10 +32,7 @@ export default function RecommendedInsights() {
           </Link>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button onClick={() => scrollBy(-1)} className="hidden md:flex size-10 rounded-full bg-white border border-[#E4E0E7] items-center justify-center shadow-sm hover:border-[#DDAA42] transition-all shrink-0" aria-label="Scroll left">
-            <ChevronLeft className="size-5 text-[#121B35]" />
-          </button>
+        <div>
           <div ref={scrollerRef} className="flex gap-5 overflow-x-auto no-scrollbar pb-3 scroll-smooth">
             {items.map((l) => (
               <Link key={(l as any)._id ?? l.name} href={l.href} className="group shrink-0 w-[280px]">
@@ -57,9 +52,6 @@ export default function RecommendedInsights() {
               </Link>
             ))}
           </div>
-          <button onClick={() => scrollBy(1)} className="hidden md:flex size-10 rounded-full bg-white border border-[#E4E0E7] items-center justify-center shadow-sm hover:border-[#DDAA42] transition-all shrink-0" aria-label="Scroll right">
-            <ChevronRight className="size-5 text-[#121B35]" />
-          </button>
         </div>
       </div>
     </section>

@@ -1,7 +1,7 @@
 "use client";
 import { useRef } from "react";
 import Link from "@/components/Link";
-import { ChevronLeft, ChevronRight, Sparkles, User, ArrowUpRight } from "lucide-react";
+import { User, ArrowUpRight } from "lucide-react";
 import PropertyCard from "./PropertyCard";
 import { getPropertiesBySection, getPublishedProperties } from "@/lib/propertyStore";
 import { useLiveProperties } from "@/lib/useLiveProperties";
@@ -22,36 +22,21 @@ export default function RecommendedProperties() {
     []
   );
 
-  const scrollBy = (dir: 1 | -1) => {
-    scrollerRef.current?.scrollBy({ left: dir * 660, behavior: "smooth" });
-  };
-
   if (properties.length === 0) return null;
 
   return (
-    <section className="bg-[#F8F7FA] py-10">
+    <section className="recommended-properties bg-[#F8F7FA] py-10">
       <div className="max-w-[1200px] mx-auto px-5">
-        <div className="flex items-end justify-between mb-6 flex-wrap gap-4">
+        <div className="mb-6">
           <div>
-            <span className="inline-flex items-center gap-1.5 text-[12px] font-bold tracking-[0.18em] uppercase text-[#DDAA42]">
-              <Sparkles className="size-4" /> Curated especially for you
-            </span>
-            <h2 className="text-[28px] md:text-[34px] font-bold text-[#121B35] mt-1">
+            <h2 className="text-[28px] md:text-[34px] font-bold text-[#121B35]">
               Recommended <span className="text-gold-gradient">Properties</span>
             </h2>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => scrollBy(-1)} className="size-11 rounded-full bg-white border border-[#E4E0E7] flex items-center justify-center shadow-sm hover:border-[#DDAA42] hover:text-[#DDAA42] transition-all" aria-label="Scroll left">
-              <ChevronLeft className="size-5 text-[#121B35]" />
-            </button>
-            <button onClick={() => scrollBy(1)} className="size-11 rounded-full bg-white border border-[#E4E0E7] flex items-center justify-center shadow-sm hover:border-[#DDAA42] hover:text-[#DDAA42] transition-all" aria-label="Scroll right">
-              <ChevronRight className="size-5 text-[#121B35]" />
-            </button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
-          <div ref={scrollerRef} className="flex gap-5 overflow-x-auto no-scrollbar pb-3 scroll-smooth">
+          <div ref={scrollerRef} className="recommended-properties-row home-mobile-swipe flex gap-5 overflow-x-auto no-scrollbar pb-3 scroll-smooth">
             {properties.map((p) => (
               <PropertyCard key={p.id} p={p} />
             ))}

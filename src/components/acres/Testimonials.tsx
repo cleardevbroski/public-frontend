@@ -1,13 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Quote, Star, Sparkles } from "lucide-react";
+import { Quote, Star, Sparkles } from "lucide-react";
 import { fetchTestimonials } from "@/lib/api";
 
 type Testimonial = { _id?: string; name: string; role: string; quote: string; rating: number };
 
 export default function Testimonials() {
   const ref = useRef<HTMLDivElement>(null);
-  const scrollBy = (d: 1 | -1) => ref.current?.scrollBy({ left: d * 360, behavior: "smooth" });
   const [items, setItems] = useState<Testimonial[]>([]);
   useEffect(() => {
     fetchTestimonials({ status: "approved" })
@@ -35,23 +34,6 @@ export default function Testimonials() {
             </p>
           </div>
 
-          {/* Navigation Buttons */}
-          <div className="flex items-center gap-2.5 self-start md:self-auto">
-            <button
-              onClick={() => scrollBy(-1)}
-              className="size-10 rounded-full bg-white border border-[#E4E0E7]/60 flex items-center justify-center hover:border-[#DDAA42] hover:shadow-lg hover:scale-105 transition-all duration-200"
-              aria-label="Scroll reviews left"
-            >
-              <ChevronLeft className="size-5 text-[#121B35]" />
-            </button>
-            <button
-              onClick={() => scrollBy(1)}
-              className="size-10 rounded-full bg-white border border-[#E4E0E7]/60 flex items-center justify-center hover:border-[#DDAA42] hover:shadow-lg hover:scale-105 transition-all duration-200"
-              aria-label="Scroll reviews right"
-            >
-              <ChevronRight className="size-5 text-[#121B35]" />
-            </button>
-          </div>
         </div>
 
         {/* Carousel Content */}

@@ -58,6 +58,12 @@
   }
   .home-mobile-swipe > * { flex: 0 0 calc(100% - 28px); min-width: 0; scroll-snap-align: start; margin-block: 0; border-radius: 8px; }
   .home-mobile-swipe.property-type-row > * { flex-basis: 176px; min-height: 132px; }
+  .recommended-properties { padding-block: 28px; }
+  .recommended-properties .mb-6 { margin-bottom: 16px; }
+  .recommended-properties h2 { font-size: 24px; line-height: 1.25; letter-spacing: 0; }
+  .recommended-properties-row { gap: 12px; }
+  .recommended-properties-row > * { flex-basis: calc(100% - 36px); }
+  .recommended-properties .grid { gap: 16px; }
   .buyer-journey .public-container { padding-block: 28px; }
   .buyer-journey .display-heading { font-size: 24px; line-height: 1.25; letter-spacing: 0; }
   .buyer-journey-paths > a { min-height: 148px; padding: 14px; }

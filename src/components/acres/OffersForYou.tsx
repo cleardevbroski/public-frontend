@@ -1,7 +1,7 @@
 "use client";
 import { useRef } from "react";
 import Link from "@/components/Link";
-import { ChevronLeft, ChevronRight, Gift } from "lucide-react";
+import { Gift } from "lucide-react";
 import { getPropertiesBySection } from "@/lib/propertyStore";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 import type { Property } from "./mock-data";
@@ -20,9 +20,6 @@ type DisplayProject = {
 
 export default function OffersForYou() {
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const scrollBy = (dir: 1 | -1) =>
-    scrollerRef.current?.scrollBy({ left: dir * 560, behavior: "smooth" });
-
   const configuredProjects = useLiveProperties<Property[]>(() => getPropertiesBySection("Offers"), []);
   const projects: DisplayProject[] = configuredProjects.map((property) => ({
         id: property.id,
@@ -49,14 +46,6 @@ export default function OffersForYou() {
               Offers <span className="text-gold-gradient">for you</span>
             </h2>
             <p className="text-[13px] text-[#68646F] mt-1">Projects with ongoing offers in Bangalore East</p>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => scrollBy(-1)} className="size-10 rounded-full bg-white border border-[#E4E0E7] flex items-center justify-center shadow-sm hover:border-[#DDAA42] transition-all" aria-label="Scroll left">
-              <ChevronLeft className="size-5 text-[#121B35]" />
-            </button>
-            <button onClick={() => scrollBy(1)} className="size-10 rounded-full bg-white border border-[#E4E0E7] flex items-center justify-center shadow-sm hover:border-[#DDAA42] transition-all" aria-label="Scroll right">
-              <ChevronRight className="size-5 text-[#121B35]" />
-            </button>
           </div>
         </div>
 

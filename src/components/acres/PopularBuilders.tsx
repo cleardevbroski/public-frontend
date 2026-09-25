@@ -1,7 +1,7 @@
 "use client";
 import { useRef } from "react";
 import Link from "@/components/Link";
-import { ChevronLeft, ChevronRight, Building2, ArrowUpRight } from "lucide-react";
+import { Building2, ArrowUpRight } from "lucide-react";
 import { getBuilders } from "@/lib/propertyStore";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 
@@ -23,10 +23,6 @@ export default function PopularBuilders() {
     []
   );
 
-  const scrollBy = (dir: 1 | -1) => {
-    scrollerRef.current?.scrollBy({ left: dir * 640, behavior: "smooth" });
-  };
-
   if (builders.length === 0) return null;
 
   return (
@@ -43,22 +39,6 @@ export default function PopularBuilders() {
             <p className="text-[14px] text-[#68646F] mt-1">
               Developers represented in the projects currently published on ClearTitle One.
             </p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => scrollBy(-1)}
-              className="size-11 rounded-full bg-white border border-[#E4E0E7] flex items-center justify-center shadow-sm hover:border-[#DDAA42] hover:text-[#DDAA42] transition-all"
-              aria-label="Scroll left"
-            >
-              <ChevronLeft className="size-5 text-[#121B35]" />
-            </button>
-            <button
-              onClick={() => scrollBy(1)}
-              className="size-11 rounded-full bg-white border border-[#E4E0E7] flex items-center justify-center shadow-sm hover:border-[#DDAA42] hover:text-[#DDAA42] transition-all"
-              aria-label="Scroll right"
-            >
-              <ChevronRight className="size-5 text-[#121B35]" />
-            </button>
           </div>
         </div>
 

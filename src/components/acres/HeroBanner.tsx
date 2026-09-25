@@ -1,7 +1,7 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "@/components/Link";
-import { Search, MapPin, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, MapPin, ChevronDown } from "lucide-react";
 import ProjectTrustStrip from "./ProjectTrustStrip";
 import { bangaloreLocalities } from "./bangalore-data";
 import { getHeroSlides, heroHref, type HeroSlide } from "@/lib/heroStore";
@@ -26,10 +26,6 @@ export default function HeroBanner({ showTrustStrip = true }: { showTrustStrip?:
   }, []);
 
   const count = slides.length;
-  const go = useCallback((dir: 1 | -1) => {
-    setIndex((i) => (count ? (i + dir + count) % count : 0));
-  }, [count]);
-
   useEffect(() => {
     if (count <= 1) return;
     const t = setInterval(() => setIndex((i) => (i + 1) % count), 6000);
@@ -129,15 +125,8 @@ export default function HeroBanner({ showTrustStrip = true }: { showTrustStrip?:
           </>
         )}
 
-        {/* Arrows */}
         {count > 1 && (
           <>
-            <button onClick={() => go(-1)} className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 size-9 sm:size-11 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-md border border-white/30 flex items-center justify-center transition-all" aria-label="Previous slide">
-              <ChevronLeft className="size-5 text-white" />
-            </button>
-            <button onClick={() => go(1)} className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-30 size-9 sm:size-11 rounded-full bg-white/25 hover:bg-white/40 backdrop-blur-md border border-white/30 flex items-center justify-center transition-all" aria-label="Next slide">
-              <ChevronRight className="size-5 text-white" />
-            </button>
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-2">
               {slides.map((s, i) => (
                 <button key={s.id} onClick={() => setIndex(i)} className={`h-1.5 rounded-full transition-all ${i === index ? "w-6 bg-[#F2C052]" : "w-2 bg-white/55"}`} aria-label={`Go to slide ${i + 1}`} />
