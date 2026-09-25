@@ -81,6 +81,19 @@
   .popular-builder-card h3 { font-size: 14px; }
   .popular-builder-card p { margin-top: 2px; font-size: 11px; line-height: 1.35; }
   .popular-builder-card .size-5 { width: 16px; height: 16px; }
+  .clearer-buying-process { padding-block: 28px; }
+  .clearer-buying-heading { margin-bottom: 20px; }
+  .clearer-buying-heading .display-heading { font-size: 24px; line-height: 1.25; letter-spacing: 0; }
+  .clearer-buying-heading .gold-divider { margin-top: 12px; }
+  .clearer-buying-heading p:last-child { margin-top: 12px; font-size: 13px; line-height: 1.5; }
+  .clearer-buying-cards { gap: 12px; }
+  .clearer-buying-card { min-height: 176px; padding: 18px 16px; }
+  .clearer-buying-card .size-16 { width: 48px; height: 48px; margin-bottom: 12px; border-radius: 8px; }
+  .clearer-buying-card .size-7 { width: 22px; height: 22px; }
+  .clearer-buying-card h3 { font-size: 16px; }
+  .clearer-buying-card p { margin-top: 6px; font-size: 12px; line-height: 1.5; }
+  .clearer-buying-process .mt-10 { margin-top: 20px; }
+  .clearer-buying-process .btn-gold { min-height: 44px; padding: 10px 16px; }
   .home-advisor .advisor-heading { margin-bottom: 20px; text-align: left; }
   .home-advisor .advisor-layout { min-height: 0; gap: 16px; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
   .home-advisor .advisor-menu { padding: 0; border: 0; background: transparent; min-width: 0; }
@@ -137,6 +150,7 @@
 
 @media (min-width: 421px) and (max-width: 767px) {
   .popular-builder-card { flex-basis: min(250px, calc((100% - 12px) / 2)); }
+  .clearer-buying-card { flex-basis: min(250px, calc((100% - 12px) / 2)); }
 }
 
 @media (max-width: 767px), (max-width: 1023px) and (max-height: 500px) and (orientation: landscape) {

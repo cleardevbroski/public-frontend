@@ -22,9 +22,9 @@ const reasons = [
 
 export default function WhyChooseClearTitle() {
   return (
-    <section className="bg-white py-12">
+    <section className="clearer-buying-process bg-white py-12">
       <div className="max-w-[1100px] mx-auto px-5">
-        <div className="text-center mb-12">
+        <div className="clearer-buying-heading text-center mb-12">
           <p className="public-page-hero__eyebrow">A clearer buying process</p>
           <h2 className="display-heading mt-3 text-[32px] md:text-[44px] text-[#121B35]">
             Trust should be <span className="text-gold-gradient">visible</span>
@@ -35,11 +35,11 @@ export default function WhyChooseClearTitle() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="clearer-buying-cards home-mobile-swipe grid grid-cols-1 md:grid-cols-3 gap-6">
           {reasons.map(({ icon: Icon, title, desc }) => (
             <div
               key={title}
-              className="group bg-[#F8F7FA] rounded-2xl p-8 text-center border border-[#E4E0E7]/60 hover:border-[#DDAA42]/50 hover:shadow-xl transition-all duration-300"
+              className="clearer-buying-card group bg-[#F8F7FA] rounded-2xl p-8 text-center border border-[#E4E0E7]/60 hover:border-[#DDAA42]/50 hover:shadow-xl transition-all duration-300"
             >
               <div className="mx-auto mb-5 size-16 rounded-2xl bg-gradient-to-br from-[#121B35] to-[#273559] flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
                 <Icon className="size-7 text-[#F2C052]" />
