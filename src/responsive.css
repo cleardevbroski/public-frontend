@@ -98,8 +98,8 @@
   .clearer-buying-card .size-7 { width: 22px; height: 22px; }
   .clearer-buying-card h3 { font-size: 16px; }
   .clearer-buying-card p { margin-top: 6px; font-size: 12px; line-height: 1.5; }
-  .clearer-buying-process .mt-10 { margin-top: 20px; }
-  .clearer-buying-process .btn-gold { min-height: 44px; padding: 10px 16px; }
+  .clearer-buying-process .mt-10 { margin-top: 16px; }
+  .clearer-buying-process .btn-gold { min-height: 38px; padding: 8px 12px; font-size: 12px; }
   .home-advisor .advisor-heading { margin-bottom: 20px; text-align: left; }
   .home-advisor .advisor-layout { min-height: 0; gap: 16px; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
   .home-advisor .advisor-menu { padding: 0; border: 0; background: transparent; min-width: 0; }
