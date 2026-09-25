@@ -1930,16 +1930,16 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                 {/* Header */}
                 <div className="flex items-start justify-between">
                   <div>
-                    {formData.title && <h3 className="text-[20px] font-bold text-[#121B35]" style={{ fontFamily: "var(--font-outfit)" }}>
+                    {formData.title && <h3 className="ct-property-title text-[20px]">
                       {formData.title}
                     </h3>}
-                    {formData.subtitle && <p className="text-[14px] text-[#68646F] flex items-center gap-1 mt-1">
+                    {formData.subtitle && <p className="ct-property-meta text-[14px] flex items-center gap-1 mt-1">
                       <MapPin className="w-4 h-4 text-[#DDAA42]" />
                       {formData.subtitle}
                     </p>}
                   </div>
                   {(previewData as Property).price && <div className="text-right">
-                    <p className="text-[22px] font-bold text-[#DDAA42]">{(previewData as Property).price}</p>
+                    <p className="ct-property-price text-[22px] text-[#DDAA42]">{(previewData as Property).price}</p>
                     {formData.pricePerSqft && (
                       <p className="text-[13px] text-[#68646F]">{formData.pricePerSqft}</p>
                     )}

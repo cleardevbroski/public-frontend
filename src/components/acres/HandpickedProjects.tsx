@@ -67,10 +67,10 @@ export default function HandpickedProjects() {
       <div className="max-w-[1200px] mx-auto px-5">
         <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
           <div>
-            <span className="inline-flex items-center gap-1.5 text-[12px] font-bold tracking-[0.18em] uppercase text-[#DDAA42]">
+            <span className="ct-section-kicker inline-flex items-center gap-1.5">
               <Star className="size-4" /> Featured projects
             </span>
-            <h2 className="text-[28px] md:text-[34px] font-bold text-[#121B35] mt-1">
+            <h2 className="ct-section-title mt-1">
               Featured Handpicked <span className="text-gold-gradient">Projects</span>
             </h2>
           </div>

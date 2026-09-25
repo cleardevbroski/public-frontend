@@ -60,11 +60,11 @@ export default function PropertyCard({ p }: { p: Property }) {
 
       {/* Body */}
       <div className="p-3.5">
-        {p.builder && <p className="mb-1 truncate text-[9.5px] font-bold uppercase tracking-[0.12em] text-[#68646F]">{p.builder}</p>}
-        {p.title && <h3 className="text-[15.5px] font-bold text-[#121B35] truncate group-hover:text-[#805A0B] transition-colors">
+        {p.builder && <p className="ct-detail-label mb-1 truncate">{p.builder}</p>}
+        {p.title && <h3 className="ct-property-title truncate group-hover:text-[#805A0B] transition-colors">
           {p.title}
         </h3>}
-        {p.subtitle && <p className="text-[12px] text-[#68646F] truncate mt-0.5 flex items-center gap-1">
+        {p.subtitle && <p className="ct-property-meta truncate mt-0.5 flex items-center gap-1">
           <MapPin className="size-3.5 text-[#DDAA42] shrink-0" />
           {p.subtitle}
         </p>}

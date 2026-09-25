@@ -456,6 +456,33 @@ p { text-wrap: pretty; }
   -webkit-text-fill-color: transparent;
   color: transparent;
 }
+.ct-section-kicker {
+  color: #DDAA42;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.ct-section-title {
+  color: #121B35;
+  font-family: var(--font-open-sans), "Open Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(1.5rem, 2.4vw, 2.125rem);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+.ct-property-title {
+  color: #121B35;
+  font-family: var(--font-open-sans), "Open Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+.ct-property-meta { color: #68646F; font-size: 0.75rem; line-height: 1.35; }
+.ct-property-price { color: #121B35; font-size: 1.125rem; font-weight: 800; letter-spacing: 0; line-height: 1.15; }
+.ct-detail-label { color: #68646F; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.ct-detail-value { color: #121B35; font-size: 0.8125rem; font-weight: 700; line-height: 1.3; }
 .bg-navy { background-color: #121B35; }
 .bg-navy-deep { background-color: #0B1328; }
 .text-navy { color: #121B35; }
