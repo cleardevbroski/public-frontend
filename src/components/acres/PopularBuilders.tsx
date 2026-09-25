@@ -30,7 +30,7 @@ export default function PopularBuilders() {
   if (builders.length === 0) return null;
 
   return (
-    <section className="bg-[#F8F7FA] py-12">
+    <section className="popular-builders bg-[#F8F7FA] py-12">
       <div className="max-w-[1200px] mx-auto px-5">
         <div className="flex items-end justify-between mb-8 flex-wrap gap-4">
           <div>
@@ -64,13 +64,13 @@ export default function PopularBuilders() {
 
         <div
           ref={scrollerRef}
-          className="grid grid-flow-col auto-cols-[minmax(300px,1fr)] grid-rows-2 gap-5 overflow-x-auto no-scrollbar pb-3 scroll-smooth md:auto-cols-[minmax(440px,1fr)]"
+          className="popular-builders-row grid grid-flow-col auto-cols-[minmax(300px,1fr)] grid-rows-2 gap-5 overflow-x-auto no-scrollbar pb-3 scroll-smooth md:auto-cols-[minmax(440px,1fr)]"
         >
           {builders.map((b) => (
             <Link
               key={b.slug}
               href={`/builder/${b.slug}`}
-              className="group flex items-center gap-5 bg-white rounded-2xl border border-[#E4E0E7]/60 hover:border-[#DDAA42]/60 hover:shadow-xl p-5 transition-all duration-300"
+              className="popular-builder-card group flex items-center gap-5 bg-white rounded-2xl border border-[#E4E0E7]/60 hover:border-[#DDAA42]/60 hover:shadow-xl p-5 transition-all duration-300"
             >
               {/* Logo monogram */}
               <div className="relative shrink-0 size-[88px] rounded-full bg-[#F8F7FA] border border-[#E4E0E7] flex items-center justify-center shadow-inner group-hover:border-[#DDAA42]/50 transition-colors">
