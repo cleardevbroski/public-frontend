@@ -55,7 +55,7 @@ export default function GetInTouch() {
               { icon: Mail, label: "feedback@cleartitleone.com", href: "mailto:feedback@cleartitleone.com" },
             ].map(({ icon: Icon, label, href }) => {
               const content = <><div className="size-11 rounded-xl bg-[#DDAA42]/15 border border-[#DDAA42]/30 flex items-center justify-center shrink-0"><Icon className="size-5 text-[#F2C052]" /></div><span className="text-[14px] text-white/85">{label}</span></>;
-              return href ? <a key={label} href={href} className="support-contact public-interactive flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-4 hover:border-[#DDAA42]/50">{content}</a> : <div key={label} className="support-contact flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-4">{content}</div>;
+              return href ? <a key={label} href={href} aria-label={label} title={label} className="support-contact public-interactive flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-4 hover:border-[#DDAA42]/50">{content}</a> : <div key={label} title={label} className="support-contact flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-4">{content}</div>;
             })}
             <div className="support-map mt-2 rounded-2xl overflow-hidden border border-white/10 h-[160px]">
               <img
