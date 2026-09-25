@@ -535,8 +535,7 @@ p { text-wrap: pretty; }
 
   .home-main {
     padding: 18px 0 28px;
-    background:
-      linear-gradient(180deg, #EFF1F4 0%, #F6F6F7 42%, #F0F2F4 100%);
+    background: #FFFFFF;
   }
 
   .home-main > .hero-banner {
@@ -563,10 +562,16 @@ p { text-wrap: pretty; }
     padding-block: 0;
   }
 
-  .home-main > .scroll-reveal:nth-of-type(4n + 1) > section {
+  .home-main > .home-band-white > section {
     border: 1px solid rgba(18, 27, 53, 0.08);
-    background: #FFFFFF;
+    background: #FFFFFF !important;
     box-shadow: 0 14px 38px rgba(18, 27, 53, 0.05);
+  }
+
+  .home-main > .home-band-accent > section {
+    border: 1px solid rgba(18, 27, 53, 0.08);
+    background: #EEEAE2 !important;
+    box-shadow: none;
   }
 
   .buyer-journey {
@@ -586,18 +591,24 @@ p { text-wrap: pretty; }
   }
 
   .public-main {
-    background:
-      radial-gradient(circle at 92% 4%, rgba(221, 170, 66, 0.06), transparent 24rem),
-      #F3F4F6;
+    background: #FFFFFF;
     color: #3F3D46;
   }
 
   .public-page-shell {
     min-height: 72vh;
-    background:
-      radial-gradient(circle at 92% 0%, rgba(221, 170, 66, 0.07), transparent 27rem),
-      #F6F5F7;
+    background: #FFFFFF;
     color: #3F3D46;
+  }
+
+  .public-main > :nth-child(even of section:not(.public-page-hero):not([class*="bg-[#0B1328]"])),
+  .public-page-shell > .public-container > .max-w-3xl > :nth-child(even of section) {
+    background: #EEEAE2;
+  }
+
+  .public-main > :nth-child(odd of section:not(.public-page-hero):not([class*="bg-[#0B1328]"])),
+  .public-page-shell > .public-container > .max-w-3xl > :nth-child(odd of section) {
+    background: #FFFFFF;
   }
 
   .public-container {
@@ -683,8 +694,11 @@ p { text-wrap: pretty; }
   }
 
   .property-detail-page {
-    background: #F3F4F6;
+    background: #FFFFFF;
   }
+
+  .property-detail-page > .property-detail-intro { background: #FFFFFF; }
+  .property-detail-page > .bg-\[\#F3F1F5\] { background: #EEEAE2; }
 
   .property-detail-hero {
     max-width: 1440px;

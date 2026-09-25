@@ -59,17 +59,17 @@ export default function Home() {
         {!mobile && <BuyerJourney />}
 
         {/* Curated recommendations + guest activity sidebar */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-white">
           <RecommendedProperties />
         </ScrollReveal>
 
         {/* Locality price/YoY insight cards */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-accent">
           <LocalitiesYouMayLike />
         </ScrollReveal>
 
         {/* Apartments, Villas and more — type tiles */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-white">
           <PropertyTypeTiles />
         </ScrollReveal>
 
@@ -77,82 +77,82 @@ export default function Home() {
         {mobile && <BuyerJourney />}
 
         {/* Handpicked featured projects */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-accent">
           <HandpickedProjects />
         </ScrollReveal>
 
         {/* ClearTitle Legal Shield — submit legal consultation queries */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-white">
           <LegalConsultationConsole />
         </ScrollReveal>
 
         {/* Newly launched projects */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-accent">
           <NewlyLaunchedProjects />
         </ScrollReveal>
 
         {/* Based on search trends */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-white">
           <SearchTrends />
         </ScrollReveal>
 
         {/* Offers for you */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-accent">
           <OffersForYou />
         </ScrollReveal>
 
         {/* Featured dealers (View all -> /dealers) */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-white">
           <FeaturedDealers />
         </ScrollReveal>
 
         {/* BHK choice */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-accent">
           <BhkChoice />
         </ScrollReveal>
 
         {/* Properties posted by advertiser type */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-white">
           <PostedByAdvertiser />
         </ScrollReveal>
 
         {/* Move in now / possession timeline */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-accent">
           <PossessionTimeline />
         </ScrollReveal>
 
         {/* Budget choice */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-white">
           <BudgetChoice />
         </ScrollReveal>
 
         {/* Newly listed — live admin + curated listings */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-accent">
           <NewlyListed />
         </ScrollReveal>
 
         {/* Popular builders — grouped from live listings */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-white">
           <PopularBuilders />
         </ScrollReveal>
 
         {/* Recommended locality insights */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-accent">
           <RecommendedInsights />
         </ScrollReveal>
 
         {/* Advisory / tools console */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-white">
           <ClearTitleAdvisor />
         </ScrollReveal>
 
         {/* Trust pillars (brand theme) */}
-        <ScrollReveal direction="up">
+        <ScrollReveal direction="up" className="home-band-accent">
           <WhyChooseClearTitle />
         </ScrollReveal>
 
         {/* Editorial customer reviews */}
-        <ScrollReveal direction="up" delay={80}>
+        <ScrollReveal direction="up" delay={80} className="home-band-white">
           <Testimonials />
         </ScrollReveal>
 
