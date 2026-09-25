@@ -100,6 +100,28 @@
   .clearer-buying-card p { margin-top: 6px; font-size: 12px; line-height: 1.5; }
   .clearer-buying-process .mt-10 { margin-top: 16px; }
   .clearer-buying-process .btn-gold { min-height: 38px; padding: 8px 12px; font-size: 12px; }
+  .get-in-touch { padding-block: 28px; }
+  .get-in-touch-heading { margin-bottom: 20px; }
+  .get-in-touch-heading .display-heading { font-size: 24px; line-height: 1.25; letter-spacing: 0; }
+  .get-in-touch-heading .gold-divider { margin-top: 12px; }
+  .get-in-touch-heading p:last-child { margin-top: 12px; font-size: 13px; line-height: 1.5; }
+  .get-in-touch .grid { gap: 16px; }
+  .get-in-touch .support-info { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .get-in-touch .support-contact { min-width: 0; min-height: 76px; flex-direction: column; justify-content: center; gap: 5px; padding: 8px 6px; text-align: center; }
+  .get-in-touch .support-contact .size-11 { width: 32px; height: 32px; border-radius: 6px; }
+  .get-in-touch .support-contact .size-5 { width: 16px; height: 16px; }
+  .get-in-touch .support-contact span:last-child { overflow-wrap: anywhere; font-size: 10px; line-height: 1.25; }
+  .get-in-touch .support-map { display: none; }
+  .get-in-touch .support-form { padding: 16px; border-radius: 8px; }
+  .get-in-touch .support-form h3 { margin-bottom: 12px; font-size: 18px; }
+  .get-in-touch .support-form .space-y-3\.5 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .get-in-touch .support-form .space-y-3\.5 > :not([hidden]) ~ :not([hidden]) { margin-top: 0; min-width: 0; }
+  .get-in-touch .support-form .space-y-3\.5 > :nth-child(3),
+  .get-in-touch .support-form .space-y-3\.5 > :nth-child(4),
+  .get-in-touch .support-form .space-y-3\.5 > :nth-child(5),
+  .get-in-touch .support-form .space-y-3\.5 > :nth-child(6) { grid-column: 1 / -1; }
+  .get-in-touch .support-message { min-height: 66px; height: 66px; }
+  .get-in-touch .support-submit { min-height: 40px; padding-block: 8px; font-size: 13px; }
   .home-advisor .advisor-heading { margin-bottom: 20px; text-align: left; }
   .home-advisor .advisor-layout { min-height: 0; gap: 16px; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
   .home-advisor .advisor-menu { padding: 0; border: 0; background: transparent; min-width: 0; }

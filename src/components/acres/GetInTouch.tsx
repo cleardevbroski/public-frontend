@@ -24,7 +24,7 @@ export default function GetInTouch() {
   };
 
   return (
-    <section id="contact" className="relative bg-[#0B1328] py-12 overflow-hidden">
+    <section id="contact" className="get-in-touch relative bg-[#0B1328] py-12 overflow-hidden">
       <div className="absolute inset-0 z-0 opacity-25">
         <img
           src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1600&q=80"
@@ -35,7 +35,7 @@ export default function GetInTouch() {
       </div>
 
       <div className="relative z-10 max-w-[1100px] mx-auto px-5">
-        <div className="text-center mb-12">
+        <div className="get-in-touch-heading text-center mb-12">
           <p className="public-page-hero__eyebrow">Human support</p>
           <h2 className="display-heading mt-3 text-[34px] text-white md:text-[46px]">
             Ask our team what the record <span className="text-gold-gradient">doesn&apos;t answer</span>
@@ -48,16 +48,16 @@ export default function GetInTouch() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
           {/* Contact info */}
-          <div className="flex flex-col justify-center gap-5">
+          <div className="support-info flex flex-col justify-center gap-5">
             {[
               { icon: MapPin, label: "Bangalore, Karnataka", href: "" },
               { icon: Phone, label: "1800 41 99099", href: "tel:18004199099" },
               { icon: Mail, label: "feedback@cleartitleone.com", href: "mailto:feedback@cleartitleone.com" },
             ].map(({ icon: Icon, label, href }) => {
               const content = <><div className="size-11 rounded-xl bg-[#DDAA42]/15 border border-[#DDAA42]/30 flex items-center justify-center shrink-0"><Icon className="size-5 text-[#F2C052]" /></div><span className="text-[14px] text-white/85">{label}</span></>;
-              return href ? <a key={label} href={href} className="public-interactive flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-4 hover:border-[#DDAA42]/50">{content}</a> : <div key={label} className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-4">{content}</div>;
+              return href ? <a key={label} href={href} className="support-contact public-interactive flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-4 hover:border-[#DDAA42]/50">{content}</a> : <div key={label} className="support-contact flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-4">{content}</div>;
             })}
-            <div className="mt-2 rounded-2xl overflow-hidden border border-white/10 h-[160px]">
+            <div className="support-map mt-2 rounded-2xl overflow-hidden border border-white/10 h-[160px]">
               <img
                 src="https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=1000&q=80"
                 alt=""
@@ -67,7 +67,7 @@ export default function GetInTouch() {
           </div>
 
           {/* Form */}
-          <form onSubmit={submit} className="bg-white rounded-2xl p-7 shadow-2xl">
+          <form onSubmit={submit} className="support-form bg-white rounded-2xl p-7 shadow-2xl">
             <h3 className="text-[20px] font-bold text-[#121B35] mb-5">Send us a Message</h3>
             <div className="space-y-3.5">
               <input
@@ -96,11 +96,11 @@ export default function GetInTouch() {
                 onChange={(e) => setForm({ ...form, message: e.target.value })}
                 placeholder="Message"
                 rows={4}
-                className="w-full px-4 py-3 rounded-xl border border-[#E4E0E7] text-[14px] text-[#121B35] outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/15 transition-all resize-none"
+                className="support-message w-full px-4 py-3 rounded-xl border border-[#E4E0E7] text-[14px] text-[#121B35] outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/15 transition-all resize-none"
               />
               <button
                 type="submit"
-                className="w-full btn-gold py-3.5 rounded-xl text-[14px] flex items-center justify-center gap-2"
+                className="support-submit w-full btn-gold py-3.5 rounded-xl text-[14px] flex items-center justify-center gap-2"
               >
                 {sent ? (
                   <>
