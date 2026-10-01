@@ -8,6 +8,9 @@ export type CPProspect = {
   importBatchId: string;
   batch: { id: string; name: string; originalFileName: string } | null;
   sourceRowNumber: number;
+  sourceGroup: string;
+  sourceSerialNumber: number;
+  allocationSequence: number;
   existingPartner: { id: string; applicationNumber: string; companyName: string } | null;
   assignedEmployeeId: string;
   assignedEmployee: Pick<CRMEmployee, "id" | "employeeId" | "name" | "isActive"> | null;

@@ -10,7 +10,7 @@ export const cpImportFields: CPImportField[] = [
   { key: "yearEstablished", label: "Year established", aliases: ["year established", "establishment year", "year of establishment"] },
   { key: "panNumber", label: "PAN number", aliases: ["pan", "pan number", "pan no"] },
   { key: "gstNumber", label: "GST number", aliases: ["gst", "gst number", "gst no"] },
-  { key: "reraNumber", label: "RERA number", aliases: ["rera", "rera number", "rera no", "rera registration no"] },
+  { key: "reraNumber", label: "RERA number", aliases: ["rera", "rera number", "rera no", "rera registration no", "prm no reg no", "reg no"] },
   { key: "contactName", label: "Contact person", aliases: ["contact name", "contact person", "name", "cp contact"] },
   { key: "designation", label: "Designation", aliases: ["designation", "position", "role"] },
   { key: "mobile", label: "Mobile number", required: true, aliases: ["mobile", "mobile number", "phone", "phone number", "contact number", "primary mobile"] },
@@ -21,7 +21,7 @@ export const cpImportFields: CPImportField[] = [
   { key: "city", label: "City", aliases: ["city", "district"] },
   { key: "state", label: "State", aliases: ["state"] },
   { key: "pinCode", label: "PIN code", aliases: ["pin", "pin code", "pincode", "postal code"] },
-  { key: "areasOfOperation", label: "Working areas", aliases: ["areas of operation", "working areas", "area", "areas", "locality", "location", "locations"] },
+  { key: "areasOfOperation", label: "Working areas", aliases: ["areas of operation", "working areas", "area", "areas", "locality", "location", "locations", "taluk"] },
   { key: "currentProjects", label: "Current projects", aliases: ["current projects", "projects currently selling", "projects"] },
   { key: "developerAssociations", label: "Developer associations", aliases: ["developer associations", "developers", "builders"] },
   { key: "teamStrength", label: "Team strength", aliases: ["team strength", "team size"] },
@@ -78,13 +78,18 @@ export function parseCPImportMatrix(matrix: Array<Array<string | number | Date>>
 
 export async function readCPImportFile(file: File) {
   const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const matrix = XLSX.utils.sheet_to_json<Array<string | number | Date>>(sheet, { header: 1, defval: "", raw: false });
-  return parseCPImportMatrix(matrix);
+  let allocationSequence = 0;
+  const parsedSheets = workbook.SheetNames.map((sheetName) => {
+    const matrix = XLSX.utils.sheet_to_json<Array<string | number | Date>>(workbook.Sheets[sheetName], { header: 1, defval: "", raw: false });
+    const parsed = parseCPImportMatrix(matrix);
+    return { ...parsed, rows: parsed.rows.map((row) => ({ ...row, __sourceGroup: sheetName, __sourceSerialNumber: row[parsed.headers.find((header) => normalized(header) === "slno") || ""] || "", __allocationSequence: String(++allocationSequence) })) };
+  });
+  const first = parsedSheets[0] || { headers: [], rows: [], mapping: {} };
+  return { headers: first.headers, mapping: first.mapping, rows: parsedSheets.flatMap((sheet) => sheet.rows) };
 }
 
 export function mapCPImportRows(rows: CPImportRow[], mapping: Record<string, string>) {
-  return rows.map((row) => Object.fromEntries(cpImportFields.map((field) => [field.key, mapping[field.key] ? row[mapping[field.key]] || "" : ""])));
+  return rows.map((row) => ({ ...Object.fromEntries(cpImportFields.map((field) => [field.key, field.key === "state" && !mapping.state && row.__sourceGroup ? "Karnataka" : mapping[field.key] ? row[mapping[field.key]] || "" : ""])), sourceGroup: row.__sourceGroup || "", sourceSerialNumber: row.__sourceSerialNumber || "", allocationSequence: row.__allocationSequence || "" }));
 }
 
 export function downloadCPImportTemplate() {
