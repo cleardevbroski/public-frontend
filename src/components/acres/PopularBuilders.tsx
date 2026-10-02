@@ -3,9 +3,9 @@ import { useRef } from "react";
 import Link from "@/components/Link";
 import { Building2, ArrowUpRight } from "lucide-react";
 import { getBuilders } from "@/lib/propertyStore";
-import { useLiveProperties } from "@/lib/useLiveProperties";
+import { useLiveData } from "@/lib/useLiveProperties";
 
-type Builder = { name: string; slug: string; total: number };
+type Builder = { name: string; slug: string; total: number; logo?: string };
 
 function initials(name: string): string {
   return name
@@ -18,9 +18,10 @@ function initials(name: string): string {
 
 export default function PopularBuilders() {
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const builders = useLiveProperties<Builder[]>(
-    () => getBuilders().map(({ name, slug, total }) => ({ name, slug, total })),
-    []
+  const builders = useLiveData<Builder[]>(
+    () => getBuilders().map(({ name, slug, total, logo }) => ({ name, slug, total, logo })),
+    [],
+    ["cleartitle:properties-changed", "cleartitle:builders-changed"]
   );
 
   if (builders.length === 0) return null;
@@ -52,11 +53,9 @@ export default function PopularBuilders() {
               href={`/builder/${b.slug}`}
               className="popular-builder-card group flex items-center gap-5 bg-white rounded-2xl border border-[#E4E0E7]/60 hover:border-[#DDAA42]/60 hover:shadow-xl p-5 transition-all duration-300"
             >
-              {/* Logo monogram */}
+              {/* Uploaded Builder logo, with a monogram only when no logo is available. */}
               <div className="relative shrink-0 size-[88px] rounded-full bg-[#F8F7FA] border border-[#E4E0E7] flex items-center justify-center shadow-inner group-hover:border-[#DDAA42]/50 transition-colors">
-                <span className="text-[22px] font-bold text-[#121B35] tracking-tight">
-                  {initials(b.name)}
-                </span>
+                {b.logo ? <img src={b.logo} alt={`${b.name} logo`} className="size-full rounded-full object-contain p-2" /> : <span className="text-[22px] font-bold text-[#121B35] tracking-tight">{initials(b.name)}</span>}
                 <span className="absolute -bottom-1 -right-1 size-6 rounded-full bg-gradient-to-br from-[#F2C052] to-[#DDAA42] flex items-center justify-center shadow">
                   <Building2 className="size-3.5 text-[#121B35]" />
                 </span>

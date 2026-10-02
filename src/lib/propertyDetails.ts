@@ -159,9 +159,13 @@ export function validateApartmentDraft(property: Partial<Property>): ApartmentEr
   if (!rows.length) errors.configurations = "Add at least one BHK configuration.";
   rows.forEach((row, index) => {
     const prefix = `configuration.${index}`;
+    const configurationBhk = Number(row.configuration.match(/^(\d+(?:\.5)?)\s*BHK$/i)?.[1]);
+    const bedrooms = !Number.isInteger(configurationBhk) && Number(row.bedrooms) === configurationBhk
+      ? Math.floor(configurationBhk)
+      : row.bedrooms;
     if (!row.price.trim()) errors[`${prefix}.price`] = "Price is required.";
     if (!row.carpetArea.trim()) errors[`${prefix}.carpetArea`] = "Carpet area is required.";
-    if (!Number.isInteger(row.bedrooms) || (row.configuration === "Studio" ? row.bedrooms !== 0 : row.bedrooms < 1)) errors[`${prefix}.bedrooms`] = row.configuration === "Studio" ? "Studio must use 0 separate bedrooms." : "Enter at least 1 bedroom.";
+    if (!Number.isInteger(bedrooms) || (row.configuration === "Studio" ? bedrooms !== 0 : bedrooms < 1)) errors[`${prefix}.bedrooms`] = row.configuration === "Studio" ? "Studio must use 0 separate bedrooms." : "Enter at least 1 bedroom.";
     if (row.bathrooms === undefined || !Number.isInteger(row.bathrooms) || row.bathrooms < 1) errors[`${prefix}.bathrooms`] = "Enter at least 1 bathroom.";
     if (row.balconies === undefined || !Number.isInteger(row.balconies) || row.balconies < 0) errors[`${prefix}.balconies`] = "Enter the number of balconies, including 0 when there is no balcony.";
     if (row.facings.some((facing) => !facingOptions.some((option) => option === facing))) {

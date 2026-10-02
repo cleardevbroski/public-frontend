@@ -1179,6 +1179,149 @@ const AMENITY_PATTERNS: Array<[string, RegExp]> = [
   ["Park", /\b(park|garden|green area)\b/i], ["Reserved Parking", /\b(parking|car park)\b/i],
 ];
 
+function apartmentRoomCategory(name: string): NonNullable<ConfigurationDetail["rooms"]>[number]["category"] {
+  const value = name.toLowerCase();
+  if (/bedroom/.test(value)) return "bedroom";
+  if (/toilet|bath/.test(value)) return "bathroom";
+  if (/kitchen/.test(value)) return "kitchen";
+  if (/living/.test(value)) return "living";
+  if (/dining/.test(value)) return "dining";
+  if (/balcony/.test(value)) return "balcony";
+  if (/utility/.test(value)) return "utility";
+  return "other";
+}
+
+/** Reads markdown or plain-text layout lists such as "2 BHK Luxe - 01". */
+function parseApartmentRoomLayouts(source: string): ConfigurationDetail[] {
+  const headings = [...source.matchAll(/(?:^|\n)\s*(?:#{1,6}\s*)?(\d+(?:\.5)?\s*BHK[^\n]*)/gi)];
+  return headings.map<ConfigurationDetail | null>((match, index) => {
+    const heading = clean(match[1]).replace(/[*_`]/g, "").replace(/[\s-]+$/, "");
+    const configuration = normalizeBhkLabel(heading.match(/\d+(?:\.5)?\s*BHK/i)?.[0] || "");
+    if (!configuration) return null;
+    const body = source.slice((match.index || 0) + match[0].length, headings[index + 1]?.index || source.length);
+    const rooms: NonNullable<ConfigurationDetail["rooms"]> = [];
+    let balconies: number | undefined;
+    [...body.matchAll(/(?:^|\n)\s*[-*]\s*(?:\[[ xX]\]\s*)?([^:\n]+)\s*:\s*([^\n]+)/g)].forEach((roomMatch, roomIndex) => {
+      const name = clean(roomMatch[1]).replace(/[*_`]/g, "");
+      const raw = clean(roomMatch[2]).replace(/[*_`]/g, "");
+      const dimensions = raw.match(/(\d+(?:\.\d+)?)\s*(?:×|x)\s*(\d+(?:\.\d+)?)\s*(m|met(?:er|re)s?|ft|feet|')?\b/i);
+      const count = raw.match(/(\d+)\s*balcon(?:y|ies)/i);
+      if (/^balcon(?:y|ies)$/i.test(name) && count) balconies = Number(count[1]);
+      if (!dimensions && !/wide/i.test(raw)) return;
+      const isMetres = /^(m|met)/i.test(dimensions?.[3] || "");
+      const wide = raw.match(/(\d+(?:\.\d+)?)\s*'\s*(\d+(?:\.\d+)?)?\s*\"?\s*wide/i);
+      rooms.push({
+        id: `room-${index + 1}-${roomIndex + 1}`,
+        name,
+        category: apartmentRoomCategory(name),
+        length: dimensions ? Number(dimensions[1]) : undefined,
+        width: dimensions ? Number(dimensions[2]) : wide ? Number(wide[1]) + Number(wide[2] || 0) / 12 : undefined,
+        unit: isMetres ? "m" : "ft",
+        description: dimensions ? "" : raw,
+      });
+    });
+    if (!rooms.length && balconies === undefined) return null;
+    const defaults = createConfigurationDetail(configuration);
+    return { ...defaults, variantName: heading, rooms, balconies: balconies ?? rooms.filter((room) => room.category === "balcony").length };
+  }).filter((row): row is ConfigurationDetail => Boolean(row));
+}
+
+function specified(value: string): string {
+  return /^(?:not specified|n\/?a|na|--|-)?$/i.test(clean(value)) ? "" : clean(value);
+}
+
+/** Reads the compact configuration comparison table copied from a brochure or spreadsheet. */
+function parseApartmentConfigurationTable(source: string): ConfigurationDetail[] {
+  return source.split(/\r?\n/).map<ConfigurationDetail | null>((line) => {
+    if (!line.includes("|")) return null;
+    const cells = line.split("|").map((cell) => specified(cell.replace(/[*_`]/g, ""))).filter(Boolean);
+    const variantName = cells.find((cell) => /\b\d+(?:\.5)?\s*bhk\b/i.test(cell));
+    const configuration = normalizeBhkLabel(variantName?.match(/\d+(?:\.5)?\s*BHK/i)?.[0] || "");
+    if (!variantName || !configuration) return null;
+    const areas = cells.filter((cell) => /\b(?:sq\.?\s*ft\.?|sqft|square\s*feet)\b/i.test(cell));
+    const builtUpArea = areas.find((cell) => /sale|built|super/i.test(cell)) || areas[0] || "";
+    const carpetArea = areas.find((cell) => /carpet/i.test(cell)) || (areas[0] === builtUpArea ? areas[1] || "" : areas[0] || "");
+    const numberCells = cells.filter((cell) => /^\d+$/.test(cell)).map(Number);
+    const facings = cells.filter((cell) => /^(?:east|west|north|south)(?:[- ](?:east|west))?$/i.test(cell));
+    const price = cells.find((cell) => /(?:₹|\b(?:rs\.?|inr)\b|\b\d+(?:\.\d+)?\s*(?:cr|crore|lakh|lac)\b)/i.test(cell)) || "";
+    const defaults = createConfigurationDetail(configuration);
+    return {
+      ...defaults,
+      variantName,
+      price,
+      builtUpArea,
+      carpetArea,
+      bedrooms: numberCells[0] ?? defaults.bedrooms,
+      bathrooms: numberCells[1] ?? defaults.bathrooms,
+      balconies: numberCells[2] ?? defaults.balconies,
+      facings,
+    };
+  }).filter((row): row is ConfigurationDetail => Boolean(row));
+}
+
+/** Reads brochure tables which arrive as one plain-text line after copy/paste. */
+function parseCompactApartmentConfigurations(source: string): ConfigurationDetail[] {
+  const variants = [...source.matchAll(/\b(\d+(?:\.5)?\s*BHK(?:\s+(?:luxe|premium|classic|deluxe|type|plan)\b(?:\s*-?\s*\d+)?)?)/gi)];
+  return variants.map<ConfigurationDetail | null>((match, index) => {
+    const variantName = clean(match[1]);
+    const configuration = normalizeBhkLabel(variantName.match(/\d+(?:\.5)?\s*BHK/i)?.[0] || "");
+    const block = source.slice((match.index || 0) + match[0].length, variants[index + 1]?.index || source.length);
+    const areas = [...block.matchAll(/(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?\s*(?:sq\.?\s*ft\.?|sqft|square\s*feet)(?:\s*(?:sale|built|super)\s*area)?/gi)].map((area) => clean(area[0]));
+    if (!configuration || areas.length < 2) return null;
+    const price = block.match(/₹\s*[\d,.]+\s*(?:cr|crore|lakh|lac|l)?(?:\s*onwards)?\*?/i)?.[0]?.replace(/\*+$/, "") || "";
+    const withoutAreasAndPrice = block.replace(/(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?\s*(?:sq\.?\s*ft\.?|sqft|square\s*feet)(?:\s*(?:sale|built|super)\s*area)?/gi, " ").replace(/₹\s*[\d,.]+\s*(?:cr|crore|lakh|lac|l)?(?:\s*onwards)?\*?/gi, " ");
+    const counts = [...withoutAreasAndPrice.matchAll(/\b\d+\b/g)].map((value) => Number(value[0]));
+    const facing = withoutAreasAndPrice.match(/\b(?:east|west|north|south)(?:[- ](?:east|west))?\b/i)?.[0];
+    const defaults = createConfigurationDetail(configuration);
+    return {
+      ...defaults,
+      variantName,
+      price,
+      builtUpArea: areas[0],
+      carpetArea: areas[1],
+      bedrooms: counts[0] ?? defaults.bedrooms,
+      bathrooms: counts[1] ?? defaults.bathrooms,
+      balconies: counts[2] ?? defaults.balconies,
+      facings: facing ? [facing] : [],
+    };
+  }).filter((row): row is ConfigurationDetail => Boolean(row));
+}
+
+/** Reads labelled brochure copy: "2 BHK Price: ... Built-up Area: ...". */
+function parseLabelledApartmentConfigurations(source: string): ConfigurationDetail[] {
+  const starts = [...source.matchAll(/\b(\d+(?:\.5)?\s*BHK)\s+Price\s*:/gi)];
+  const read = (block: string, label: RegExp) => block.match(label)?.[1]?.trim().replace(/\*+$/, "") || "";
+  return starts.map<ConfigurationDetail | null>((match, index) => {
+    const configuration = normalizeBhkLabel(match[1]);
+    if (!configuration) return null;
+    const block = source.slice(match.index || 0, starts[index + 1]?.index || source.length);
+    const price = read(block, /\bPrice\s*:\s*(.*?)(?=\s+(?:(?:Built-up\s*\/\s*Super\s*Built-up|Built-up|Super Built-up)\s+Area|Carpet\s+Area|Bedrooms|Bathrooms|Balconies|Facing)\s*:|$)/i);
+    const builtUpArea = read(block, /\b(?:Built-up\s*\/\s*Super\s*Built-up|Built-up|Super Built-up)\s+Area\s*:\s*(.*?)(?=\s+(?:Carpet|Bedrooms|Bathrooms|Balconies|Facing)\s*:|$)/i);
+    const carpetArea = read(block, /\bCarpet\s+Area\s*:\s*(.*?)(?=\s+(?:Bedrooms|Bathrooms|Balconies|Facing)\s*:|$)/i);
+    const bedrooms = number(read(block, /\bBedrooms\s*:\s*(\d+)/i));
+    const bathrooms = number(read(block, /\bBathrooms\s*:\s*(\d+)/i));
+    const balconies = number(read(block, /\bBalconies\s*:\s*(\d+)/i));
+    const facing = read(block, /\bFacing\s*:\s*(.*?)(?=\s+(?:\d+(?:\.5)?\s*BHK\s+Price\s*:)|$)/i);
+    const defaults = createConfigurationDetail(configuration);
+    const quickFillFields = [
+      price && "price", builtUpArea && "builtUpArea", carpetArea && "carpetArea",
+      bedrooms !== undefined && "bedrooms", bathrooms !== undefined && "bathrooms",
+      balconies !== undefined && "balconies", facing && !/not specified|—/i.test(facing) && "facings",
+    ].filter((field): field is string => Boolean(field));
+    return { ...defaults, variantName: configuration, price, builtUpArea, carpetArea, bedrooms: bedrooms ?? defaults.bedrooms, bathrooms: bathrooms ?? defaults.bathrooms, balconies: balconies ?? defaults.balconies, facings: facing && !/not specified|—/i.test(facing) ? [facing] : [], quickFillFields };
+  }).filter((row): row is ConfigurationDetail => Boolean(row));
+}
+
+function mergeApartmentConfigurations(layouts: ConfigurationDetail[], tableRows: ConfigurationDetail[]): ConfigurationDetail[] {
+  const result = [...layouts];
+  tableRows.forEach((tableRow) => {
+    const index = result.findIndex((row) => (row.variantName || row.configuration).toLowerCase() === (tableRow.variantName || tableRow.configuration).toLowerCase());
+    if (index < 0) result.push(tableRow);
+    else result[index] = { ...result[index], ...tableRow, rooms: result[index].rooms };
+  });
+  return result;
+}
+
 /** Deterministic, review-first extraction. It only returns details explicitly present in the pasted text. */
 export function analyzePropertyDescription(text: string, preferredType?: SupportedPropertyType): QuickFillSuggestion {
   const source = clean(text);
@@ -1186,7 +1329,12 @@ export function analyzePropertyDescription(text: string, preferredType?: Support
   if (/\[\s*PROPERTY BASICS\s*\]/i.test(source)) return analyzeStructuredDescription(source, preferredType);
   const fields: QuickFillSuggestion["fields"] = [];
   const warnings = ["Review every suggested value before applying it. The analyzer does not create photos, documents, or facts not stated in the description."];
-  const type = normalizePropertyType(source) || preferredType;
+  const roomLayouts = parseApartmentRoomLayouts(source);
+  const tableConfigurations = parseApartmentConfigurationTable(source);
+  const compactConfigurations = parseCompactApartmentConfigurations(source);
+  const labelledConfigurations = parseLabelledApartmentConfigurations(source);
+  const apartmentConfigurations = mergeApartmentConfigurations(mergeApartmentConfigurations(mergeApartmentConfigurations(roomLayouts, tableConfigurations), compactConfigurations), labelledConfigurations);
+  const type = normalizePropertyType(source) || preferredType || (apartmentConfigurations.length ? "Apartment" : undefined);
   const patch: QuickFillPatch = { propertyType: type, description: source };
   const capture = (label: string, expression: RegExp, destination: keyof QuickFillPatch) => {
     const value = source.match(expression)?.[1]?.trim();
@@ -1199,8 +1347,8 @@ export function analyzePropertyDescription(text: string, preferredType?: Support
   if (patch.reraNumber) patch.reraRegistered = true;
   const price = source.match(/₹\s*[\d,.]+\s*(?:cr|crore|lakh|lac|l)?(?:\s*[-–]\s*₹?\s*[\d,.]+\s*(?:cr|crore|lakh|lac|l)?)?/i)?.[0];
   if (price) { patch.price = price; addField(fields, "Price", price); }
-  const area = source.match(/\b\d[\d,]*(?:\s*[-–]\s*\d[\d,]*)?\s*(?:sq\.?\s*ft\.?|sqft|square feet)\b/i)?.[0];
-  if (area) { patch.area = area; addField(fields, "Area", area); }
+  const area = source.match(/(?:^|[^\d.,])(\d[\d,]*(?:\s*[-–]\s*\d[\d,]*)?\s*(?:sq\.?\s*ft\.?|sqft|square feet))\b/i)?.[1];
+  if (area && !apartmentConfigurations.length) { patch.area = area; addField(fields, "Area", area); }
   const possessionText = source.match(/(?:possession|completion|ready to move)[^\n.]*/i)?.[0] || "";
   const possessionDetails = completion(possessionText);
   if (possessionDetails) { patch.possessionDetails = possessionDetails; patch.possession = possessionText; addField(fields, "Possession", possessionText); }
@@ -1211,7 +1359,12 @@ export function analyzePropertyDescription(text: string, preferredType?: Support
     ? [...source.matchAll(/\b(villament|pent\s*house|sky\s*villa|duplex|triplex)\b/gi)].map((match) => match[0])
     : [];
   const uniqueConfigs = [...new Set((type === "Villa" ? [...bhkMatches, ...standaloneVillaMatches].map((value) => parseVillaConfigurationLabel(value)?.configuration) : bhkMatches.map(normalizeBhkLabel)).filter((item): item is string => Boolean(item)))];
-  if (type === "Apartment" && uniqueConfigs.length) {
+  if (type === "Apartment" && apartmentConfigurations.length) {
+    patch.configurationDetails = apartmentConfigurations;
+    patch.configs = apartmentConfigurations.map((row) => row.configuration);
+    const roomCount = apartmentConfigurations.reduce((total, row) => total + (row.rooms?.length || 0), 0);
+    addField(fields, "Apartment configurations", `${apartmentConfigurations.length} named configuration${apartmentConfigurations.length === 1 ? "" : "s"}${roomCount ? ` with ${roomCount} room measurements` : ""}`);
+  } else if (type === "Apartment" && uniqueConfigs.length) {
     patch.configurationDetails = uniqueConfigs.map((configuration) => createConfigurationDetail(configuration));
     patch.configs = uniqueConfigs;
     addField(fields, "Configurations", uniqueConfigs.join(", "));

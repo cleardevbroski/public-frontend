@@ -3,7 +3,7 @@ import Image from "@/components/Image";
 import Link from "@/components/Link";
 import { MapPin, ShieldCheck } from "lucide-react";
 import type { Property } from "./mock-data";
-import { priceWithCharges } from "@/lib/propertyPresentation";
+import { getPropertyCoverImage, priceWithCharges } from "@/lib/propertyPresentation";
 import FavoriteButton from "./FavoriteButton";
 
 const isBase64 = (src: string) => src.startsWith("data:");
@@ -24,7 +24,7 @@ export default function PropertyCard({ p }: { p: Property }) {
       {/* Image */}
       <div className="relative h-[170px] bg-[#F3F1F5] overflow-hidden">
         {(() => {
-          const coverImage = p.heroImages?.[0] || p.images?.[0] || p.image;
+          const coverImage = getPropertyCoverImage(p);
           if (!coverImage) return null;
           return isBase64(coverImage) ? (
             <img src={coverImage} alt={p.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />

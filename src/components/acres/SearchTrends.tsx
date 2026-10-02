@@ -2,7 +2,7 @@
 import { useRef } from "react";
 import Link from "@/components/Link";
 import { ShieldCheck, TrendingUp } from "lucide-react";
-import { getPropertiesBySection } from "@/lib/propertyStore";
+import { getNewlyListed, getPropertiesBySection } from "@/lib/propertyStore";
 import { formatPossession } from "@/lib/propertyDetails";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 import { searchTrendProjects, type Property } from "./mock-data";
@@ -29,7 +29,7 @@ type DisplayProject = {
 
 export default function SearchTrends() {
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const configuredProjects = useLiveProperties<Property[]>(() => getPropertiesBySection("Search Trends"), []);
+  const configuredProjects = useLiveProperties<Property[]>(() => { const placed = getPropertiesBySection("Search Trends"); return placed.length ? placed : getNewlyListed(10); }, []);
   const projects: DisplayProject[] = configuredProjects.length
     ? configuredProjects.map((property) => ({
         id: property.id,

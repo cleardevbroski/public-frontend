@@ -1,7 +1,7 @@
 import type { Property } from "@/components/acres/mock-data";
 import { createHydratedCache } from "./hydratedCache";
 import {
-  fetchProperties,
+  fetchAllPublishedProperties,
   fetchBuilders,
   createProperty as apiCreateProperty,
   updateProperty as apiUpdateProperty,
@@ -16,8 +16,8 @@ const BUILDERS_EVENT = "cleartitle:builders-changed";
 type BuilderRecord = { id: string; name: string; slug: string; verified?: boolean; featured?: boolean; logo?: string };
 
 const cache = createHydratedCache<Property>(async () => {
-  const data = await fetchProperties({ limit: 200, sort: "-createdAt" });
-  return (data.properties as Property[]).map((p) => ({
+  const properties = await fetchAllPublishedProperties({ sort: "-createdAt" });
+  return (properties as Property[]).map((p) => ({
     ...p,
     image: p.heroImages?.[0] || p.images?.[0] || p.image || "",
     source: "admin" as const,
@@ -105,12 +105,13 @@ export function getBuilders(): { name: string; slug: string; total: number; samp
   const published = getPublishedProperties();
   const builders = builderCache.get();
   const byId = new Map(builders.map((b) => [b.id, b]));
+  const bySlug = new Map(builders.map((b) => [builderSlug(b.name), b]));
 
   type Group = { name: string; slug: string; verified?: boolean; featured?: boolean; logo?: string; list: Property[] };
   const groups: Record<string, Group> = {};
 
   for (const p of published) {
-    const linked = p.builderId ? byId.get(p.builderId) : undefined;
+    const linked = p.builderId ? byId.get(p.builderId) : bySlug.get(builderSlug(p.builder || ""));
     const freeText = (p.builder || "").trim();
 
     if (!linked && !freeText) continue;
@@ -134,6 +135,15 @@ export function getBuilders(): { name: string; slug: string; total: number; samp
   return Object.values(groups)
     .map((g) => ({ name: g.name, slug: g.slug, total: g.list.length, sample: g.list[0], verified: g.verified, featured: g.featured, logo: g.logo }))
     .sort((a, b) => b.total - a.total);
+}
+
+/** Resolve the uploaded Builder logo for a project, with its own uploaded logo as a fallback. */
+export function getBuilderLogoForProperty(property: Pick<Property, "builderId" | "builder" | "developerLogoUrl">): string | undefined {
+  const builders = builderCache.get();
+  const linked = property.builderId
+    ? builders.find((builder) => builder.id === property.builderId)
+    : builders.find((builder) => builderSlug(builder.name) === builderSlug(property.builder || ""));
+  return linked?.logo || property.developerLogoUrl;
 }
 
 /** All published properties for a given builder slug (matches real Builder link first, free-text builder name otherwise). */
@@ -183,6 +193,11 @@ export function getPropertyCount() {
 /** Reload the public-listing cache after an out-of-band admin workflow update. */
 export async function refreshProperties(): Promise<void> {
   await cache.refresh();
+}
+
+/** Reload Builder records after an admin changes a name, logo, or publication state. */
+export async function refreshBuilders(): Promise<void> {
+  await builderCache.refresh();
 }
 
 export async function addProperty(property: Omit<Property, "id">): Promise<Property | null> {

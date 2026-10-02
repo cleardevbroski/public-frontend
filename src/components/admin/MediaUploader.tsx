@@ -95,7 +95,7 @@ export default function MediaUploader({ images, onImagesChange, onImagesAdd }: M
                 <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100"><div className="flex size-7 items-center justify-center rounded-lg bg-black/50 backdrop-blur-sm"><GripVertical className="size-4 text-white" /></div></div>
                 <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/0 opacity-0 transition-all duration-200 group-hover:bg-black/30 group-hover:opacity-100">
                   <button type="button" onClick={(event) => { event.stopPropagation(); setPreviewImage(image); }} className="flex size-8 items-center justify-center rounded-lg bg-white/90 hover:bg-white"><Eye className="size-4 text-[#121B35]" /></button>
-                  <button type="button" onClick={(event) => { event.stopPropagation(); onImagesChange(images.filter((_, imageIndex) => imageIndex !== index)); }} className="flex size-8 items-center justify-center rounded-lg bg-red-500/90 hover:bg-red-600"><X className="size-4 text-white" /></button>
+                  <button type="button" onClick={(event) => { event.stopPropagation(); onImagesChange(images.filter((_, imageIndex) => imageIndex !== index)); }} className="flex size-8 items-center justify-center rounded-lg bg-red-500/90 hover:bg-red-600" title="Remove this gallery photo from the property" aria-label={`Remove gallery photo ${index + 1} from this property`}><X className="size-4 text-white" /></button>
                 </div>
               </div>
             ))}

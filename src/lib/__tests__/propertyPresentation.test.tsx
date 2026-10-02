@@ -10,7 +10,7 @@ import PropertyDetail, { PROPERTY_HERO_SECTION_ORDER } from "@/components/acres/
 import { cityListings } from "@/components/acres/mock-data";
 import { AuthProvider } from "@/components/acres/AuthContext";
 import { MemoryRouter } from "react-router-dom";
-import { configurationPriceRange, getProjectHeroImages, getPropertyCoverImage, priceWithCharges } from "@/lib/propertyPresentation";
+import { configurationPriceRange, getProjectHeroImages, getPropertyCoverImage, getPropertyGalleryImages, priceWithCharges } from "@/lib/propertyPresentation";
 
 describe("interactive property presentation", () => {
   it("keeps the hero navigation in the same order as the property content", () => {
@@ -66,6 +66,11 @@ describe("interactive property presentation", () => {
   it("uses a main-display photo before gallery and legacy thumbnail fallbacks", () => {
     expect(getPropertyCoverImage({ heroImages: ["hero.jpg"], images: ["gallery.jpg"], image: "legacy.jpg" }))
       .toBe("hero.jpg");
+  });
+
+  it("does not repeat main-display photos in the public gallery", () => {
+    expect(getPropertyGalleryImages({ heroImages: ["main.jpg", "main-two.jpg"], images: ["main.jpg", "gallery.jpg"], image: "legacy.jpg" }))
+      .toEqual(["gallery.jpg", "legacy.jpg"]);
   });
 
   it("adds the public charges suffix once", () => {

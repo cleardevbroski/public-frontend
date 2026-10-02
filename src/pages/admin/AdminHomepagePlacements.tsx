@@ -19,6 +19,7 @@ import { updateProperty } from "@/lib/propertyStore";
 export default function AdminHomepagePlacements() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [search, setSearch] = useState("");
+  const [placementFilter, setPlacementFilter] = useState<"all" | "unplaced" | "placed">("all");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState("");
   const [error, setError] = useState("");
@@ -32,35 +33,47 @@ export default function AdminHomepagePlacements() {
       .finally(() => setLoading(false));
   }, []);
 
+  const liveProperties = useMemo(
+    () => properties.filter((property) =>
+      property.published !== false &&
+      (!property.status || ["approved", "published"].includes(property.status))
+    ),
+    [properties]
+  );
+
   const visibleProperties = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return properties;
-    return properties.filter((property) => matchesPropertyAdminSearch(property, query));
-  }, [properties, search]);
+    return liveProperties.filter((property) => {
+      const placed = getHomepageSections(property).length > 0;
+      if (placementFilter === "placed" && !placed) return false;
+      if (placementFilter === "unplaced" && placed) return false;
+      return !query || matchesPropertyAdminSearch(property, query);
+    });
+  }, [liveProperties, placementFilter, search]);
 
   const placementCounts = useMemo(
     () =>
       Object.fromEntries(
         HOMEPAGE_SECTIONS.map((section) => [
           section.id,
-          properties.filter((property) => getHomepageSections(property).includes(section.id)).length,
+          liveProperties.filter((property) => getHomepageSections(property).includes(section.id)).length,
         ])
       ) as Record<HomepageSection, number>,
-    [properties]
+    [liveProperties]
   );
 
   const handpickedZoneCounts = useMemo(
     () => Object.fromEntries(
       BANGALORE_ZONES.map((zone) => [
         zone,
-        properties.filter(
+          liveProperties.filter(
           (property) =>
             getHomepageSections(property).includes("Handpicked") &&
             getBangaloreZone(property.locality?.zone) === zone
         ).length,
       ])
     ) as Record<BangaloreZone, number>,
-    [properties]
+    [liveProperties]
   );
 
   const togglePlacement = async (property: Property, section: HomepageSection) => {
@@ -108,20 +121,32 @@ export default function AdminHomepagePlacements() {
             Homepage Placement
           </h1>
           <p className="mt-1 max-w-2xl text-[13px] text-[#68646F]">
-            See every property&apos;s homepage sections and place one property in multiple
-            sections.
+            Only live public projects appear here. Place one project in multiple homepage
+            sections without exposing drafts, pending reviews, rejected, or hidden projects.
           </p>
         </div>
 
-        <label className="flex h-11 w-full items-center gap-2 rounded-xl border border-[#E4E0E7] bg-white px-3.5 shadow-sm lg:w-[320px]">
-          <Search className="size-4 text-[#77717E]" />
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search property, builder or location"
-            className="min-w-0 flex-1 bg-transparent text-[13px] text-[#121B35] outline-none"
-          />
-        </label>
+        <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+          <label className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#E4E0E7] bg-white px-3.5 shadow-sm lg:w-[320px]">
+            <Search className="size-4 text-[#77717E]" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search property, builder or location"
+              className="min-w-0 flex-1 bg-transparent text-[13px] text-[#121B35] outline-none"
+            />
+          </label>
+          <select
+            value={placementFilter}
+            onChange={(event) => setPlacementFilter(event.target.value as typeof placementFilter)}
+            className="h-11 rounded-xl border border-[#E4E0E7] bg-white px-3 text-[12px] font-semibold text-[#3F3D46] shadow-sm outline-none"
+            aria-label="Filter homepage placement"
+          >
+            <option value="all">All live projects</option>
+            <option value="unplaced">Not placed yet</option>
+            <option value="placed">Already placed</option>
+          </select>
+        </div>
       </div>
 
       <div className="mb-5 grid grid-cols-2 gap-2.5 md:grid-cols-4 xl:grid-cols-7">
@@ -169,11 +194,11 @@ export default function AdminHomepagePlacements() {
           <div>
             <h2 className="text-[15px] font-bold text-[#121B35]">Property placement matrix</h2>
             <p className="text-[11px] text-[#77717E]">
-              Select any number of sections for each property.
+              Select any number of sections for each live project.
             </p>
           </div>
           <span className="rounded-full bg-[#FFF8E8] px-2.5 py-1 text-[11px] font-bold text-[#8A6414]">
-            {visibleProperties.length} properties
+            {visibleProperties.length} live projects
           </span>
         </div>
 
@@ -184,8 +209,8 @@ export default function AdminHomepagePlacements() {
         ) : visibleProperties.length === 0 ? (
           <div className="px-5 py-14 text-center">
             <Sparkles className="mx-auto size-7 text-[#DDAA42]" />
-            <p className="mt-2 text-[14px] font-bold text-[#121B35]">No properties found</p>
-            <p className="text-[12px] text-[#77717E]">Try a different search.</p>
+            <p className="mt-2 text-[14px] font-bold text-[#121B35]">No live projects found</p>
+            <p className="text-[12px] text-[#77717E]">Try a different search or placement filter.</p>
           </div>
         ) : (
           <div className="divide-y divide-[#E4E0E7]/65">
@@ -210,11 +235,6 @@ export default function AdminHomepagePlacements() {
                         <h3 className="truncate text-[13.5px] font-bold text-[#121B35]">
                           {property.title || "Untitled property"}
                         </h3>
-                        {property.published === false && (
-                          <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold uppercase text-slate-500">
-                            Hidden
-                          </span>
-                        )}
                       </div>
                       <p className="truncate text-[11.5px] text-[#77717E]">
                         {[property.subtitle, property.propertyType].filter(Boolean).join(" · ")}

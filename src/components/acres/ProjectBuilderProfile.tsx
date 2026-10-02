@@ -18,9 +18,10 @@ export default function ProjectBuilderProfile({ property, projects }: { property
   const [filter, setFilter] = useState("All");
   const [showBuilderInfo, setShowBuilderInfo] = useState(false);
   useEffect(() => {
-    if (!property.builder) return;
-    fetchBuilder(builderSlug(property.builder)).then((data) => setBuilder(data.builder)).catch(() => setBuilder(null));
-  }, [property.builder]);
+    const identifier = property.builderId || (property.builder ? builderSlug(property.builder) : "");
+    if (!identifier) return;
+    fetchBuilder(identifier).then((data) => setBuilder(data.builder)).catch(() => setBuilder(null));
+  }, [property.builder, property.builderId]);
   useEffect(() => {
     if (!showBuilderInfo) return;
     const closeOnEscape = (event: KeyboardEvent) => event.key === "Escape" && setShowBuilderInfo(false);

@@ -1,5 +1,6 @@
 import type { Property } from "./mock-data";
 import { formatAreaRange, formatPossessionDateOnly, propertyAreaRange, propertyDensity, type ComparisonMatch } from "@/lib/projectEnhancements";
+import { getPropertyCoverImage } from "@/lib/propertyPresentation";
 
 const value = (text: unknown) => {
   if (text === undefined || text === null) return "";
@@ -35,7 +36,7 @@ export default function ProjectComparison({ current, matches }: { current: Prope
     <div className="mt-5 overflow-x-auto pb-1">
       <div className="grid min-w-[720px] gap-3" style={{ gridTemplateColumns: `repeat(${properties.length}, minmax(220px, 1fr))` }} aria-label="Compared properties">
       {properties.map((property, index) => {
-        const image = property.heroImages?.find(Boolean) || property.images?.find(Boolean) || property.image;
+        const image = getPropertyCoverImage(property);
         return <article key={property.id} className={`min-w-0 overflow-hidden rounded-xl border ${index === 0 ? "border-[#DDAA42] bg-[#FFF9E9]" : "border-[#E1E5EC] bg-[#F8F9FB]"}`}>
           <div className="p-3.5">
             {image && <div className="aspect-[16/9] overflow-hidden rounded-lg bg-[#E5E8EE]"><img src={image} alt={`${property.title} project`} loading={index === 0 ? "eager" : "lazy"} className="h-full w-full object-cover" /></div>}

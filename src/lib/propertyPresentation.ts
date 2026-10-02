@@ -1,9 +1,19 @@
 import type { ConfigurationDetail, Property } from "@/components/acres/mock-data";
 
-export function getPropertyCoverImage(property: Pick<Property, "image" | "images" | "heroImages">): string {
+type PropertyMedia = Partial<Pick<Property, "image" | "images" | "heroImages">>;
+
+export function getPropertyCoverImage(property: PropertyMedia): string {
   return [property.heroImages?.[0], property.images?.[0], property.image]
     .find((image) => Boolean(image?.trim()))
     ?.trim() || "";
+}
+
+/** Gallery contains only additional photos; photos chosen for the main display stay out of it. */
+export function getPropertyGalleryImages(property: PropertyMedia): string[] {
+  const mainPhotos = new Set((property.heroImages || []).map((image) => image?.trim()).filter(Boolean));
+  const gallery = (property.images || []).map((image) => image?.trim()).filter((image): image is string => Boolean(image));
+  const legacy = property.image?.trim();
+  return [...new Set([...gallery, ...(legacy ? [legacy] : [])])].filter((image) => !mainPhotos.has(image));
 }
 
 export function getProjectHeroImages(property: Pick<Property, "image" | "images" | "heroImages">): string[] {

@@ -311,7 +311,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
   const [submitAction, setSubmitAction] = useState<"pending" | "publish" | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [configInput, setConfigInput] = useState("");
-  const [builders, setBuilders] = useState<{ id: string; name: string }[]>([]);
+  const [builders, setBuilders] = useState<{ id: string; name: string; logo?: string }[]>([]);
   const [validationErrors, setValidationErrors] = useState<ApartmentErrors>({});
   const [configError, setConfigError] = useState("");
   const [submitError, setSubmitError] = useState("");
@@ -708,7 +708,13 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
     setFormData((prev) => ({
       ...prev,
       configurationDetails: prev.configurationDetails?.map((row, rowIndex) =>
-        rowIndex === index ? { ...row, ...updates } : row
+        rowIndex === index ? {
+          ...row,
+          ...updates,
+          bedrooms: updates.bedrooms !== undefined && /\d+\.5\s*BHK/i.test(row.configuration) && Number(updates.bedrooms) === Number(row.configuration.match(/\d+(?:\.5)?/)?.[0])
+            ? Math.floor(Number(updates.bedrooms))
+            : updates.bedrooms ?? row.bedrooms,
+        } : row
       ),
     }));
   };
@@ -1046,7 +1052,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
               <h2 className="text-[20px] font-bold text-[#121B35]" style={{ fontFamily: "var(--font-outfit)" }}>
                 Property Basic Details
               </h2>
-              {!isPublic && <PropertyQuickFill propertyType={formData.propertyType} onApply={applyQuickFill} />}
+              {!isPublic && <PropertyQuickFill propertyType={formData.propertyType} currentData={formData} onApply={applyQuickFill} />}
               {Object.values(validationErrors).some(Boolean) && (
                 <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-[13px] text-red-700">
                   Please correct the highlighted {formData.propertyType} details before continuing.
@@ -1305,11 +1311,12 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                     type="text"
                     list={!isPublic ? "builder-options" : undefined}
                     value={formData.builder || ""}
-                    onChange={(e) => updateField("builder", e.target.value)}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, builder: e.target.value, builderId: null }))}
                     placeholder="e.g. Prestige Group"
                     className="w-full px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42] focus:ring-2 focus:ring-[#DDAA42]/10 transition-all"
                   />
                   {!isPublic && <datalist id="builder-options">{builders.map((builder) => <option key={builder.id} value={builder.name} />)}</datalist>}
+                  {!isPublic && <select value={formData.builderId || ""} onChange={(event) => { const builder = builders.find((item) => item.id === event.target.value); setFormData((prev) => ({ ...prev, builderId: builder?.id || null, builder: builder?.name || prev.builder })); }} className="mt-2 h-9 w-full rounded-lg border border-[#E4E0E7] bg-[#F8F7FA] px-3 text-[12px] text-[#3F3D46]"><option value="">Link uploaded Builder logo (optional)</option>{builders.map((builder) => <option key={builder.id} value={builder.id}>{builder.name}</option>)}</select>}
                   {validationErrors.builder && <p className="text-[12px] text-red-600 mt-1">{validationErrors.builder}</p>}
                 </div>
                 <div>
@@ -1447,7 +1454,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
                       <option key={o.value} value={o.value}>{o.label}</option>
                     ))}
                   </select>
-                  <p className="text-[12px] text-[#68646F] mt-1.5">Choose which homepage section this property appears in</p>
+                  <p className="text-[12px] text-[#68646F] mt-1.5">Handpicked = Featured Handpicked Projects. Choose Newly Launched, Based on Search Trends, or Offers for You to place this published property in that public section.</p>
                 </div>
               )}
 

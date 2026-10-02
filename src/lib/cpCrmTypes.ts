@@ -30,6 +30,8 @@ export type CRMMetrics = {
   active?: number;
   inactive?: number;
   callbackRequested?: number;
+  leads?: number;
+  leadsContacted?: number;
 };
 
 export type CRMPartner = {

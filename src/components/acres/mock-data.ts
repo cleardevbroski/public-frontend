@@ -21,6 +21,8 @@ export type ApartmentRoom = {
 export type ConfigurationDetail = {
   id?: string;
   configuration: string;
+  /** A named layout within a BHK configuration, for example "2 BHK Luxe - 01". */
+  variantName?: string;
   price: string;
   /** Legacy apartment field retained for older listings; new forms use built-up/carpet area. */
   superBuiltUpArea?: string;
@@ -33,6 +35,8 @@ export type ConfigurationDetail = {
   floorPlan2dUrl?: string;
   floorPlan3dUrl?: string;
   rooms?: ApartmentRoom[];
+  /** Temporary Quick Fill metadata. It is used only while reviewing an import. */
+  quickFillFields?: string[];
 };
 
 export type FacilityDetail = {

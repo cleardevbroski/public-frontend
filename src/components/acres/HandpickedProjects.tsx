@@ -2,11 +2,11 @@
 import { useRef, useState } from "react";
 import Link from "@/components/Link";
 import { ShieldCheck, Star } from "lucide-react";
-import { getAllProperties } from "@/lib/propertyStore";
-import { useLiveProperties } from "@/lib/useLiveProperties";
+import { getAllProperties, getBuilderLogoForProperty, getFeaturedProperties } from "@/lib/propertyStore";
+import { useLiveData } from "@/lib/useLiveProperties";
 import { handpickedProjects, type Property } from "./mock-data";
 import { formatPossession } from "@/lib/propertyDetails";
-import { priceWithCharges } from "@/lib/propertyPresentation";
+import { getPropertyCoverImage, priceWithCharges } from "@/lib/propertyPresentation";
 import FavoriteButton from "./FavoriteButton";
 import {
   BANGALORE_ZONES,
@@ -28,6 +28,7 @@ type DisplayProject = {
   image: string;
   status: string;
   rera: boolean;
+  builderLogo?: string;
   href: string;
   canFavorite: boolean;
 };
@@ -35,17 +36,20 @@ type DisplayProject = {
 export default function HandpickedProjects() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [activeZone, setActiveZone] = useState<BangaloreZone>("East");
-  const allProperties = useLiveProperties<Property[]>(() => getAllProperties(), []);
+  const allProperties = useLiveData<Property[]>(() => getAllProperties(), [], ["cleartitle:properties-changed", "cleartitle:builders-changed"]);
   const configuredProjects = getHandpickedProjectsByZone(allProperties, activeZone);
-  const projects: DisplayProject[] = configuredProjects.length
-    ? configuredProjects.map((property) => ({
+  const fallbackProjects = getFeaturedProperties(10).filter((property) => property.locality?.zone?.toLowerCase() === activeZone.toLowerCase());
+  const visibleProjects = configuredProjects.length ? configuredProjects : fallbackProjects;
+  const projects: DisplayProject[] = visibleProjects.length
+    ? visibleProjects.map((property) => ({
         id: property.id,
         name: property.title,
         locality: property.subtitle,
         price: property.price,
-        image: property.image,
+        image: getPropertyCoverImage(property),
         status: statusOf(property),
         rera: Boolean(property.reraRegistered),
+        builderLogo: getBuilderLogoForProperty(property),
         href: `/property/${property.id}`,
         canFavorite: true,
       }))
@@ -100,7 +104,7 @@ export default function HandpickedProjects() {
                 <div className="absolute left-6 right-6 -bottom-px">
                   <div className="bg-white pt-10 px-5 pb-4 shadow-lg relative rounded-t-xl">
                     <div className="absolute -top-8 left-5 size-16 rounded-full bg-white border border-[#E4E0E7] shadow flex items-center justify-center text-[#121B35] font-bold">
-                      {p.name.split(" ").slice(0, 2).map((w) => w[0]).join("")}
+                      {p.builderLogo ? <img src={p.builderLogo} alt="" className="size-full object-contain p-2" /> : p.name.split(" ").slice(0, 2).map((w) => w[0]).join("")}
                     </div>
                     <h3 className="text-[18px] font-bold text-[#121B35] truncate">{p.name}</h3>
                     <p className="text-[13px] text-[#68646F] mt-0.5 truncate">{p.locality}</p>

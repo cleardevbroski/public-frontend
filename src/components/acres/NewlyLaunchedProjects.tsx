@@ -2,7 +2,7 @@
 import { useRef } from "react";
 import Link from "@/components/Link";
 import { ShieldCheck, Tag, Building2 } from "lucide-react";
-import { getPropertiesBySection } from "@/lib/propertyStore";
+import { getPropertiesBySection, getPublishedProperties } from "@/lib/propertyStore";
 import { useLiveProperties } from "@/lib/useLiveProperties";
 import { newlyLaunchedProjects, type Property } from "./mock-data";
 import { priceWithCharges } from "@/lib/propertyPresentation";
@@ -23,7 +23,10 @@ type DisplayProject = {
 export default function NewlyLaunchedProjects() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const configuredProjects = useLiveProperties<Property[]>(
-    () => getPropertiesBySection("Newly Launched"),
+    () => {
+      const placed = getPropertiesBySection("Newly Launched");
+      return placed.length ? placed : getPublishedProperties().filter((property) => property.possessionDetails?.status === "New Launch" || property.possessionDetails?.status === "Under Construction" || property.ageOfProperty === "Under Construction" || property.badges?.includes("New Launch")).slice(0, 10);
+    },
     []
   );
   const projects: DisplayProject[] = configuredProjects.length

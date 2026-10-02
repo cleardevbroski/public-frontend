@@ -12,6 +12,7 @@ import {
 
 type Props = {
   propertyType?: string;
+  currentData?: Partial<QuickFillPatch>;
   onApply: (patch: QuickFillPatch, replaceExisting: boolean) => void;
 };
 
@@ -19,7 +20,26 @@ function typeFor(value?: string): SupportedPropertyType | undefined {
   return ["Apartment", "Villa", "Plot", "Commercial", "PG/Co-living"].includes(value || "") ? value as SupportedPropertyType : undefined;
 }
 
-export default function PropertyQuickFill({ propertyType, onApply }: Props) {
+type UpdateChoice = "keep" | "import";
+
+type ReviewField = {
+  id: string;
+  label: string;
+  incoming: unknown;
+  current: unknown;
+  apply: (patch: Record<string, unknown>) => void;
+  mergeOnly?: boolean;
+};
+
+const hasValue = (value: unknown) => Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== "";
+const displayValue = (value: unknown) => Array.isArray(value)
+  ? value.join(", ")
+  : typeof value === "object" && value !== null
+    ? JSON.stringify(value)
+    : String(value ?? "");
+const sameValue = (left: unknown, right: unknown) => displayValue(left).trim().toLowerCase() === displayValue(right).trim().toLowerCase();
+
+export default function PropertyQuickFill({ propertyType, currentData = {}, onApply }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
   const zipInput = useRef<HTMLInputElement>(null);
   const [description, setDescription] = useState("");
@@ -29,7 +49,7 @@ export default function PropertyQuickFill({ propertyType, onApply }: Props) {
   const [draggingZip, setDraggingZip] = useState(false);
   const [zipProgress, setZipProgress] = useState<{ completed: number; total: number; label: string } | null>(null);
   const [error, setError] = useState("");
-  const [replaceExisting, setReplaceExisting] = useState(false);
+  const [reviewChoices, setReviewChoices] = useState<Record<string, UpdateChoice>>({});
   const [templateType, setTemplateType] = useState<SupportedPropertyType>(() => typeFor(propertyType) || "Apartment");
 
   useEffect(() => {
@@ -41,7 +61,67 @@ export default function PropertyQuickFill({ propertyType, onApply }: Props) {
     setSuggestion(next);
     setSource(nextSource);
     setError("");
-    setReplaceExisting(false);
+    setReviewChoices({});
+  };
+
+  const reviewFields: ReviewField[] = suggestion ? [
+    ["title", "Project name"], ["builder", "Builder / developer"], ["subtitle", "Project locality"], ["price", "Project price"], ["pricePerSqft", "Price per sq. ft."], ["area", "Total area / sq. ft."], ["possession", "Possession"], ["totalUnits", "Total units"], ["totalTowers", "Total towers"], ["description", "Project description"],
+  ].map(([key, label]) => ({ id: key, label, incoming: suggestion.patch[key as keyof QuickFillPatch], current: currentData[key as keyof QuickFillPatch], apply: (patch: Record<string, unknown>) => { patch[key] = suggestion.patch[key as keyof QuickFillPatch]; } })).filter((field) => hasValue(field.incoming)) : [];
+
+  if (suggestion?.patch.locality) {
+    (["city", "zone", "address", "landmark", "pinCode"] as const).forEach((key) => {
+      const incoming = suggestion.patch.locality?.[key];
+      if (!hasValue(incoming)) return;
+      reviewFields.push({ id: `locality.${key}`, label: `Locality: ${key === "pinCode" ? "PIN code" : key}`, incoming, current: currentData.locality?.[key], apply: (patch) => {
+        patch.locality = { ...((patch.locality as Record<string, unknown>) || {}), [key]: incoming };
+      } });
+    });
+  }
+  if (suggestion?.patch.reraNumber || suggestion?.patch.reraPhases?.length) {
+    reviewFields.push({ id: "rera", label: "RERA registration / phases", incoming: suggestion.patch.reraPhases?.length ? suggestion.patch.reraPhases.map((phase) => phase.reraNumber).join(", ") : suggestion.patch.reraNumber, current: currentData.reraPhases?.length ? currentData.reraPhases.map((phase) => phase.reraNumber).join(", ") : currentData.reraNumber, apply: (patch) => {
+      patch.reraRegistered = suggestion.patch.reraRegistered;
+      patch.reraNumber = suggestion.patch.reraNumber;
+      patch.reraPhases = suggestion.patch.reraPhases;
+    } });
+  }
+  if (suggestion?.patch.amenities?.length) {
+    const missing = suggestion.patch.amenities.filter((amenity) => !currentData.amenities?.some((existing) => existing.trim().toLowerCase() === amenity.trim().toLowerCase()));
+    reviewFields.push({ id: "amenities", label: "Amenities", incoming: missing, current: currentData.amenities || [], mergeOnly: true, apply: (patch) => { patch.amenities = suggestion.patch.amenities; patch.facilities = suggestion.patch.facilities; } });
+  }
+  if (suggestion?.patch.configurationDetails?.length) {
+    const incoming = suggestion.patch.configurationDetails.map((row) => `${row.variantName || row.configuration}: ${row.price || "price not supplied"} · ${row.builtUpArea || row.carpetArea || "area not supplied"}`).join(" | ");
+    const current = currentData.configurationDetails?.map((row) => `${row.variantName || row.configuration}: ${row.price || "price not supplied"} · ${row.builtUpArea || row.carpetArea || "area not supplied"}`).join(" | ") || "";
+    reviewFields.push({ id: "configurations", label: "Apartment configurations", incoming, current, apply: (patch) => {
+      const existing = [...(currentData.configurationDetails || [])];
+      const merged = [...existing];
+      suggestion.patch.configurationDetails!.forEach((incomingRow) => {
+        const index = merged.findIndex((currentRow) => (currentRow.variantName || currentRow.configuration).toLowerCase() === (incomingRow.variantName || incomingRow.configuration).toLowerCase());
+        const fields = incomingRow.quickFillFields || Object.keys(incomingRow);
+        const updates = Object.fromEntries(fields.filter((key) => key !== "quickFillFields").map((key) => [key, incomingRow[key as keyof typeof incomingRow]]));
+        if (index < 0) merged.push({ ...incomingRow, quickFillFields: undefined });
+        else merged[index] = { ...merged[index], ...updates, quickFillFields: undefined };
+      });
+      patch.configurationDetails = merged;
+      patch.configs = merged.map((row) => row.configuration);
+    } });
+  }
+
+  const choiceFor = (field: ReviewField): UpdateChoice => reviewChoices[field.id] || (!hasValue(field.current) ? "import" : "keep");
+
+  const applySuggestion = () => {
+    if (!suggestion) return;
+    const patch: Record<string, unknown> = {};
+    reviewFields.forEach((field) => {
+      if (field.mergeOnly || choiceFor(field) === "import") field.apply(patch);
+    });
+    const reviewedRootKeys = new Set(["title", "builder", "subtitle", "price", "pricePerSqft", "area", "possession", "totalUnits", "totalTowers", "description", "locality", "reraRegistered", "reraNumber", "reraPhases", "amenities", "facilities", "configs", "configurationDetails"]);
+    const fillBlankPatch = Object.fromEntries(Object.entries(suggestion.patch).filter(([key]) => !reviewedRootKeys.has(key))) as QuickFillPatch;
+    // Keep full-template support: structured sections not shown in this compact
+    // review are still filled only when the existing form has no value.
+    if (Object.keys(fillBlankPatch).length) onApply(fillBlankPatch, false);
+    if (!Object.keys(patch).length && !Object.keys(fillBlankPatch).length) { setError("Choose at least one uploaded value to apply."); return; }
+    if (Object.keys(patch).length) onApply(patch as QuickFillPatch, true);
+    setSuggestion(null);
   };
 
   const uploadZip = async (file?: File) => {
@@ -53,7 +133,6 @@ export default function PropertyQuickFill({ propertyType, onApply }: Props) {
       const { importPropertyZip } = await import("@/lib/propertyZipImport");
       const next = await importPropertyZip(file, typeFor(propertyType), setZipProgress);
       showSuggestion(next, "ZIP");
-      onApply(next.patch, false);
     } catch (cause) {
       setSuggestion(null);
       setError(cause instanceof Error ? cause.message : "Unable to import this ZIP package.");
@@ -152,7 +231,7 @@ export default function PropertyQuickFill({ propertyType, onApply }: Props) {
 
       {suggestion && (
         <div className="mt-4 rounded-xl border border-[#D8DDE4] bg-white p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="flex items-center gap-2 text-[13px] font-bold text-[#121B35]"><FileSpreadsheet className="size-4 text-[#B98428]" /> {source} suggestions ready</p><p className="mt-0.5 text-[11px] text-[#68646F]">{suggestion.fields.length} field{suggestion.fields.length === 1 ? "" : "s"} found. {source === "ZIP" ? "The package was applied to the form automatically. " : ""}Nothing is saved until you submit the property.</p></div>{source === "ZIP" ? <span className="rounded-lg bg-emerald-50 px-4 py-2 text-[12px] font-bold text-emerald-700">Applied to form</span> : <button type="button" onClick={() => { onApply(suggestion.patch, replaceExisting); setSuggestion(null); }} className="rounded-lg bg-[#DDAA42] px-4 py-2 text-[12px] font-bold text-[#121B35]">Apply to form</button>}</div>
+          <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="flex items-center gap-2 text-[13px] font-bold text-[#121B35]"><FileSpreadsheet className="size-4 text-[#B98428]" /> {source} suggestions ready</p><p className="mt-0.5 text-[11px] text-[#68646F]">{suggestion.fields.length} field{suggestion.fields.length === 1 ? "" : "s"} found. Review the imported values below. Nothing is saved until you submit the property.</p></div><button type="button" onClick={applySuggestion} className="rounded-lg bg-[#DDAA42] px-4 py-2 text-[12px] font-bold text-[#121B35]">Apply selected updates</button></div>
           <div className="mt-3 rounded-lg border border-[#E9DEC7] bg-[#FFFBF1] p-3">
             <p className="text-[11px] font-bold uppercase tracking-wide text-[#805C12]">Import confirmation</p>
             <div className="mt-2 grid gap-1.5 text-[11px] sm:grid-cols-2 lg:grid-cols-3">
@@ -163,7 +242,16 @@ export default function PropertyQuickFill({ propertyType, onApply }: Props) {
           <div className="mt-3 max-h-48 overflow-y-auto rounded-lg border border-[#EEF0F3] text-[12px]">
             {suggestion.fields.length ? suggestion.fields.map((field, index) => <div key={`${field.label}-${index}`} className="grid grid-cols-[130px_1fr] gap-3 border-b border-[#F0F1F3] px-3 py-2 last:border-0"><span className="font-semibold text-[#68646F]">{field.label}</span><span className="break-words text-[#121B35]">{field.value}</span></div>) : <p className="p-3 text-[#68646F]">No recognized fields were found. You can still enter the details manually.</p>}
           </div>
-          {source !== "ZIP" && <label className="mt-3 flex cursor-pointer items-start gap-2 text-[11px] text-[#3F3D46]"><input type="checkbox" checked={replaceExisting} onChange={(event) => setReplaceExisting(event.target.checked)} className="mt-0.5" /><span>Replace existing non-empty form values. Leave unchecked to fill only blank values; amenities are added without removing current selections.</span></label>}
+          <div className="mt-3 rounded-lg border border-[#E9DEC7] bg-[#FFFBF1] p-3 text-[11px] text-[#3F3D46]">
+            <p className="font-bold text-[#805C12]">Review changes before applying</p>
+            <p className="mt-1 text-[#68646F]">New values are selected automatically. Existing values stay unchanged until you choose the uploaded value. Amenities only add missing items.</p>
+            <div className="mt-3 space-y-2">{reviewFields.map((field) => {
+              const isNew = !hasValue(field.current);
+              const isSame = !isNew && sameValue(field.current, field.incoming);
+              const choice = choiceFor(field);
+              return <div key={field.id} className="rounded-md border border-[#E9DEC7] bg-white px-3 py-2"><div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><p className="font-bold text-[#121B35]">{field.label} <span className={isNew ? "text-emerald-700" : isSame ? "text-[#68646F]" : "text-amber-700"}>({isNew ? "new" : isSame ? "same" : field.mergeOnly ? "adds missing" : "conflict"})</span></p>{!isNew && <p className="mt-1 break-words text-[#68646F]">Current: {displayValue(field.current)}</p>}<p className="mt-1 break-words text-[#121B35]">Upload: {field.mergeOnly && !(field.incoming as unknown[]).length ? "No new amenities" : displayValue(field.incoming)}</p></div>{!field.mergeOnly && !isSame && <div className="flex shrink-0 gap-2"><label className="flex items-center gap-1"><input type="radio" name={`review-${field.id}`} checked={choice === "keep"} onChange={() => setReviewChoices((current) => ({ ...current, [field.id]: "keep" }))} />Keep</label><label className="flex items-center gap-1"><input type="radio" name={`review-${field.id}`} checked={choice === "import"} onChange={() => setReviewChoices((current) => ({ ...current, [field.id]: "import" }))} />Use upload</label></div>}</div></div>;
+            })}</div>
+          </div>
           {suggestion.warnings.map((warning) => <p key={warning} className="mt-2 text-[11px] leading-relaxed text-[#9A741E]">• {warning}</p>)}
         </div>
       )}

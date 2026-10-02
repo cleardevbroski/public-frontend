@@ -6,6 +6,7 @@ import { Plus, Pencil, Trash2, X, Search, ShieldCheck, Star } from "lucide-react
 import AdminLayout from "@/components/admin/AdminLayout";
 import StatusControls from "@/components/admin/StatusControls";
 import { fetchAllBuilders, createBuilder, updateBuilder, deleteBuilder } from "@/lib/api";
+import { refreshBuilders } from "@/lib/propertyStore";
 import { matchesAdminSearch } from "@/lib/adminSearch";
 
 type Builder = {
@@ -74,6 +75,14 @@ export default function AdminBuilders() {
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  const chooseLogo = (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) { alert("Choose an image smaller than 5 MB."); return; }
+    const reader = new FileReader();
+    reader.onload = () => set("logo", String(reader.result || ""));
+    reader.readAsDataURL(file);
+  };
+
   const startAdd = () => {
     setEditing(null);
     setForm(blank);
@@ -98,6 +107,7 @@ export default function AdminBuilders() {
       } else {
         await createBuilder(form);
       }
+      await refreshBuilders();
       setShowForm(false);
       load();
     } catch (err) {
@@ -110,11 +120,13 @@ export default function AdminBuilders() {
   const remove = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this builder?")) return;
     await deleteBuilder(id);
+    await refreshBuilders();
     load();
   };
 
   const setStatus = async (id: string, status: "pending" | "approved" | "rejected") => {
     await updateBuilder(id, { status });
+    await refreshBuilders();
     load();
   };
 
@@ -264,6 +276,11 @@ export default function AdminBuilders() {
                 <div>
                   <label className={label}>Logo URL</label>
                   <input value={form.logo || ""} onChange={(e) => set("logo", e.target.value)} className={input} placeholder="https://..." />
+                </div>
+                <div>
+                  <label className={label}>Upload Builder Logo</label>
+                  <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={(event) => chooseLogo(event.target.files?.[0])} className={`${input} cursor-pointer p-2 text-[12px]`} />
+                  {form.logo && <img src={form.logo} alt="Builder logo preview" className="mt-2 size-12 rounded-md border border-[#E4E0E7] object-contain bg-white p-1" />}
                 </div>
                 <div className="col-span-2 flex gap-6 mt-2">
                   <label className="flex items-center gap-2 text-[14px] text-[#121B35] font-bold cursor-pointer">

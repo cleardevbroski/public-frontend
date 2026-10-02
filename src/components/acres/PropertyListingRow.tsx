@@ -4,7 +4,7 @@ import Link from "@/components/Link";
 import { MapPin, ShieldCheck, Star } from "lucide-react";
 import type { Property } from "./mock-data";
 import { formatPossession } from "@/lib/propertyDetails";
-import { priceWithCharges } from "@/lib/propertyPresentation";
+import { getPropertyCoverImage, priceWithCharges } from "@/lib/propertyPresentation";
 import FavoriteButton from "./FavoriteButton";
 
 const isBase64 = (src?: string) => !!src && src.startsWith("data:");
@@ -17,7 +17,7 @@ function statusOf(p: Property): string {
 
 /** Wide listing-row card for a real posted Property (used in the listing feed). */
 export default function PropertyListingRow({ p }: { p: Property }) {
-  const cover = p.heroImages?.[0] || p.images?.[0] || p.image || "";
+  const cover = getPropertyCoverImage(p);
   const status = statusOf(p);
   const lister = p.submittedBy === "user" ? "Owner" : p.builder;
   const trustLabel = p.verified

@@ -61,7 +61,7 @@ import AdRail from "./AdRail";
 import VerifiedPropertyActionModal, { type PropertyAction } from "./VerifiedPropertyActionModal";
 import LawyerConsultationModal from "./LawyerConsultationModal";
 import GovernmentChargesModal from "./GovernmentChargesModal";
-import { configurationPriceRange, getProjectHeroImages, priceWithCharges } from "@/lib/propertyPresentation";
+import { configurationPriceRange, getProjectHeroImages, getPropertyGalleryImages, priceWithCharges } from "@/lib/propertyPresentation";
 import { trackAnalytics } from "@/lib/analytics";
 import { useHomepagePromotion } from "@/lib/useHomepagePromotion";
 import PropertyReraSections from "./PropertyReraSections";
@@ -451,6 +451,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
   const tabBarMarkerRef = useRef<HTMLDivElement>(null);
 
   const images = [...new Set([...(property.heroImages || []), ...(property.images || []), property.image].filter(Boolean))];
+  const galleryImages = getPropertyGalleryImages(property);
   const heroImages = getProjectHeroImages(property);
   const primaryImage = images[currentImageIndex] || heroImages[0] || "";
   const galleryPreviewImages = images
@@ -503,7 +504,7 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     detail.floorPlan2dUrl || detail.floorPlan3dUrl || detail.rooms?.length
   ));
   const hasPriceList = Boolean(property.configurationDetails?.length || property.villaDetails?.configurationDetails?.length || property.plotDetails?.plotSizeDetails?.length || property.pgDetails?.sharingDetails?.length);
-  const hasPhotosOrVideos = Boolean(images.length || property.videos?.length || property.heroVideo);
+  const hasPhotosOrVideos = Boolean(galleryImages.length || property.videos?.length || property.heroVideo);
   const hasBrochure = Boolean(
     property.brochure ||
     property.projectDownloads?.length ||
@@ -1304,7 +1305,7 @@ const whyHighlights = (property.description || "")
             {hasPhotosOrVideos && (
               <div ref={setSectionRef("photos-videos")}>
                 <PropertyMediaCarousel
-                  images={images}
+                  images={galleryImages}
                   videos={[...new Set([...(property.videos || []), property.heroVideo].filter((video): video is string => Boolean(video)))]}
                   title={property.title}
                 />

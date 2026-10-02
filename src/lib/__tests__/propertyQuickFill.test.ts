@@ -31,6 +31,56 @@ describe("admin property quick fill", () => {
     expect(merged.amenities).toEqual(expect.arrayContaining(["Lift", "Gymnasium", "Swimming Pool"]));
   });
 
+  it("imports named apartment layouts and metric room dimensions from pasted text", () => {
+    const result = analyzePropertyDescription(`#### 2 BHK Luxe - 01
+- Foyer: **1.45 × 1.675 m**
+- Living Room: **3.20 × 3.51 m**
+- Master Bedroom: **3.35 × 4.02 m**
+- Master Toilet: **2.45 × 1.525 m**
+- Corridor: **3'6" wide**
+
+#### 3 BHK Premium
+- Bedroom 01: **3.42 × 4.02 m**
+- Balconies: **2 balconies**`, "Apartment");
+    expect(result.patch.configurationDetails?.[0]).toMatchObject({ configuration: "2 BHK", variantName: "2 BHK Luxe - 01" });
+    expect(result.patch.configurationDetails?.[0].rooms).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: "Foyer", length: 1.45, width: 1.675, unit: "m" }),
+      expect.objectContaining({ name: "Master Toilet", category: "bathroom", length: 2.45, width: 1.525, unit: "m" }),
+      expect.objectContaining({ name: "Corridor", width: 3.5, unit: "ft" }),
+    ]));
+    expect(result.patch.configurationDetails?.[1]).toMatchObject({ configuration: "3 BHK", variantName: "3 BHK Premium", balconies: 2 });
+    expect(result.patch.configurationDetails?.[1].rooms).toEqual(expect.arrayContaining([expect.objectContaining({ name: "Bedroom 01", category: "bedroom", length: 3.42, width: 4.02, unit: "m" })]));
+  });
+
+  it("imports apartment configuration rows when price is not supplied", () => {
+    const result = analyzePropertyDescription(`| Configuration | Price | Built-up / Sale Area | Carpet Area | Bedrooms | Bathrooms | Balconies | Facing |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **2 BHK Luxe - 01** | Not specified | **1,239.73 sq.ft sale area** | **759.51 sq.ft** | 2 | 2 | 1 | Not specified |
+| **3 BHK Premium** | Not specified | **1,867.79 sq.ft sale area** | **1,119.35 sq.ft** | 3 | 3 | 2 | Not specified |`, "Apartment");
+    expect(result.patch.configurationDetails).toMatchObject([
+      { configuration: "2 BHK", variantName: "2 BHK Luxe - 01", price: "", builtUpArea: "1,239.73 sq.ft sale area", carpetArea: "759.51 sq.ft", bedrooms: 2, bathrooms: 2, balconies: 1, facings: [] },
+      { configuration: "3 BHK", variantName: "3 BHK Premium", price: "", builtUpArea: "1,867.79 sq.ft sale area", carpetArea: "1,119.35 sq.ft", bedrooms: 3, bathrooms: 3, balconies: 2, facings: [] },
+    ]);
+  });
+
+  it("imports compact brochure configuration text with per-variant price and areas", () => {
+    const result = analyzePropertyDescription("Per-configuration details Config Price Built-up / Sale Area Carpet Area Bedrooms Bathrooms Balconies Facing 2 BHK Luxe-01 ₹1.44 Cr onwards* 1,239.73 sq.ft 759.51 sq.ft 2 2 1 — 2 BHK Luxe-02 ₹1.44 Cr onwards* 1,246.75 sq.ft 777.59 sq.ft 2 2 1 — 3 BHK Premium ₹2.16 Cr onwards* 1,867.79 sq.ft 1,119.35 sq.ft 3 3 2 —", "Apartment");
+    expect(result.patch.area).toBeUndefined();
+    expect(result.patch.configurationDetails).toMatchObject([
+      { configuration: "2 BHK", variantName: "2 BHK Luxe-01", price: "₹1.44 Cr onwards", builtUpArea: "1,239.73 sq.ft", carpetArea: "759.51 sq.ft", bedrooms: 2, bathrooms: 2, balconies: 1 },
+      { configuration: "2 BHK", variantName: "2 BHK Luxe-02", price: "₹1.44 Cr onwards", builtUpArea: "1,246.75 sq.ft", carpetArea: "777.59 sq.ft", bedrooms: 2, bathrooms: 2, balconies: 1 },
+      { configuration: "3 BHK", variantName: "3 BHK Premium", price: "₹2.16 Cr onwards", builtUpArea: "1,867.79 sq.ft", carpetArea: "1,119.35 sq.ft", bedrooms: 3, bathrooms: 3, balconies: 2 },
+    ]);
+  });
+
+  it("updates labelled configuration copy without marking missing facts for replacement", () => {
+    const result = analyzePropertyDescription("1 BHK Price: ₹83.67 L onwards Built-up / Super Built-up Area: 753 sq.ft Bedrooms: 1 Bathrooms: Balconies: Facing: 2 BHK Price: ₹1.47 Cr onwards Built-up / Super Built-up Area: 1,240–1,339 sq.ft Bedrooms: 2 Bathrooms: Balconies: Facing:", "Apartment");
+    expect(result.patch.configurationDetails).toMatchObject([
+      { configuration: "1 BHK", price: "₹83.67 L onwards", builtUpArea: "753 sq.ft", bedrooms: 1, quickFillFields: ["price", "builtUpArea", "bedrooms"] },
+      { configuration: "2 BHK", price: "₹1.47 Cr onwards", builtUpArea: "1,240–1,339 sq.ft", bedrooms: 2, quickFillFields: ["price", "builtUpArea", "bedrooms"] },
+    ]);
+  });
+
   it("reads the downloadable structured format including society, amenity descriptions, and nearby places", () => {
     const result = analyzePropertyDescription(`PROPERTY IMPORT FORMAT
 

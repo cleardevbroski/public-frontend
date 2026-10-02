@@ -65,7 +65,7 @@ export default function ApartmentDetailsFields(props: Props) {
             value={props.configInput}
             onChange={(event) => props.setConfigInput(event.target.value)}
             onKeyDown={(event) => event.key === "Enter" && (event.preventDefault(), props.addConfig())}
-            placeholder="e.g. Studio, 2 BHK or 3.5 BHK"
+            placeholder="e.g. Studio, 2 BHK, 3.5 BHK or 4.5 BHK"
             className="flex-1 px-4 py-3 border border-[#E4E0E7] rounded-xl text-[14px] focus:outline-none focus:border-[#DDAA42]"
           />
           <button type="button" onClick={props.addConfig} className="px-5 py-3 bg-[#DDAA42] text-[#0B1328] rounded-xl text-[13px] font-semibold">Add</button>
@@ -74,7 +74,7 @@ export default function ApartmentDetailsFields(props: Props) {
         <div className="flex flex-wrap gap-2 mt-3">
           {props.details.map((row, index) => (
             <span key={`${row.configuration}-${index}`} className="inline-flex items-center gap-1.5 bg-[#F3F1F5] text-[#121B35] px-3 py-1.5 rounded-lg text-[13px] font-semibold">
-              {row.configuration}
+              {row.variantName || row.configuration}
               <button type="button" onClick={() => props.removeConfig(row.configuration, props.details.slice(0, index).filter((item) => item.configuration === row.configuration).length)} className="text-[#68646F] hover:text-red-600" aria-label={`Remove ${row.configuration}`}>×</button>
             </span>
           ))}
@@ -95,7 +95,7 @@ export default function ApartmentDetailsFields(props: Props) {
                   const field = (name: string) => props.errors[`${prefix}.${name}`];
                   return (
                     <tr key={`${row.configuration}-${index}`} className="border-t border-[#F3F1F5] align-top">
-                      <td className="px-3 py-3 font-bold text-[#121B35] whitespace-nowrap">{row.configuration}</td>
+                      <td className="px-3 py-3 font-bold text-[#121B35] whitespace-nowrap">{row.variantName || row.configuration}</td>
                       {(["price", "builtUpArea", "carpetArea"] as const).map((key) => (
                         <td key={key} className="px-2 py-2">
                           <input className={inputClass} value={row[key]} placeholder={key === "price" ? "₹1.70 Cr" : "1280 sqft"} onChange={(e) => props.updateDetail(index, { [key]: e.target.value })} />
@@ -134,7 +134,7 @@ export default function ApartmentDetailsFields(props: Props) {
           {props.details.map((row, configurationIndex) => (
             <div key={`plan-${row.configuration}-${configurationIndex}`} className="rounded-xl border border-[#E4E0E7] bg-[#F8F7FA] p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[13px] font-bold text-[#121B35]">{row.configuration} presentation</p>
+                <p className="text-[13px] font-bold text-[#121B35]">{row.variantName || row.configuration} presentation</p>
                 <button type="button" onClick={() => addRoom(configurationIndex)} className="rounded-lg border border-[#DDAA42] bg-white px-3 py-1.5 text-[11px] font-bold text-[#9A741E] hover:bg-[#FFF9E9]">+ Add room</button>
               </div>
               <div className="mt-3 grid gap-3 md:grid-cols-3">

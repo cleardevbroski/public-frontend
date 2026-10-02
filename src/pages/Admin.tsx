@@ -11,6 +11,7 @@ import {
   BarChart3,
   Sparkles,
   Archive,
+  UserRound,
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PropertyTable from "@/components/admin/PropertyTable";
@@ -23,7 +24,7 @@ export default function AdminDashboard() {
   const initialSearch = searchParams.get("q") || "";
   const [allProperties, setAllProperties] = useState<Property[]>([]);
   const [adminProperties, setAdminProperties] = useState<Property[]>([]);
-  const [counts, setCounts] = useState({ total: 0, admin: 0, mock: 0, published: 0, pending: 0, recheck: 0 });
+  const [counts, setCounts] = useState({ total: 0, admin: 0, user: 0, bulk: 0, published: 0, pending: 0, recheck: 0 });
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -35,17 +36,18 @@ export default function AdminDashboard() {
       const properties = await fetchAllAdminProperties() as Property[];
       setAllProperties(properties);
       
-      const adminProps = properties.filter((p) => p.postedBy?.role === "admin" || (!p.postedBy && p.source === "admin"));
+      const adminProps = properties.filter((p) => p.submittedBy === "admin");
       setAdminProperties(adminProps);
 
-      const published = properties.filter((p) => ["approved", "published"].includes(p.status || "") || (!p.status && p.published !== false)).length;
+      const published = properties.filter((p) => p.published !== false && (["approved", "published"].includes(p.status || "") || !p.status)).length;
       const recheck = properties.filter((p) => p.status === "recheck").length;
       setCounts({
         total: properties.length,
         admin: adminProps.length,
-        mock: 0,
+        user: properties.filter((p) => p.submittedBy === "user").length,
+        bulk: properties.filter((p) => Boolean(p.bulkImport)).length,
         published,
-        pending: properties.length - published - recheck,
+        pending: properties.filter((p) => p.status !== "recheck" && p.status !== "rejected" && !(p.published !== false && (["approved", "published"].includes(p.status || "") || !p.status))).length,
         recheck,
       });
     } catch (error) {
@@ -111,7 +113,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-8">
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#E4E0E7]/30 hover:shadow-md transition-shadow group">
           <div className="flex items-center justify-between mb-3">
             <div className="w-11 h-11 bg-gradient-to-br from-[#EEEFF4] to-[#E1E3EC] rounded-xl flex items-center justify-center group-hover:shadow-md transition-all">
@@ -141,7 +143,7 @@ export default function AdminDashboard() {
             </div>
           </div>
           <p className="text-[28px] font-bold text-[#121B35]">{counts.published}</p>
-          <p className="text-[13px] text-[#68646F]">Live on Site</p>
+          <p className="text-[13px] text-[#68646F]">Live on Website</p>
         </div>
 
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#E4E0E7]/30 hover:shadow-md transition-shadow group">
@@ -151,7 +153,17 @@ export default function AdminDashboard() {
             </div>
           </div>
           <p className="text-[28px] font-bold text-[#121B35]">{counts.pending}</p>
-          <p className="text-[13px] text-[#68646F]">Pending Approval</p>
+          <p className="text-[13px] text-[#68646F]">Needs Review</p>
+        </div>
+
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#E4E0E7]/30 hover:shadow-md transition-shadow group">
+          <div className="flex items-center justify-between mb-3"><div className="w-11 h-11 bg-gradient-to-br from-[#EEF4FF] to-[#DFE9FF] rounded-xl flex items-center justify-center group-hover:shadow-md transition-all"><UserRound className="w-5 h-5 text-blue-700" /></div></div>
+          <p className="text-[28px] font-bold text-[#121B35]">{counts.user}</p><p className="text-[13px] text-[#68646F]">Public Submissions</p>
+        </div>
+
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#E4E0E7]/30 hover:shadow-md transition-shadow group">
+          <div className="flex items-center justify-between mb-3"><div className="w-11 h-11 bg-gradient-to-br from-[#F3F1F5] to-[#E9E6ED] rounded-xl flex items-center justify-center group-hover:shadow-md transition-all"><Archive className="w-5 h-5 text-[#805A0B]" /></div></div>
+          <p className="text-[28px] font-bold text-[#121B35]">{counts.bulk}</p><p className="text-[13px] text-[#68646F]">Bulk Imported</p>
         </div>
 
         <Link href="/admin/review-folder" className="block bg-white rounded-2xl p-5 shadow-sm border border-[#E4E0E7]/30 hover:shadow-md transition-shadow group">

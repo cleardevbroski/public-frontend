@@ -45,6 +45,9 @@ const EmployeeLogin = lazy(() => import("@/pages/EmployeeLogin"));
 const CPManagement = lazy(() => import("@/pages/CPManagement"));
 const CPVerification = lazy(() => import("@/pages/CPVerification"));
 const BrokerVerification = lazy(() => import("@/pages/BrokerVerification"));
+const EmployeeReports = lazy(() => import("@/pages/EmployeeReports"));
+const EmployeeLeads = lazy(() => import("@/pages/EmployeeLeads"));
+const EmployeeLeadReports = lazy(() => import("@/pages/EmployeeLeadReports"));
 const FindMyHome = lazy(() => import("@/pages/FindMyHome"));
 const FamilyWorkspace = lazy(() => import("@/pages/FamilyWorkspace"));
 const Legal = lazy(() => import("@/pages/Legal"));
@@ -99,6 +102,9 @@ export const router = createBrowserRouter([
       { path: "/cp-management", element: <CPManagement /> },
       { path: "/cp-verification", element: <CPVerification /> },
       { path: "/broker-verification", element: <BrokerVerification /> },
+      { path: "/employee-reports", element: <EmployeeReports /> },
+      { path: "/employee-leads", element: <EmployeeLeads /> },
+      { path: "/employee-lead-reports", element: <EmployeeLeadReports /> },
       { path: "/property/:id", element: <Property /> },
       { path: "/dealer/:slug", element: <Dealer /> },
       { path: "/builder/:slug", element: <Builder /> },

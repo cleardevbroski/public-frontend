@@ -38,7 +38,7 @@ export default function PropertyTable({
   onPropertyDeleted,
 }: PropertyTableProps) {
   const [searchQuery, setSearchQuery] = useState(initialSearch);
-  const [filter, setFilter] = useState<"all" | "pending" | "recheck" | "admin" | "mock">("all");
+  const [filter, setFilter] = useState<"all" | "live" | "pending" | "recheck" | "rejected" | "admin" | "user" | "bulk" | "legacy">("all");
   const [deleteModal, setDeleteModal] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -64,14 +64,22 @@ export default function PropertyTable({
   }, [initialSearch]);
 
   const adminIds = new Set(adminProperties.map((p) => p.id));
+  const isLive = (property: Property) => property.published !== false && (["approved", "published"].includes(property.status || "") || !property.status);
+  const needsReview = (property: Property) => !isLive(property) && !["recheck", "rejected"].includes(property.status || "");
+  const isBulk = (property: Property) => Boolean(property.bulkImport);
+  const isLegacy = (property: Property) => !adminIds.has(property.id) && property.submittedBy !== "user" && !isBulk(property);
   const filteredProperties = properties.filter((p) => {
     const matchesSearch = matchesPropertyAdminSearch(p, searchQuery);
     const matchesFilter =
       filter === "all" ||
-      (filter === "pending" && p.status !== "recheck" && (p.status ? !["approved", "published"].includes(p.status) : p.published === false)) ||
+      (filter === "live" && isLive(p)) ||
+      (filter === "pending" && needsReview(p)) ||
       (filter === "recheck" && p.status === "recheck") ||
+      (filter === "rejected" && p.status === "rejected") ||
       (filter === "admin" && adminIds.has(p.id)) ||
-      (filter === "mock" && !adminIds.has(p.id));
+      (filter === "user" && p.submittedBy === "user") ||
+      (filter === "bulk" && isBulk(p)) ||
+      (filter === "legacy" && isLegacy(p));
     return matchesSearch && matchesFilter;
   }).sort((left, right) => new Date(right.updatedAt || right.postedDate || right.createdAt || 0).getTime() - new Date(left.updatedAt || left.postedDate || left.createdAt || 0).getTime());
 
@@ -158,11 +166,11 @@ export default function PropertyTable({
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {(["all", "pending", "recheck", "admin", "mock"] as const).map((f) => {
-            const pendingCount = properties.filter((p) => p.status !== "recheck" && (p.status ? !["approved", "published"].includes(p.status) : p.published === false)).length;
+          {(["all", "live", "pending", "recheck", "rejected", "admin", "user", "bulk", "legacy"] as const).map((f) => {
+            const pendingCount = properties.filter(needsReview).length;
             const recheckCount = properties.filter((p) => p.status === "recheck").length;
             const label =
-              f === "all" ? "All" : f === "pending" ? "Pending" : f === "recheck" ? "Recheck" : f === "admin" ? "Admin Posted" : "Mock Data";
+              f === "all" ? "All" : f === "live" ? "Live" : f === "pending" ? "Pending" : f === "recheck" ? "Recheck" : f === "rejected" ? "Rejected" : f === "admin" ? "Admin Posted" : f === "user" ? "Public Submissions" : f === "bulk" ? "Bulk Imported" : "Legacy";
             return (
               <button
                 key={f}
@@ -220,6 +228,9 @@ export default function PropertyTable({
         ) : (
           paged.map((property) => {
             const isAdmin = adminIds.has(property.id);
+            const propertyIsLive = isLive(property);
+            const propertyIsBulk = isBulk(property);
+            const propertyIsLegacy = isLegacy(property);
             const coverImage = getPropertyCoverImage(property);
             return (
               <div
@@ -271,19 +282,23 @@ export default function PropertyTable({
                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold ${
                       property.submittedBy === "user"
                         ? "bg-blue-50 text-blue-600"
+                        : propertyIsBulk
+                        ? "bg-violet-50 text-violet-700"
                         : isAdmin
                         ? "bg-[#F3F1F5] text-[#DDAA42]"
-                        : "bg-[#FFF8E8] text-[#DDAA42]"
+                        : "bg-slate-100 text-slate-600"
                     }`}
                   >
                     {property.submittedBy === "user" ? (
                       <>
                         <UserRound className="w-3 h-3" /> User
                       </>
+                    ) : propertyIsBulk ? (
+                      "Bulk import"
                     ) : isAdmin ? (
                       "Admin"
                     ) : (
-                      "Mock"
+                      propertyIsLegacy ? "Legacy" : "Unknown"
                     )}
                   </span>
                   {isAdmin && (property.updatedAt || property.postedDate || property.createdAt) && (
@@ -318,12 +333,12 @@ export default function PropertyTable({
                 {/* Actions */}
                 <div className="flex w-full flex-wrap items-center justify-start gap-2 border-t border-[#F3F1F5] pt-3 lg:w-auto lg:flex-nowrap lg:justify-center lg:border-t-0 lg:pt-0 lg:whitespace-nowrap">
                   <Link
-                    href={property.status === "recheck" ? `/admin/post?edit=${encodeURIComponent(property.id)}` : `/property/${property.id}`}
-                    aria-label={`${property.status === "recheck" ? "Review" : "View"} ${property.title}`}
+                    href={propertyIsLive ? `/property/${property.id}` : `/admin/post?edit=${encodeURIComponent(property.id)}`}
+                    aria-label={`${propertyIsLive ? "View on website" : "Open editor for"} ${property.title}`}
                     className="inline-flex h-9 min-w-[76px] flex-1 items-center justify-center gap-1 rounded-lg border border-[#E4E0E7]/30 bg-[#F8F7FA] px-2 text-[11px] font-bold text-[#DDAA42] transition-colors hover:bg-[#F3F1F5] lg:h-8 lg:min-w-8 lg:flex-none lg:px-0"
-                    title={property.status === "recheck" ? "Open private review form" : "View on site"}
+                    title={propertyIsLive ? "View on website" : "Not live yet. Open editor instead."}
                   >
-                    <Eye className="h-4 w-4" /><span className="lg:hidden">View</span>
+                    <Eye className="h-4 w-4" /><span className="lg:hidden">{propertyIsLive ? "Website" : "Editor"}</span>
                   </Link>
                   <Link
                     href={`/admin/post?edit=${encodeURIComponent(property.id)}`}
