@@ -25,7 +25,7 @@ const property = {
 describe("VillaLocationPriceComparison", () => {
   beforeEach(() => vi.mocked(fetchLocationPriceComparison).mockReset());
 
-  it("keeps a compact unavailable state instead of stretching a single current-project bar", async () => {
+  it("hides the comparison section when there is no nearby locality data", async () => {
     vi.mocked(fetchLocationPriceComparison).mockResolvedValue({
       comparisonBasis: "nearby_data_unavailable",
       currentLocation: "Jakkur",
@@ -38,14 +38,11 @@ describe("VillaLocationPriceComparison", () => {
       await settleAsyncWork();
     });
 
-    expect(host.textContent).toContain("Location Price Comparison");
-    expect(host.textContent).toContain("Nearby comparison data unavailable");
-    expect(host.textContent).toContain("No estimated or example locality prices shown");
-    expect([...host.querySelectorAll("div")].some((element) => element.classList.contains("h-[188px]"))).toBe(true);
+    expect(host.textContent).toBe("");
     await act(async () => root.unmount());
   });
 
-  it("shows an explicit empty state when the project has no usable rate", async () => {
+  it("hides the comparison section when the project has no usable rate", async () => {
     vi.mocked(fetchLocationPriceComparison).mockResolvedValue({ comparisonBasis: "nearby_data_unavailable", currentLocation: "Jakkur", comparisons: [] });
     const host = document.createElement("div");
     const root = createRoot(host);
@@ -54,8 +51,7 @@ describe("VillaLocationPriceComparison", () => {
       await settleAsyncWork();
     });
 
-    expect(host.textContent).toContain("Nearby comparison data unavailable");
-    expect(host.textContent).toContain("Verified coordinates");
+    expect(host.textContent).toBe("");
     await act(async () => root.unmount());
   });
 

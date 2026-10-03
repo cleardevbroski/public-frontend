@@ -151,6 +151,27 @@ Road 1 Distance: 2.5 km`, "Apartment");
     expect(result.patch.nearbyDetails?.roads?.places).toMatchObject([{ name: "Sarjapur Road", distance: "2.5 km" }]);
   });
 
+  it("does not replace existing Villa configurations when a structured paste contains nearby places only", () => {
+    const result = analyzePropertyDescription(`[PROPERTY BASICS]
+Property Type: Villa
+Project / Property Name: VR Royal View
+
+[NEARBY PLACES]
+School 1 Name: Al-Ameen Residential Schools
+School 1 Distance: Approximately 0.8 km
+Road 1 Name: Old Madras Road / NH 75
+Road 1 Distance: Approximately 2 km`, "Villa");
+
+    expect(result.patch.villaDetails).toBeUndefined();
+    expect(result.patch.configs).toBeUndefined();
+    expect(result.patch.nearbyDetails?.schools?.places).toMatchObject([
+      { name: "Al-Ameen Residential Schools", distance: "Approximately 0.8 km" },
+    ]);
+    expect(result.patch.nearbyDetails?.roads?.places).toMatchObject([
+      { name: "Old Madras Road / NH 75", distance: "Approximately 2 km" },
+    ]);
+  });
+
   it("imports descriptive Villa configurations and optional inventory fields", () => {
     const result = analyzePropertyDescription(`[PROPERTY BASICS]
 Property Type: Villa

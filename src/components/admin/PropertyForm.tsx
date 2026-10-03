@@ -282,6 +282,43 @@ function compactPropertyPayload<T>(value: T): T | undefined {
   return value;
 }
 
+function synchronizeVillaConfigurationTags(data: FormData): FormData {
+  const rows = data.villaDetails?.configurationDetails;
+  if (data.propertyType !== "Villa") return data;
+
+  if (!rows?.length) {
+    const configs = data.configs
+      .map((config) => parseVillaConfigurationLabel(config)?.configuration)
+      .filter((config): config is string => Boolean(config));
+    if (!configs.length || configs.length !== data.configs.length) return data;
+    return {
+      ...data,
+      configs,
+      villaDetails: {
+        ...(data.villaDetails || initialVillaDetails()),
+        configurationDetails: configs.map((config) => createVillaConfigurationDetail(config)),
+      },
+    };
+  }
+
+  const normalizedRows = rows.map((row) => {
+    const parsed = parseVillaConfigurationLabel(row.configuration);
+    return parsed ? { ...row, configuration: parsed.configuration } : row;
+  });
+  if (normalizedRows.some((row) => !parseVillaConfigurationLabel(row.configuration))) return data;
+
+  const configs = normalizedRows.map((row) => row.configuration);
+  const alreadySynchronized = data.configs.length === configs.length
+    && data.configs.every((config, index) => config === configs[index]);
+  if (alreadySynchronized && normalizedRows.every((row, index) => row === rows[index])) return data;
+
+  return {
+    ...data,
+    configs,
+    villaDetails: { ...data.villaDetails!, configurationDetails: normalizedRows },
+  };
+}
+
 function mergeInitialData(initialData?: Partial<FormData>): FormData {
   if (!initialData) return initialFormData;
   const reraPhases = initialData.reraPhases?.length
@@ -289,7 +326,7 @@ function mergeInitialData(initialData?: Partial<FormData>): FormData {
     : initialData.reraRegistered && initialData.reraNumber
       ? [{ name: "Phase 1", reraNumber: initialData.reraNumber, reraSiteUrl: KARNATAKA_RERA_URL, reraDocuments: [], projectDocuments: [] }]
       : [];
-  return {
+  return synchronizeVillaConfigurationTags({
     ...initialFormData,
     ...initialData,
     society: { ...initialFormData.society, ...initialData.society },
@@ -297,7 +334,7 @@ function mergeInitialData(initialData?: Partial<FormData>): FormData {
     nearbyAmenities: { ...initialFormData.nearbyAmenities, ...initialData.nearbyAmenities },
     nearbyDetails: { ...initialFormData.nearbyDetails, ...initialData.nearbyDetails },
     reraPhases,
-  };
+  });
 }
 
 export default function PropertyForm({ mode = "admin", initialData, submissionId, submissionProfile }: PropertyFormProps) {
@@ -398,7 +435,7 @@ export default function PropertyForm({ mode = "admin", initialData, submissionId
             possessionDetails: undefined,
           }
         : previous;
-      return mergeQuickFill(base, patch, replaceExisting);
+      return synchronizeVillaConfigurationTags(mergeQuickFill(base, patch, replaceExisting));
     });
     setValidationErrors({});
     setConfigError("");

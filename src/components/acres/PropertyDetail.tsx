@@ -162,6 +162,7 @@ function PropertyMediaCarousel({
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isMobileGallery, setIsMobileGallery] = useState(false);
   const [manualChangeCount, setManualChangeCount] = useState(0);
   const touchStartX = useRef<number | null>(null);
 
@@ -175,6 +176,14 @@ function PropertyMediaCarousel({
     updatePreference();
     mediaQuery.addEventListener("change", updatePreference);
     return () => mediaQuery.removeEventListener("change", updatePreference);
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 639px)");
+    const updateViewport = () => setIsMobileGallery(mediaQuery.matches);
+    updateViewport();
+    mediaQuery.addEventListener("change", updateViewport);
+    return () => mediaQuery.removeEventListener("change", updateViewport);
   }, []);
 
   useEffect(() => {
@@ -207,7 +216,7 @@ function PropertyMediaCarousel({
     if (distance > 0) showPrevious();
     else showNext();
   };
-  const visiblePhotoCount = Math.min(3, images.length);
+  const visiblePhotoCount = isMobileGallery ? 1 : Math.min(3, images.length);
   const visiblePhotos = Array.from({ length: visiblePhotoCount }, (_, offset) => {
     const imageIndex = (activeIndex + offset) % images.length;
     return { src: images[imageIndex], imageIndex };
@@ -215,7 +224,7 @@ function PropertyMediaCarousel({
 
   return (
     <section
-      className="rounded-2xl border border-[#DDE2EA] bg-white p-4 shadow-sm md:p-6"
+      className="rounded-2xl border border-[#DDE2EA] bg-white p-3 shadow-sm md:p-6"
       aria-labelledby="property-gallery-heading"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
@@ -226,15 +235,15 @@ function PropertyMediaCarousel({
     >
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 id="property-gallery-heading" className="text-[20px] font-extrabold text-[#172039] md:text-[22px]">
+          <h2 id="property-gallery-heading" className="text-[16px] font-extrabold leading-5 text-[#172039] sm:text-[20px] md:text-[22px]">
             {title} Photos &amp; Videos
           </h2>
-          <p className="mt-1 text-[12px] font-semibold text-[#68646F]">
+          <p className="mt-0.5 text-[10px] font-semibold text-[#68646F] sm:mt-1 sm:text-[12px]">
             {images.length} {images.length === 1 ? "photo" : "photos"}{videos.length ? ` · ${videos.length} ${videos.length === 1 ? "video" : "videos"}` : ""}
           </p>
         </div>
         {images.length > 1 && (
-          <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-2 sm:flex">
             <button
               type="button"
               onClick={showPrevious}
@@ -257,7 +266,7 @@ function PropertyMediaCarousel({
 
       {images.length > 0 && (
         <div
-          className="relative mt-4 overflow-hidden rounded-xl border border-[#E5E8EE] bg-[#F4F5F7] p-2 touch-pan-y md:p-3"
+            className="relative mt-3 overflow-hidden rounded-xl border border-[#E5E8EE] bg-[#F4F5F7] p-1.5 touch-pan-y sm:mt-4 sm:p-2 md:p-3"
           onTouchStart={(event) => {
             touchStartX.current = event.touches[0].clientX;
             setIsPaused(true);
@@ -294,7 +303,7 @@ function PropertyMediaCarousel({
               <button
                 type="button"
                 onClick={showPrevious}
-                className="absolute left-3 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#172039] shadow-lg transition hover:bg-white md:size-11"
+                className="absolute left-3 top-1/2 hidden size-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#172039] shadow-lg transition hover:bg-white sm:flex md:size-11"
                 aria-label="Show previous property photo"
               >
                 <ChevronLeft className="size-5" />
@@ -302,7 +311,7 @@ function PropertyMediaCarousel({
               <button
                 type="button"
                 onClick={showNext}
-                className="absolute right-3 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#172039] shadow-lg transition hover:bg-white md:size-11"
+                className="absolute right-3 top-1/2 hidden size-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-[#172039] shadow-lg transition hover:bg-white sm:flex md:size-11"
                 aria-label="Show next property photo"
               >
                 <ChevronRight className="size-5" />
@@ -311,6 +320,10 @@ function PropertyMediaCarousel({
           )}
         </div>
       )}
+
+      {images.length > 1 && <div className="mt-2 flex justify-center gap-1.5 sm:hidden" aria-label="Photo position">
+        {images.map((_, index) => <button key={index} type="button" onClick={() => setActiveIndex(index)} className={`h-1.5 rounded-full transition-all ${index === activeIndex ? "w-5 bg-[#DDAA42]" : "w-1.5 bg-[#CDD2DB]"}`} aria-label={`Show property photo ${index + 1}`} aria-current={index === activeIndex ? "true" : undefined} />)}
+      </div>}
 
       {videos.length > 0 && (
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Property videos">
@@ -1082,13 +1095,13 @@ const whyHighlights = (property.description || "")
         className={`${isTabBarSticky ? "fixed top-[60px] md:top-[64px] left-0 right-0 z-40 shadow-md border-b border-[#B98428]/40" : ""} bg-[#DDAA42] transition-all duration-300`}
       >
         <div className="mx-auto max-w-[1440px] px-4 md:px-5">
-          <nav className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" aria-label="Property information sections">
+          <nav className="flex flex-nowrap items-center gap-1.5 overflow-x-auto no-scrollbar py-1.5 scroll-smooth" aria-label="Property information sections">
             {visibleSections.map((section) => (
               <button
                 key={section.id}
                 data-section-id={section.id}
                 onClick={() => scrollToSection(section.id)}
-                className={`rounded-lg px-4 py-2.5 text-[13px] font-bold transition-all duration-200 border border-transparent whitespace-nowrap ${
+                className={`shrink-0 snap-start rounded-lg border border-transparent px-3 py-2 text-[11px] font-bold whitespace-nowrap transition-all duration-200 sm:px-4 sm:py-2.5 sm:text-[13px] ${
                   activeSection === section.id
                     ? "bg-[#121B35] text-white border-[#121B35] shadow-sm"
                     : "text-white"
@@ -1100,7 +1113,7 @@ const whyHighlights = (property.description || "")
           </nav>
         </div>
       </div>
-      {isTabBarSticky && <div className="h-[53px]" aria-hidden="true" />}
+      {isTabBarSticky && <div className="h-[45px] sm:h-[53px]" aria-hidden="true" />}
 
       {/* Main Container with desktop advertising rails */}
       <div className={isPromotedProperty
@@ -1435,10 +1448,10 @@ const whyHighlights = (property.description || "")
 
       {/* Sticky bottom action bar */}
       <div data-public-bottom-bar className="fixed bottom-0 left-0 right-0 z-40 bg-[#121B35]/95 backdrop-blur-md border-t border-[#DDAA42]/30 shadow-2xl">
-        <div className="max-w-[1200px] mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
           <div className="min-w-0">
-            <p className="text-[10px] text-white/50 uppercase font-bold tracking-wider truncate">{property.title}</p>
-            <p className="text-[20px] font-extrabold text-gold-gradient leading-none">{priceWithCharges(property.price)}</p>
+            <p className="truncate text-[9px] font-bold uppercase tracking-wider text-white/50 sm:text-[10px]">{property.title}</p>
+            <p className="text-[16px] font-extrabold leading-none text-gold-gradient sm:text-[20px]">{priceWithCharges(property.price)}</p>
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
             {hasBrochure && <button onClick={() => setVerifiedAction("brochure")} className="hidden sm:flex items-center gap-2 border border-[#F2C052]/40 text-[#F2C052] font-bold text-[13px] px-5 py-2.5 rounded-xl hover:bg-white/5 transition-all">
@@ -1447,14 +1460,14 @@ const whyHighlights = (property.description || "")
             <button onClick={() => setVerifiedAction("call")} className="hidden sm:flex items-center gap-2 border border-white/20 text-white font-bold text-[13px] px-5 py-2.5 rounded-xl hover:bg-white/10 transition-all">
               <Phone className="size-4" /> Call
             </button>
-            <button onClick={() => setVerifiedAction("enquiry")} className="btn-gold flex items-center gap-2 px-6 py-2.5 rounded-xl text-[13px]">
-              <MessageCircle className="size-4" /> Enquire Now
+            <button onClick={() => setVerifiedAction("enquiry")} className="btn-gold flex h-10 items-center gap-1.5 rounded-lg px-4 text-[12px] sm:h-auto sm:gap-2 sm:rounded-xl sm:px-6 sm:py-2.5 sm:text-[13px]">
+              <MessageCircle className="size-3.5 sm:size-4" /> Enquire Now
             </button>
           </div>
         </div>
       </div>
 
-      <div className="h-20" />
+      <div className="h-16 sm:h-20" />
       <Footer />
     </div>
   );

@@ -1123,13 +1123,26 @@ function analyzeStructuredDescription(source: string, preferredType?: SupportedP
     return configuration ? { configuration, bhk: normalizeBhkLabel(rawBhk) || parsedVilla?.bhk, unitVariant, numberOfFloors: get("Structure", body) || get("Number of Floors", body) || parsedVilla?.numberOfFloors, price: get("Price", body), plotArea: get("Plot Area", body), builtUpArea: get("Built-up Area", body), carpetArea: get("Carpet Area", body), superArea: get("Super Area", body), bedrooms: number(get("Bedrooms", body)), bathrooms: number(get("Bathrooms", body)), balconies: number(get("Balconies", body)), facing: get("Facing", body) } : null;
   }).filter((item): item is NonNullable<typeof item> => Boolean(item));
   if (type === "Apartment" && configRows.length) { patch.configurationDetails = configRows.map((row) => ({ ...createConfigurationDetail(row.configuration), price: row.price, builtUpArea: row.builtUpArea, carpetArea: row.carpetArea, bedrooms: row.bedrooms || createConfigurationDetail(row.configuration).bedrooms, bathrooms: row.bathrooms || createConfigurationDetail(row.configuration).bathrooms, balconies: row.balconies ?? 0, facings: row.facing ? [row.facing] : [] })); patch.configs = configRows.map((row) => row.configuration); }
-  if (type === "Villa") {
-    const sharedNumberOfFloors = get("Number of Floors", villaText);
+  const villaType = get("Villa Type", villaText);
+  const sharedNumberOfFloors = get("Number of Floors", villaText);
+  const gardenArea = get("Garden Area", villaText);
+  const villaDetailValues = [
+    villaType,
+    sharedNumberOfFloors,
+    get("Plot Facing", villaText),
+    get("Corner Plot", villaText),
+    get("Road Width", villaText),
+    get("Private Garden", villaText),
+    gardenArea,
+    get("Private Pool", villaText),
+    get("Terrace", villaText),
+    get("Gated Community", villaText),
+  ];
+  if (type === "Villa" && (configRows.length || villaDetailValues.some(isProvided))) {
     const validSharedFloorCount = normalizeVillaFloorCount(sharedNumberOfFloors) || "";
-    const gardenArea = get("Garden Area", villaText);
     patch.villaDetails = {
       ...initialVillaDetails(),
-      villaType: normalizeVillaType(get("Villa Type", villaText)) || "Independent",
+      villaType: normalizeVillaType(villaType) || "Independent",
       configurationDetails: configRows.map((row) => ({
         ...createVillaConfigurationDetail(row.configuration),
         bhk: row.bhk,
@@ -1147,14 +1160,14 @@ function analyzeStructuredDescription(source: string, preferredType?: SupportedP
       })),
       plotDimensions: get("Plot Dimensions", villaText),
       numberOfFloors: validSharedFloorCount,
-      plotFacing: importedPlotFacing(get("Plot Facing", villaText), warnings, "Project plot facing"),
-      cornerPlot: /yes|true/i.test(get("Corner Plot", villaText)),
-      roadWidthFacing: get("Road Width", villaText),
-      privateGarden: /yes|true/i.test(get("Private Garden", villaText)),
+      plotFacing: importedPlotFacing(villaDetailValues[2], warnings, "Project plot facing"),
+      cornerPlot: /yes|true/i.test(villaDetailValues[3]),
+      roadWidthFacing: villaDetailValues[4],
+      privateGarden: /yes|true/i.test(villaDetailValues[5]),
       privateGardenArea: number(gardenArea) !== undefined ? gardenArea : "",
-      privatePool: /yes|true/i.test(get("Private Pool", villaText)),
-      terrace: /yes|true/i.test(get("Terrace", villaText)),
-      gatedCommunity: /yes|true/i.test(get("Gated Community", villaText)),
+      privatePool: /yes|true/i.test(villaDetailValues[7]),
+      terrace: /yes|true/i.test(villaDetailValues[8]),
+      gatedCommunity: /yes|true/i.test(villaDetailValues[9]),
     };
     if (configRows.length) patch.configs = configRows.map((row) => row.configuration);
   }
