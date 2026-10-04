@@ -3,7 +3,6 @@
 import Image from "@/components/Image";
 import Link from "@/components/Link";
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   MapPin,
   Bed,
@@ -420,7 +419,6 @@ function PropertyRail({
 }
 
 export default function PropertyDetail({ property }: PropertyDetailProps) {
-  const navigate = useNavigate();
   const promotion = useHomepagePromotion(property.id);
   const isPromotedProperty = Boolean(promotion?.promotionSlot);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -614,16 +612,6 @@ export default function PropertyDetail({ property }: PropertyDetailProps) {
     submitPropertyActivity(propertyActivity, 0, "share");
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
-  };
-
-  const goBack = () => {
-    // React Router records an index for in-site navigation. Direct links have no prior app page.
-    const historyIndex = window.history.state?.idx;
-    if (typeof historyIndex === "number" && historyIndex > 0) {
-      navigate(-1);
-      return;
-    }
-    navigate("/property-in-bangalore-ffid");
   };
 
   const isPdfBrochure = property.brochure?.startsWith("data:application/pdf");
@@ -874,14 +862,6 @@ const whyHighlights = (property.description || "")
       <PropertyTrustSummary property={property} onRera={hasReraPhases ? () => scrollToSection("rera-details") : undefined} onLocation={hasLocalityContent ? () => scrollToSection("locality") : undefined} />
 
       <section className="property-detail-intro mx-auto max-w-[1440px] px-4 pb-4 pt-3 md:px-5 md:pb-5">
-        <button
-          type="button"
-          onClick={goBack}
-          className="mb-3 inline-flex h-8 items-center gap-1.5 rounded-md border border-[#D9DCE2] bg-white px-2.5 text-[11px] font-bold text-[#121B35] shadow-sm md:hidden"
-          aria-label="Back to properties"
-        >
-          <ChevronLeft className="size-4" /> Back
-        </button>
         <nav className="mb-3 hidden items-center gap-2 overflow-hidden text-[12px] font-medium text-[#77717E] md:flex">
           <Link href="/" className="shrink-0 hover:text-[#B98428]">Home</Link>
           <ChevronRight className="size-3.5 shrink-0 text-[#B9B5BE]" />
