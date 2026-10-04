@@ -83,7 +83,7 @@ describe("phase-wise RERA presentation", () => {
     expect(html).toContain("2 phases");
     expect(html).toContain("RERA details");
     expect(html).toContain("Project details");
-    expect(html).toContain("Selected project phase");
+    expect(html).not.toContain("Selected project phase");
     expect(html).toContain('data-testid="rera-workspace-column"');
     expect(html).toContain('data-testid="phase-verification"');
     expect(html).toContain('data-testid="download-disclosure"');
@@ -97,8 +97,9 @@ describe("phase-wise RERA presentation", () => {
     expect(html).toContain("Official registration information");
     expect(html).toContain("REDDY STRUCTURES PRIVATE LIMITED");
     expect(html).toContain("9960");
-    expect(html).toContain("22 Sept 2022");
-    expect(html).toContain("31 Mar 2027");
+    expect(html).not.toContain("22 Sept 2022");
+    expect(html).not.toContain("31 Mar 2027");
+    expect(html).toContain("View more");
     expect(html).not.toContain("Document storage links stay private");
     expect(html).not.toContain("Linked Dealer");
   });
@@ -116,8 +117,8 @@ describe("phase-wise RERA presentation", () => {
     expect(host.querySelector('[data-testid="download-disclosure"] button[aria-label="View RERA downloads"]')).toBeTruthy();
     await act(async () => disclosure("View RERA downloads").click());
     expect(host.textContent).toContain("Registration Certificate");
-    expect(host.textContent).toContain("17 Oct 2024");
-    expect(host.textContent).toContain("1.24 MB");
+    expect(host.textContent).not.toContain("17 Oct 2024");
+    expect(host.textContent).not.toContain("1.24 MB");
     expect(disclosure("Hide RERA downloads").getAttribute("aria-expanded")).toBe("true");
 
     await act(async () => button("Project Details").click());
@@ -130,8 +131,8 @@ describe("phase-wise RERA presentation", () => {
     expect(host.textContent).not.toContain("Phase 2 Commencement Certificate");
     await act(async () => disclosure("View project downloads").click());
     expect(host.textContent).toContain("Phase 2 Commencement Certificate");
-    expect(host.textContent).toContain("2 KB");
-    expect(host.querySelector('[data-testid="selected-phase-summary"]')?.textContent).toContain("Phase 2");
+    expect(host.textContent).not.toContain("2 KB");
+    expect(host.querySelector('[data-testid="selected-phase-summary"]')?.textContent).not.toContain("Phase 2");
     expect(host.querySelector('[data-testid="phase-verification"]')?.textContent).toContain("PRM/KA/RERA/5678");
     expect(host.querySelector('[data-testid="phase-verification"] a')?.getAttribute("href")).toBe("https://rera.karnataka.gov.in/project/phase-2");
     expect(host.querySelector('img[alt*="QR code"]')?.getAttribute("src")).toContain("local-qr");
@@ -150,5 +151,16 @@ describe("phase-wise RERA presentation", () => {
     expect(html).not.toContain(">Project Details</button>");
     expect(html).not.toContain("View downloads");
     expect(html).not.toContain("No documents uploaded");
+  });
+
+  it("hides the phase selector for a single-phase project", () => {
+    const singlePhase = { ...property, reraPhases: [property.reraPhases![0]] };
+    const html = renderToStaticMarkup(<AuthProvider><PropertyReraSections property={singlePhase} setSectionRef={() => () => {}} /></AuthProvider>);
+
+    expect(html).not.toContain('aria-label="Project phase"');
+    expect(html).not.toContain(">Phase 1</button>");
+    expect(html).toContain("Phase Project");
+    expect(html).toContain("RERA Details");
+    expect(html).toContain("Project Details");
   });
 });
