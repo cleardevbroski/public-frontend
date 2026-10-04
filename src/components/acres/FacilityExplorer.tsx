@@ -2,19 +2,26 @@
 
 import { useState } from "react";
 import {
+  Baby,
   Bike,
   Building2,
   Car,
   Check,
   CircleDot,
+  Coffee,
   Dumbbell,
+  Flower2,
   Gamepad2,
+  HeartPulse,
+  Library,
   PersonStanding,
   Shield,
   Sparkles,
   TreePine,
   Users,
+  UtensilsCrossed,
   Waves,
+  Wifi,
   X,
   Zap,
 } from "lucide-react";
@@ -72,7 +79,27 @@ const icons: Record<string, typeof Check> = {
   Park: TreePine,
   "Landscaped Gardens": TreePine,
   "Reserved Parking": Car,
+  Cafeteria: Coffee,
+  "Food Court": UtensilsCrossed,
+  Library,
+  Spa: Flower2,
 };
+
+const amenityIconPatterns: Array<[RegExp, typeof Check]> = [
+  [/pool|spa|jacuzzi/i, Waves],
+  [/gym|fitness|yoga/i, Dumbbell],
+  [/badminton|tennis|squash|cricket|sports|court/i, CircleDot],
+  [/play.?area|playground|creche|kids/i, Baby],
+  [/library|reading/i, Library],
+  [/cafe|cafeteria|food|restaurant|dining/i, UtensilsCrossed],
+  [/garden|park|green|plant|landscape/i, TreePine],
+  [/security|cctv|fire|intercom|gated/i, Shield],
+  [/parking|garage|car.?wash/i, Car],
+  [/wi[-\s]?fi|internet/i, Wifi],
+  [/club|lobby|hall|theatre|cinema|conference/i, Building2],
+  [/senior|health|medical/i, HeartPulse],
+  [/power|backup|water|charging/i, Zap],
+];
 
 const narrativeGroups = [
   { title: "Areas for Relaxing and Socializing", text: "A residential complex is incomplete without areas where residents can relax away from their homes. These recreational facilities provide residents with areas for relaxation and leisure.", names: ["Kids' Play Areas / Sand Pits", "Children's Play Area", "Large Green Area", "Park", "Landscaped Gardens"] },
@@ -83,7 +110,8 @@ const narrativeGroups = [
 ];
 
 function AmenityIcon({ name, compact = false }: { name: string; compact?: boolean }) {
-  const Icon = icons[name] || Sparkles;
+  const normalizedName = name.trim().replace(/\s+/g, " ");
+  const Icon = icons[normalizedName] || amenityIconPatterns.find(([pattern]) => pattern.test(normalizedName))?.[1] || Sparkles;
   return <Icon className={compact ? "size-7 text-[#2E3547]" : "size-6 text-[#2E3547]"} strokeWidth={1.6} />;
 }
 

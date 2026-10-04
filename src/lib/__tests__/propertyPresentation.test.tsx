@@ -123,6 +123,13 @@ describe("interactive property presentation", () => {
     expect(html).toContain("View More Details");
   });
 
+  it("uses specific icons for uploaded amenity names that are not exact presets", () => {
+    const html = renderToStaticMarkup(<FacilityExplorer amenities={["Library", "Spa", "Wi-Fi"]} />);
+    expect(html).toContain("lucide-library");
+    expect(html).toContain("lucide-flower-2");
+    expect(html).toContain("lucide-wifi");
+  });
+
   it("shows Amenities View More even without extra rows or descriptions", () => {
     const html = renderToStaticMarkup(<FacilityExplorer amenities={["Power Backup", "Security"]} />);
     expect(html).toContain("View More Details");
