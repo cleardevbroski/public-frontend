@@ -2,9 +2,9 @@
 import { useRef, useState } from "react";
 import Link from "@/components/Link";
 import { ShieldCheck, Star } from "lucide-react";
-import { getAllProperties, getBuilderLogoForProperty, getFeaturedProperties } from "@/lib/propertyStore";
+import { getAllProperties, getBuilderLogoForProperty, getFeaturedProperties, havePropertiesLoaded } from "@/lib/propertyStore";
 import { useLiveData } from "@/lib/useLiveProperties";
-import { handpickedProjects, type Property } from "./mock-data";
+import type { Property } from "./mock-data";
 import { formatPossession } from "@/lib/propertyDetails";
 import { getPropertyCoverImage, priceWithCharges } from "@/lib/propertyPresentation";
 import FavoriteButton from "./FavoriteButton";
@@ -37,11 +37,11 @@ export default function HandpickedProjects() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [activeZone, setActiveZone] = useState<BangaloreZone>("East");
   const allProperties = useLiveData<Property[]>(() => getAllProperties(), [], ["cleartitle:properties-changed", "cleartitle:builders-changed"]);
+  const loading = useLiveData(() => { getAllProperties(); return !havePropertiesLoaded(); }, true);
   const configuredProjects = getHandpickedProjectsByZone(allProperties, activeZone);
   const fallbackProjects = getFeaturedProperties(10).filter((property) => property.locality?.zone?.toLowerCase() === activeZone.toLowerCase());
   const visibleProjects = configuredProjects.length ? configuredProjects : fallbackProjects;
-  const projects: DisplayProject[] = visibleProjects.length
-    ? visibleProjects.map((property) => ({
+  const projects: DisplayProject[] = visibleProjects.map((property) => ({
         id: property.id,
         name: property.title,
         locality: property.subtitle,
@@ -52,14 +52,9 @@ export default function HandpickedProjects() {
         builderLogo: getBuilderLogoForProperty(property),
         href: `/property/${property.id}`,
         canFavorite: true,
-      }))
-    : handpickedProjects.map((project) => ({
-        ...project,
-        status: project.status || "Featured",
-        rera: Boolean(project.rera),
-        href: "/new-projects-in-bangalore-ffid",
-        canFavorite: false,
       }));
+
+  if (!projects.length && !loading) return null;
 
   const selectZone = (zone: BangaloreZone) => {
     setActiveZone(zone);
@@ -92,6 +87,7 @@ export default function HandpickedProjects() {
         </div>
 
         <div ref={scrollerRef} className="flex gap-6 overflow-x-auto no-scrollbar pb-3 scroll-smooth">
+          {!projects.length && Array.from({ length: 2 }, (_, index) => <div key={index} aria-label="Loading featured projects" className="h-[265px] w-[520px] max-w-[88vw] shrink-0 animate-pulse rounded-2xl border border-[#E4E0E7] bg-white" />)}
           {projects.map((p) => (
             <Link key={p.id} href={p.href} className="group shrink-0 w-[520px] max-w-[88vw]">
               <div className="relative h-[265px] overflow-hidden rounded-2xl border border-[#E4E0E7]/70 shadow-md">

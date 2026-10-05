@@ -2,10 +2,10 @@
 import { useRef } from "react";
 import Link from "@/components/Link";
 import { ShieldCheck, TrendingUp } from "lucide-react";
-import { getNewlyListed, getPropertiesBySection } from "@/lib/propertyStore";
+import { getAllProperties, getNewlyListed, getPropertiesBySection, havePropertiesLoaded } from "@/lib/propertyStore";
 import { formatPossession } from "@/lib/propertyDetails";
-import { useLiveProperties } from "@/lib/useLiveProperties";
-import { searchTrendProjects, type Property } from "./mock-data";
+import { useLiveData, useLiveProperties } from "@/lib/useLiveProperties";
+import type { Property } from "./mock-data";
 import { priceWithCharges } from "@/lib/propertyPresentation";
 import FavoriteButton from "./FavoriteButton";
 
@@ -29,9 +29,9 @@ type DisplayProject = {
 
 export default function SearchTrends() {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const loading = useLiveData(() => { getAllProperties(); return !havePropertiesLoaded(); }, true);
   const configuredProjects = useLiveProperties<Property[]>(() => { const placed = getPropertiesBySection("Search Trends"); return placed.length ? placed : getNewlyListed(10); }, []);
-  const projects: DisplayProject[] = configuredProjects.length
-    ? configuredProjects.map((property) => ({
+  const projects: DisplayProject[] = configuredProjects.map((property) => ({
         id: property.id,
         name: property.title,
         locality: property.subtitle,
@@ -41,14 +41,9 @@ export default function SearchTrends() {
         rera: Boolean(property.reraRegistered),
         href: `/property/${property.id}`,
         canFavorite: true,
-      }))
-    : searchTrendProjects.map((project) => ({
-        ...project,
-        status: project.status || "New Launch",
-        rera: Boolean(project.rera),
-        href: "/new-projects-in-bangalore-ffid",
-        canFavorite: false,
       }));
+
+  if (!projects.length && !loading) return null;
 
   return (
     <section className="bg-white py-8">
@@ -66,6 +61,7 @@ export default function SearchTrends() {
         </div>
 
         <div ref={scrollerRef} className="flex gap-5 overflow-x-auto no-scrollbar pb-3 scroll-smooth">
+          {!projects.length && Array.from({ length: 2 }, (_, index) => <div key={index} aria-label="Loading search trend projects" className="h-[210px] w-[360px] max-w-[85vw] shrink-0 animate-pulse bg-[#E8EAF0]" />)}
           {projects.map((p) => (
             <Link key={p.id} href={p.href} className="group shrink-0 w-[360px] max-w-[85vw]">
               <div className="relative h-[210px] overflow-hidden shadow-sm">

@@ -7,6 +7,7 @@
 export function createHydratedCache<T>(fetcher: () => Promise<T[]>, event: string) {
   let cache: T[] = [];
   let started = false;
+  let loaded = false;
 
   function notify() {
     if (typeof window !== "undefined") window.dispatchEvent(new Event(event));
@@ -16,6 +17,7 @@ export function createHydratedCache<T>(fetcher: () => Promise<T[]>, event: strin
     started = true;
     try {
       cache = await fetcher();
+      loaded = true;
     } catch {
       // DBG009: Reset so subsequent get() retries instead of returning stale empty data
       started = false;
@@ -34,6 +36,9 @@ export function createHydratedCache<T>(fetcher: () => Promise<T[]>, event: strin
     },
     async refresh() {
       await hydrate();
+    },
+    hasLoaded() {
+      return loaded;
     },
   };
 }

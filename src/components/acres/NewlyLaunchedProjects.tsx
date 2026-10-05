@@ -2,9 +2,9 @@
 import { useRef } from "react";
 import Link from "@/components/Link";
 import { ShieldCheck, Tag, Building2 } from "lucide-react";
-import { getPropertiesBySection, getPublishedProperties } from "@/lib/propertyStore";
-import { useLiveProperties } from "@/lib/useLiveProperties";
-import { newlyLaunchedProjects, type Property } from "./mock-data";
+import { getAllProperties, getPropertiesBySection, getPublishedProperties, havePropertiesLoaded } from "@/lib/propertyStore";
+import { useLiveData, useLiveProperties } from "@/lib/useLiveProperties";
+import type { Property } from "./mock-data";
 import { priceWithCharges } from "@/lib/propertyPresentation";
 
 type DisplayProject = {
@@ -22,6 +22,7 @@ type DisplayProject = {
 
 export default function NewlyLaunchedProjects() {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const loading = useLiveData(() => { getAllProperties(); return !havePropertiesLoaded(); }, true);
   const configuredProjects = useLiveProperties<Property[]>(
     () => {
       const placed = getPropertiesBySection("Newly Launched");
@@ -29,8 +30,7 @@ export default function NewlyLaunchedProjects() {
     },
     []
   );
-  const projects: DisplayProject[] = configuredProjects.length
-    ? configuredProjects.map((property) => ({
+  const projects: DisplayProject[] = configuredProjects.map((property) => ({
         id: property.id,
         name: property.title,
         locality: property.subtitle,
@@ -41,14 +41,9 @@ export default function NewlyLaunchedProjects() {
         rera: Boolean(property.reraRegistered),
         priceTrend: property.pricePerSqft || "Explore launch pricing",
         href: `/property/${property.id}`,
-      }))
-    : newlyLaunchedProjects.map((project) => ({
-      ...project,
-      tag: project.tag || "New Launch",
-      rera: Boolean(project.rera),
-      priceTrend: project.priceTrend || "Explore launch pricing",
-      href: "/new-projects-in-bangalore-ffid",
-    }));
+      }));
+
+  if (!projects.length && !loading) return null;
 
   return (
     <section className="bg-[#EEF4FB] py-8">
@@ -68,6 +63,7 @@ export default function NewlyLaunchedProjects() {
         </div>
 
         <div ref={scrollerRef} className="flex gap-5 overflow-x-auto no-scrollbar pb-3 scroll-smooth">
+          {!projects.length && Array.from({ length: 2 }, (_, index) => <div key={index} aria-label="Loading newly launched projects" className="h-[190px] w-[460px] max-w-[88vw] shrink-0 animate-pulse border border-[#E4E0E7] bg-white" />)}
           {projects.map((p) => (
             <Link key={p.id} href={p.href} className="block shrink-0 w-[460px] max-w-[88vw] bg-white shadow-sm border border-[#E4E0E7]/50 overflow-hidden">
               <div className="p-5">

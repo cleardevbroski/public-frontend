@@ -34,6 +34,11 @@ export function getAllProperties(): Property[] {
   return cache.get();
 }
 
+/** Whether the initial public-property request has finished. */
+export function havePropertiesLoaded(): boolean {
+  return cache.hasLoaded();
+}
+
 /** Only properties that should appear on the public site. */
 export function getPublishedProperties(): Property[] {
   return getAllProperties().filter((p) => p.published !== false && !["Rent", "Lease"].includes(p.propertyType || ""));

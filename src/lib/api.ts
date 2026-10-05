@@ -461,10 +461,12 @@ async function fetchAllPages<T>(
   const first = await fetchPage({ ...params, page: 1, limit: pageSize });
   const records = Array.isArray(first[collectionKey]) ? [...first[collectionKey]] : [];
   const pages = Math.max(1, Number(first.pagination?.pages) || 1);
-  for (let page = 2; page <= pages; page += 1) {
-    const response = await fetchPage({ ...params, page, limit: pageSize });
+  const remaining = await Promise.all(
+    Array.from({ length: Math.max(0, pages - 1) }, (_, index) => fetchPage({ ...params, page: index + 2, limit: pageSize }))
+  );
+  remaining.forEach((response) => {
     if (Array.isArray(response[collectionKey])) records.push(...response[collectionKey]);
-  }
+  });
   const seen = new Set<string>();
   return records.filter((record: Record<string, unknown>) => {
     const id = String(record?.id || record?._id || "");
