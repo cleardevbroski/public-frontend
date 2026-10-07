@@ -742,6 +742,17 @@ p { text-wrap: pretty; }
       #0B1328;
   }
 
+  .social-links { color: rgba(255, 255, 255, 0.6); }
+  .social-link { position: relative; display: inline-flex; width: 36px; height: 36px; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 999px; color: rgba(255, 255, 255, 0.8); transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease, transform 180ms cubic-bezier(.2,.8,.2,1), box-shadow 180ms ease; }
+  .social-link::after { position: absolute; inset: -4px; border: 2px solid transparent; border-radius: 999px; content: ""; transition: border-color 180ms ease, transform 180ms ease; }
+  .social-link:hover { color: #FFFFFF; border-color: #F2C052; background: rgba(242, 192, 82, 0.2); transform: translateY(-4px) scale(1.16); box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28); }
+  .social-link:hover::after { border-color: rgba(242, 192, 82, 0.55); transform: scale(1.08); }
+  .social-mark { display: inline-flex; align-items: center; justify-content: center; width: 21px; height: 21px; object-fit: contain; transition: filter 180ms ease; }
+  .social-link:hover .social-mark { filter: brightness(1.18) drop-shadow(0 2px 4px rgba(255, 255, 255, 0.28)); }
+  .social-mark--linkedin { font-size: 12px; }
+  .social-mark--youtube { font-size: 11px; }
+  .social-mark--whatsapp { border: 2px solid currentColor; border-radius: 999px; font-size: 12px; }
+
   .admin-shell {
     background:
       radial-gradient(circle at 100% 0%, rgba(221, 170, 66, 0.055), transparent 28rem),

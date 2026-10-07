@@ -1359,6 +1359,21 @@ export async function deleteInsight(id: string) {
   return readJson(await apiFetch(`/api/cms/insights/${id}`, { method: "DELETE" }), "Failed to delete insight");
 }
 
+// ─── Site settings: social accounts ────────────────────────────
+export type SocialAccountKey = "instagram" | "facebook" | "youtube" | "linkedin" | "twitter" | "whatsapp";
+export type SocialAccount = { url: string; enabled: boolean };
+export type SocialAccounts = Record<SocialAccountKey, SocialAccount>;
+
+export async function fetchSocialAccounts() {
+  return readJson(await apiFetch("/api/site-settings/social"), "Failed to fetch social accounts");
+}
+export async function fetchAdminSocialAccounts() {
+  return readJson(await apiFetch("/api/site-settings/social/admin"), "Failed to fetch social accounts");
+}
+export async function saveSocialAccounts(accounts: SocialAccounts) {
+  return readJson(await apiFetch("/api/site-settings/social", { method: "PUT", body: JSON.stringify(accounts) }), "Failed to save social accounts");
+}
+
 // ─── Leads: status + delete ────────────────────────────────────
 export async function updateLeadStatus(id: string, status: string) {
   return readJson(await apiFetch(`/api/leads/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }), "Failed to update lead status");

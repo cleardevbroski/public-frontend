@@ -54,9 +54,9 @@ export default function PopularBuilders() {
               className="popular-builder-card group flex items-center gap-5 bg-white rounded-2xl border border-[#E4E0E7]/60 hover:border-[#DDAA42]/60 hover:shadow-xl p-5 transition-all duration-300"
             >
               {/* Uploaded Builder logo, with a monogram only when no logo is available. */}
-              <div className="relative shrink-0 size-[88px] rounded-full bg-[#F8F7FA] border border-[#E4E0E7] flex items-center justify-center shadow-inner group-hover:border-[#DDAA42]/50 transition-colors">
-                {b.logo ? <img src={b.logo} alt={`${b.name} logo`} className="size-full rounded-full object-contain p-2" /> : <span className="text-[22px] font-bold text-[#121B35] tracking-tight">{initials(b.name)}</span>}
-                <span className="absolute -bottom-1 -right-1 size-6 rounded-full bg-gradient-to-br from-[#F2C052] to-[#DDAA42] flex items-center justify-center shadow">
+              <div className="relative shrink-0 size-[88px] rounded-full bg-white border border-[#E4E0E7] flex items-center justify-center shadow-inner transition-all duration-300 group-hover:scale-105 group-hover:border-[#DDAA42] group-hover:shadow-[0_0_0_5px_rgba(242,192,82,.18),0_10px_24px_rgba(18,27,53,.18)]">
+                {b.logo ? <img src={b.logo} alt={`${b.name} logo`} className="size-full rounded-full object-contain p-2 transition-transform duration-300 group-hover:scale-110" /> : <span className="text-[22px] font-bold text-[#121B35] tracking-tight">{initials(b.name)}</span>}
+                <span className="absolute -bottom-1 -right-1 size-6 rounded-full bg-gradient-to-br from-[#F2C052] to-[#DDAA42] flex items-center justify-center shadow transition-transform duration-300 group-hover:scale-110">
                   <Building2 className="size-3.5 text-[#121B35]" />
                 </span>
               </div>

@@ -1,9 +1,15 @@
 "use client";
 import Link from "@/components/Link";
 import { CalendarClock } from "lucide-react";
-import { possessionTiles } from "./mock-data";
+import { getAllProperties, havePropertiesLoaded } from "@/lib/propertyStore";
+import { getHomepageStats } from "@/lib/homepageStats";
+import { useLiveData } from "@/lib/useLiveProperties";
 
 export default function PossessionTimeline() {
+  const properties = useLiveData(() => getAllProperties(), [], ["cleartitle:properties-changed"]);
+  const loading = useLiveData(() => { getAllProperties(); return !havePropertiesLoaded(); }, true);
+  const { possession } = getHomepageStats(properties);
+  if (!loading && !possession.length) return null;
   return (
     <section className="bg-white py-12">
       <div className="max-w-[1200px] mx-auto px-5">
@@ -17,17 +23,18 @@ export default function PossessionTimeline() {
           </div>
         </div>
         <div className="flex gap-5 overflow-x-auto no-scrollbar pb-2">
-          {possessionTiles.map((t) => (
+          {(loading ? [] : possession).map((t) => (
             <Link key={t.label} href={t.href} className="group shrink-0 w-[300px] h-[230px] overflow-hidden relative flex flex-col border border-[#E4E0E7]/50 shadow-sm hover:shadow-xl transition-all" style={{ backgroundColor: t.tint }}>
               <div className="p-5 relative z-10">
                 <h3 className="text-[22px] font-bold text-[#121B35] leading-tight">{t.label}</h3>
-                <p className="text-[13px] text-[#68646F] font-semibold mt-1">{t.count}</p>
+                <p className="text-[13px] text-[#68646F] font-semibold mt-1">{t.count} {t.count === 1 ? "Property" : "Properties"}</p>
               </div>
               <div className="mt-auto h-[120px] relative">
                 <img src={t.image} alt={t.label} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
               </div>
             </Link>
           ))}
+          {loading && Array.from({ length: 3 }, (_, index) => <div key={index} className="h-[230px] w-[300px] shrink-0 animate-pulse bg-[#F3F1F5]" />)}
         </div>
       </div>
     </section>

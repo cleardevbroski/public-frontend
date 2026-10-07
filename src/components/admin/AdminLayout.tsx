@@ -37,6 +37,7 @@ import {
   UserCog,
   ContactRound,
   FileSpreadsheet,
+  Globe2,
 } from "lucide-react";
 import { isAdminAuthed, adminLogin, adminLogout, getAdminLoginError } from "@/lib/adminAuth";
 import { fetchSystemNotifications, markAllSystemNotificationsRead, markSystemNotificationRead } from "@/lib/api";
@@ -80,6 +81,7 @@ const navItems = [
   { label: "Public Submissions", href: "/admin/property-submissions", icon: ClipboardCheck },
   { label: "Hero Showcase", href: "/admin/hero", icon: Images },
   { label: "Homepage Placement", href: "/admin/homepage-placements", icon: LayoutGrid },
+  { label: "Social Accounts", href: "/admin/social-settings", icon: Globe2 },
   { label: "Affordability Rules", href: "/admin/affordability-rules", icon: Calculator },
   { label: "Assistant Learning", href: "/admin/assistant-learning", icon: BrainCircuit },
   { label: "Advertisements", href: "/admin/advertisements", icon: Megaphone },

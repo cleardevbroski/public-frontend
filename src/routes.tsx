@@ -32,6 +32,7 @@ const AdminReraConflicts = lazy(() => import("@/pages/admin/AdminReraConflicts")
 const AdminAdvertisements = lazy(() => import("@/pages/admin/AdminAdvertisements"));
 const AdminLoginReports = lazy(() => import("@/pages/admin/AdminLoginReports"));
 const AdminHomepagePlacements = lazy(() => import("@/pages/admin/AdminHomepagePlacements"));
+const AdminSocialSettings = lazy(() => import("@/pages/admin/AdminSocialSettings"));
 const AdminChannelPartners = lazy(() => import("@/pages/admin/AdminChannelPartners"));
 const AdminCPClients = lazy(() => import("@/pages/admin/AdminCPClients"));
 const AdminClientActivity = lazy(() => import("@/pages/admin/AdminClientActivity"));
@@ -90,6 +91,7 @@ export const router = createBrowserRouter([
       { path: "/admin/advertisements", element: <AdminAdvertisements /> },
       { path: "/admin/login-reports", element: <AdminLoginReports /> },
       { path: "/admin/homepage-placements", element: <AdminHomepagePlacements /> },
+      { path: "/admin/social-settings", element: <AdminSocialSettings /> },
       { path: "/admin/channel-partners", element: <AdminChannelPartners /> },
       { path: "/admin/cp-clients", element: <AdminCPClients /> },
       { path: "/admin/affordability-rules", element: <AdminAffordabilityRules /> },

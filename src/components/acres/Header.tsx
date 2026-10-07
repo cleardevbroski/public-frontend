@@ -7,6 +7,7 @@ import { ChevronDown, Heart, Menu, MapPin, ChevronRightCircle, X, ChevronUp, Shi
 import { navItems, headerDropdowns } from "./mock-data";
 import HeaderDropdown from "./HeaderDropdown";
 import { useAuth } from "./AuthContext";
+import SocialLinks from "./SocialLinks";
 
 const AuthModal = lazy(() => import("./AuthModal"));
 const ProfileDrawer = lazy(() => import("./ProfileDrawer"));
@@ -385,6 +386,8 @@ export default function Header() {
                     Become a Dealer
                   </Link>
                 </div>
+
+                <div className="border-t border-[#DDAA42]/25 pt-4"><SocialLinks compact /></div>
 
                 <Link
                   href="/admin"

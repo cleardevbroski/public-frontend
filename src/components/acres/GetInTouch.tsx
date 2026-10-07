@@ -3,6 +3,7 @@ import { useState } from "react";
 import { MapPin, Phone, Mail, Send, CheckCircle2 } from "lucide-react";
 import { submitContactLead } from "@/lib/api";
 import { trackAnalytics } from "@/lib/analytics";
+import SocialLinks from "./SocialLinks";
 
 export default function GetInTouch() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
@@ -52,7 +53,7 @@ export default function GetInTouch() {
             {[
               { icon: MapPin, label: "Bangalore, Karnataka", href: "" },
               { icon: Phone, label: "1800 41 99099", href: "tel:18004199099" },
-              { icon: Mail, label: "feedback@cleartitleone.com", href: "mailto:feedback@cleartitleone.com" },
+              { icon: Mail, label: "admin@cleartitleone.com", href: "mailto:admin@cleartitleone.com" },
             ].map(({ icon: Icon, label, href }) => {
               const content = <><div className="size-11 rounded-xl bg-[#DDAA42]/15 border border-[#DDAA42]/30 flex items-center justify-center shrink-0"><Icon className="size-5 text-[#F2C052]" /></div><span className="text-[14px] text-white/85">{label}</span></>;
               return href ? <a key={label} href={href} aria-label={label} title={label} className="support-contact public-interactive flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-4 hover:border-[#DDAA42]/50">{content}</a> : <div key={label} title={label} className="support-contact flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-5 py-4">{content}</div>;
@@ -64,6 +65,7 @@ export default function GetInTouch() {
                 className="w-full h-full object-cover"
               />
             </div>
+            <SocialLinks compact />
           </div>
 
           {/* Form */}

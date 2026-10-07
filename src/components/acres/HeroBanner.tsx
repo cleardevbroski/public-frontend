@@ -179,14 +179,15 @@ export default function HeroBanner({ showTrustStrip = true }: { showTrustStrip?:
 
               <div className="hidden sm:block w-px bg-[#E4E0E7] my-2" />
 
-              <div className="flex-1 flex items-center gap-2 px-4">
+              <div className="flex-1 flex items-center gap-2 px-3">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  placeholder="Search locality, project or property type"
-                  className="w-full bg-transparent outline-none text-[14px] text-[#121B35] placeholder:text-[#68646F] py-3"
+                  aria-label="Search locality, project or property type"
+                  placeholder=""
+                  className="w-full bg-transparent outline-none text-[13px] text-[#121B35] placeholder:text-[#68646F] py-2.5"
                 />
               </div>
 

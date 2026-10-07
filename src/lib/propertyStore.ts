@@ -129,7 +129,7 @@ export function getBuilders(): { name: string; slug: string; total: number; samp
         slug: linked?.slug ?? builderSlug(freeText),
         verified: linked?.verified,
         featured: linked?.featured,
-        logo: linked?.logo,
+        logo: linked?.logo || p.developerLogoUrl,
         list: [],
       };
     }

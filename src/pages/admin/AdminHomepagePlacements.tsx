@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Check, LayoutGrid, MapPin, Search, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, LayoutGrid, MapPin, RefreshCw, Search, Sparkles } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import type { Property } from "@/components/acres/mock-data";
-import { fetchAllAdminProperties } from "@/lib/api";
+import { fetchAllAdminProperties, fetchAllPublishedProperties } from "@/lib/api";
+import { getHomepageStats } from "@/lib/homepageStats";
 import { matchesPropertyAdminSearch } from "@/lib/adminSearch";
 import {
   getHomepageSections,
@@ -23,6 +24,8 @@ export default function AdminHomepagePlacements() {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState("");
   const [error, setError] = useState("");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisMessage, setAnalysisMessage] = useState("");
 
   useEffect(() => {
     fetchAllAdminProperties({ sort: "-createdAt" })
@@ -76,6 +79,22 @@ export default function AdminHomepagePlacements() {
     [liveProperties]
   );
 
+  const analyzeLiveHomepageData = async () => {
+    setAnalyzing(true);
+    setError("");
+    setAnalysisMessage("");
+    try {
+      const live = await fetchAllPublishedProperties({ sort: "-createdAt" });
+      const stats = getHomepageStats(live as Property[]);
+      setAnalysisMessage(`Analyzed ${stats.publishedCount} published website properties. BHK and possession sections now use this live data.`);
+      window.dispatchEvent(new Event("cleartitle:properties-changed"));
+    } catch (analysisError) {
+      setError(analysisError instanceof Error ? analysisError.message : "Unable to analyze live homepage data");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const togglePlacement = async (property: Property, section: HomepageSection) => {
     const current = getHomepageSections(property);
     const homepageSections = current.includes(section)
@@ -127,6 +146,9 @@ export default function AdminHomepagePlacements() {
         </div>
 
         <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+          <button type="button" onClick={() => void analyzeLiveHomepageData()} disabled={analyzing} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#DDAA42] bg-[#FFF8E8] px-3.5 text-[12px] font-bold text-[#805A0B] disabled:opacity-60">
+            <RefreshCw className={`size-4 ${analyzing ? "animate-spin" : ""}`} /> {analyzing ? "Analyzing" : "Analyze live data"}
+          </button>
           <label className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#E4E0E7] bg-white px-3.5 shadow-sm lg:w-[320px]">
             <Search className="size-4 text-[#77717E]" />
             <input
@@ -148,6 +170,8 @@ export default function AdminHomepagePlacements() {
           </select>
         </div>
       </div>
+
+      {analysisMessage && <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[12px] font-semibold text-emerald-800">{analysisMessage}</div>}
 
       <div className="mb-5 grid grid-cols-2 gap-2.5 md:grid-cols-4 xl:grid-cols-7">
         {HOMEPAGE_SECTIONS.map((section) => (

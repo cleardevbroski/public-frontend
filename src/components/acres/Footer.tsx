@@ -1,5 +1,6 @@
 import { ArrowUpRight, Mail, MapPin, Phone } from "lucide-react";
 import Link from "@/components/Link";
+import SocialLinks from "./SocialLinks";
 
 const groups = [
   {
@@ -44,9 +45,10 @@ export default function Footer() {
             <p className="mt-3 max-w-[42ch] text-[12.5px] leading-6 text-[#D9DDE8]">Compare Bangalore properties using the information available in project records, RERA phases, developer documents and verified location data.</p>
             <div className="mt-5 space-y-2 text-[12px] text-[#D9DDE8]">
               <a href="tel:18004199099" className="flex items-center gap-2 hover:text-[#F2C052]"><Phone className="size-3.5 text-[#DDAA42]" /> 1800 41 99099</a>
-              <a href="mailto:feedback@cleartitleone.com" className="flex items-center gap-2 hover:text-[#F2C052]"><Mail className="size-3.5 text-[#DDAA42]" /> feedback@cleartitleone.com</a>
+              <a href="mailto:admin@cleartitleone.com" className="flex items-center gap-2 hover:text-[#F2C052]"><Mail className="size-3.5 text-[#DDAA42]" /> admin@cleartitleone.com</a>
               <p className="flex items-center gap-2"><MapPin className="size-3.5 text-[#DDAA42]" /> Bangalore, Karnataka</p>
             </div>
+            <div className="mt-5"><SocialLinks /></div>
           </section>
 
           <nav className="grid grid-cols-2 gap-8 sm:grid-cols-3" aria-label="Footer navigation">
