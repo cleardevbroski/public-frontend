@@ -13,10 +13,25 @@ describe("heroStore (backend-backed)", () => {
     await vi.waitFor(() => expect(store.getHeroSlides().some((s) => s.title === "Live")).toBe(true));
   });
 
-  it("falls back to default slides when the backend has none", async () => {
+  it("does not invent project slides when the backend has none", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ banners: [] }) }) as Response));
     const store = await import("@/lib/heroStore");
-    await vi.waitFor(() => expect(store.getHeroSlides().length).toBeGreaterThan(0));
+    await vi.waitFor(() => expect(store.getHeroSlides()).toHaveLength(0));
+  });
+
+  it("clears the previous public hero when revalidation fails", async () => {
+    let calls = 0;
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      calls += 1;
+      if (calls === 1) {
+        return { ok: true, status: 200, json: async () => ({ banners: [{ id: "1", image: "a.jpg", title: "Live", linkType: "custom", linkValue: "/x" }] }) } as Response;
+      }
+      throw new Error("network failure");
+    }));
+    const store = await import("@/lib/heroStore");
+    await vi.waitFor(() => expect(store.getHeroSlides()).toHaveLength(1));
+    await store.refreshHeroSlides();
+    expect(store.getHeroSlides()).toHaveLength(0);
   });
 
   it("keeps hidden slides available to the admin editor", async () => {

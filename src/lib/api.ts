@@ -108,8 +108,10 @@ async function apiFetchWithToken(
   }
 
   try {
+    const method = (options.method || "GET").toUpperCase();
     return await fetch(`${API_BASE}${endpoint}`, {
       ...options,
+      ...(method === "GET" ? { cache: "no-store" as RequestCache } : {}),
       headers,
     });
   } catch {

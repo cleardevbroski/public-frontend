@@ -8,18 +8,27 @@ export function createHydratedCache<T>(fetcher: () => Promise<T[]>, event: strin
   let cache: T[] = [];
   let started = false;
   let loaded = false;
+  let requestVersion = 0;
 
   function notify() {
     if (typeof window !== "undefined") window.dispatchEvent(new Event(event));
   }
 
   async function hydrate() {
+    const version = ++requestVersion;
     started = true;
+    loaded = false;
+    cache = [];
+    notify();
     try {
-      cache = await fetcher();
+      const next = await fetcher();
+      if (version !== requestVersion) return;
+      cache = next;
       loaded = true;
     } catch {
-      // DBG009: Reset so subsequent get() retries instead of returning stale empty data
+      if (version !== requestVersion) return;
+      cache = [];
+      loaded = false;
       started = false;
     }
     notify();

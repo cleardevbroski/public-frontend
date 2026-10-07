@@ -4,7 +4,7 @@ import Link from "@/components/Link";
 import { Search, MapPin, ChevronDown } from "lucide-react";
 import ProjectTrustStrip from "./ProjectTrustStrip";
 import { bangaloreLocalities } from "./bangalore-data";
-import { getHeroSlides, heroHref, type HeroSlide } from "@/lib/heroStore";
+import { getHeroSlides, heroHref, refreshHeroSlides, type HeroSlide } from "@/lib/heroStore";
 import { trackAnalytics } from "@/lib/analytics";
 
 const propertyKinds = ["Apartments", "Villas", "Plots", "Commercial", "PG/Co-living"] as const;
@@ -22,7 +22,18 @@ export default function HeroBanner({ showTrustStrip = true }: { showTrustStrip?:
     const load = () => setSlides(getHeroSlides());
     load();
     window.addEventListener("cleartitle:hero-changed", load);
-    return () => window.removeEventListener("cleartitle:hero-changed", load);
+    const revalidate = () => {
+      if (document.visibilityState === "visible") void refreshHeroSlides();
+    };
+    window.addEventListener("focus", revalidate);
+    window.addEventListener("pageshow", revalidate);
+    document.addEventListener("visibilitychange", revalidate);
+    return () => {
+      window.removeEventListener("cleartitle:hero-changed", load);
+      window.removeEventListener("focus", revalidate);
+      window.removeEventListener("pageshow", revalidate);
+      document.removeEventListener("visibilitychange", revalidate);
+    };
   }, []);
 
   const count = slides.length;

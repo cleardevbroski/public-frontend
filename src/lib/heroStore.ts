@@ -65,55 +65,6 @@ export type HeroSlide = {
   source?: "curated" | "admin";
 };
 
-/** Default showcase slides (used until the admin adds their own). */
-const defaultSlides: HeroSlide[] = [
-  {
-    id: "hero-prestige",
-    image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1920&q=80",
-    builderName: "Prestige Group",
-    title: "Prestige Lakeside Habitat",
-    tagline: "Lakefront living where every day begins with calm",
-    location: "Varthur, Whitefield — Ready to Move",
-    priceText: "Apartments starting at ₹1.2 Cr",
-    rera: "PRM/KA/RERA/1251/446/PR/0312",
-    badge: "Featured",
-    ctaText: "Explore Now",
-    linkType: "builder",
-    linkValue: "prestige-group",
-    source: "curated",
-  },
-  {
-    id: "hero-sobha",
-    image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1920&q=80",
-    builderName: "Sobha Limited",
-    title: "Sobha Dream Acres",
-    tagline: "Smart, sustainable homes in the heart of the tech corridor",
-    location: "Panathur, Balagere — New Launch",
-    priceText: "2 & 3 BHK from ₹85 Lac",
-    rera: "PRM/KA/RERA/1250/303/PR/1809",
-    badge: "New Launch",
-    ctaText: "Explore Now",
-    linkType: "builder",
-    linkValue: "sobha-limited",
-    source: "curated",
-  },
-  {
-    id: "hero-brigade",
-    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80",
-    builderName: "Brigade Group",
-    title: "Brigade Cornerstone Utopia",
-    tagline: "A township that has everything you will ever need",
-    location: "Varthur Road, Whitefield — Under Construction",
-    priceText: "Land & homes from ₹2,200 / sq.ft.",
-    rera: "PRM/KA/RERA/1254/465/PR/220125",
-    badge: "Township",
-    ctaText: "Explore Now",
-    linkType: "builder",
-    linkValue: "brigade-group",
-    source: "curated",
-  },
-];
-
 const HERO_EVENT = "cleartitle:hero-changed";
 
 const cache = createHydratedCache<HeroSlide>(async () => {
@@ -126,10 +77,14 @@ const adminCache = createHydratedCache<HeroSlide>(async () => {
   return (data.banners as HeroSlide[]).map((b) => ({ ...b, source: "admin" as const }));
 }, HERO_EVENT);
 
-/** Public hero — backend banners, else the bundled defaults. */
+/** Public hero — only banners currently published by the admin. */
 export function getHeroSlides(): HeroSlide[] {
-  const admin = cache.get();
-  return admin.length ? admin : defaultSlides;
+  return cache.get();
+}
+
+/** Revalidate the public hero when a page/tab becomes active again. */
+export async function refreshHeroSlides(): Promise<void> {
+  await cache.refresh();
 }
 
 /** Admin editor — backend banners only. */
