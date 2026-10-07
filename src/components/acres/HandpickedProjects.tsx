@@ -76,19 +76,19 @@ export default function HandpickedProjects() {
                   {p.status}
                 </span>
                 {p.canFavorite && <FavoriteButton property={{ id: p.id, title: p.name, subtitle: p.locality, price: p.price }} className="absolute top-3 right-3 size-9 rounded-full bg-white/90 shadow" />}
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#07111F]/95 via-[#07111F]/70 to-transparent px-4 pb-3 pt-14 text-white">
-                  <div className="flex items-end gap-3">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-[16px] font-bold">{p.name}</h3>
-                      <p className="mt-0.5 truncate text-[11px] text-white/75">{p.locality}</p>
+                <div className="absolute inset-x-4 bottom-0">
+                  <div className="relative rounded-t-xl bg-white px-4 pb-3 pt-7 shadow-lg">
+                    <div className="absolute -top-8 left-4 flex size-16 items-center justify-center overflow-hidden rounded-full border border-[#E4E0E7] bg-white text-[14px] font-bold text-[#121B35] shadow">
+                      {p.builderLogo ? <img src={p.builderLogo} alt="" className="size-full object-contain p-2" /> : p.name.split(" ").slice(0, 2).map((w) => w[0]).join("")}
                     </div>
-                    <div className="flex min-w-0 shrink-0 items-center gap-1.5">
-                      <span className="max-w-[180px] truncate whitespace-nowrap text-[13px] font-extrabold text-[#F2C052]">{priceWithCharges(p.price)}</span>
+                    <h3 className="truncate text-[15px] font-bold text-[#121B35]">{p.name}</h3>
+                    <p className="mt-0.5 truncate text-[11px] text-[#68646F]">{p.locality}</p>
+                    <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
+                      <span className="min-w-0 truncate whitespace-nowrap text-[13px] font-extrabold text-[#121B35]">{priceWithCharges(p.price)}</span>
                       {p.rera && <span className="inline-flex shrink-0 items-center gap-1 rounded bg-[#E6F2EA] px-1.5 py-0.5 text-[9px] font-bold text-[#1E7A46]"><ShieldCheck className="size-3" /> RERA</span>}
                     </div>
                   </div>
                 </div>
-                {p.builderLogo ? <div className="pointer-events-none absolute bottom-3 left-3 flex size-9 items-center justify-center overflow-hidden rounded-full border border-white/70 bg-white/95 shadow"><img src={p.builderLogo} alt="" className="size-full object-contain p-1" /></div> : null}
               </div>
             </Link>
           ))}
