@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import Link from "@/components/Link";
 import { ShieldCheck, Star } from "lucide-react";
 import { getAllProperties, getBuilderLogoForProperty, getFeaturedProperties, havePropertiesLoaded } from "@/lib/propertyStore";
@@ -9,9 +9,7 @@ import { formatPossession } from "@/lib/propertyDetails";
 import { getPropertyCoverImage, priceWithCharges } from "@/lib/propertyPresentation";
 import FavoriteButton from "./FavoriteButton";
 import {
-  BANGALORE_ZONES,
-  getHandpickedProjectsByZone,
-  type BangaloreZone,
+  getHandpickedProjects,
 } from "@/lib/homepagePlacements";
 
 function statusOf(p: Property): string {
@@ -35,12 +33,10 @@ type DisplayProject = {
 
 export default function HandpickedProjects() {
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const [activeZone, setActiveZone] = useState<BangaloreZone>("East");
   const allProperties = useLiveData<Property[]>(() => getAllProperties(), [], ["cleartitle:properties-changed", "cleartitle:builders-changed"]);
   const loading = useLiveData(() => { getAllProperties(); return !havePropertiesLoaded(); }, true);
-  const configuredProjects = getHandpickedProjectsByZone(allProperties, activeZone);
-  const fallbackProjects = getFeaturedProperties(10).filter((property) => property.locality?.zone?.toLowerCase() === activeZone.toLowerCase());
-  const visibleProjects = configuredProjects.length ? configuredProjects : fallbackProjects;
+  const configuredProjects = getHandpickedProjects(allProperties);
+  const visibleProjects = configuredProjects.length ? configuredProjects : getFeaturedProperties(10);
   const projects: DisplayProject[] = visibleProjects.map((property) => ({
         id: property.id,
         name: property.title,
@@ -56,15 +52,10 @@ export default function HandpickedProjects() {
 
   if (!projects.length && !loading) return null;
 
-  const selectZone = (zone: BangaloreZone) => {
-    setActiveZone(zone);
-    scrollerRef.current?.scrollTo({ left: 0, behavior: "smooth" });
-  };
-
   return (
-    <section className="bg-[#F8F7FA] py-8">
+    <section className="bg-[#F8F7FA] py-6">
       <div className="max-w-[1200px] mx-auto px-5">
-        <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
+        <div className="mb-4">
           <div>
             <span className="ct-section-kicker inline-flex items-center gap-1.5">
               <Star className="size-4" /> Featured projects
@@ -73,47 +64,31 @@ export default function HandpickedProjects() {
               Featured Handpicked <span className="text-gold-gradient">Projects</span>
             </h2>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="sr-only" htmlFor="handpicked-project-zone">Select Bangalore zone</label>
-            <select
-              id="handpicked-project-zone"
-              value={activeZone}
-              onChange={(event) => selectZone(event.target.value as BangaloreZone)}
-              className="h-10 rounded-full border border-[#E4E0E7] bg-white px-3 text-[12px] font-bold text-[#121B35] shadow-sm outline-none transition focus:border-[#DDAA42]"
-            >
-              {BANGALORE_ZONES.map((zone) => <option key={zone} value={zone}>{zone} Bangalore</option>)}
-            </select>
-          </div>
         </div>
 
-        <div ref={scrollerRef} className="flex gap-6 overflow-x-auto no-scrollbar pb-3 scroll-smooth">
-          {!projects.length && Array.from({ length: 2 }, (_, index) => <div key={index} aria-label="Loading featured projects" className="h-[265px] w-[520px] max-w-[88vw] shrink-0 animate-pulse rounded-2xl border border-[#E4E0E7] bg-white" />)}
+        <div ref={scrollerRef} className="flex gap-4 overflow-x-auto no-scrollbar pb-2 scroll-smooth">
+          {!projects.length && Array.from({ length: 2 }, (_, index) => <div key={index} aria-label="Loading featured projects" className="h-[220px] w-[480px] max-w-[88vw] shrink-0 animate-pulse rounded-2xl border border-[#E4E0E7] bg-white" />)}
           {projects.map((p) => (
-            <Link key={p.id} href={p.href} className="group shrink-0 w-[520px] max-w-[88vw]">
-              <div className="relative h-[265px] overflow-hidden rounded-2xl border border-[#E4E0E7]/70 shadow-md">
+            <Link key={p.id} href={p.href} className="group shrink-0 w-[480px] max-w-[88vw]">
+              <div className="relative h-[220px] overflow-hidden rounded-2xl border border-[#E4E0E7]/70 shadow-md">
                 <img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 <span className="absolute top-3 left-0 bg-[#DDAA42] text-[#0B1328] text-[11px] font-bold px-3 py-1 rounded-r-md shadow">
                   {p.status}
                 </span>
                 {p.canFavorite && <FavoriteButton property={{ id: p.id, title: p.name, subtitle: p.locality, price: p.price }} className="absolute top-3 right-3 size-9 rounded-full bg-white/90 shadow" />}
-                {/* Overlapping info card */}
-                <div className="absolute left-6 right-6 -bottom-px">
-                  <div className="bg-white pt-10 px-5 pb-4 shadow-lg relative rounded-t-xl">
-                    <div className="absolute -top-8 left-5 size-16 rounded-full bg-white border border-[#E4E0E7] shadow flex items-center justify-center text-[#121B35] font-bold">
-                      {p.builderLogo ? <img src={p.builderLogo} alt="" className="size-full object-contain p-2" /> : p.name.split(" ").slice(0, 2).map((w) => w[0]).join("")}
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#07111F]/95 via-[#07111F]/70 to-transparent px-4 pb-3 pt-14 text-white">
+                  <div className="flex items-end gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-[16px] font-bold">{p.name}</h3>
+                      <p className="mt-0.5 truncate text-[11px] text-white/75">{p.locality}</p>
                     </div>
-                    <h3 className="text-[18px] font-bold text-[#121B35] truncate">{p.name}</h3>
-                    <p className="text-[13px] text-[#68646F] mt-0.5 truncate">{p.locality}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-[18px] font-extrabold text-[#121B35]">{priceWithCharges(p.price)}</span>
-                      {p.rera && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#1E7A46] bg-[#E6F2EA] px-1.5 py-0.5 rounded">
-                          <ShieldCheck className="size-3" /> RERA
-                        </span>
-                      )}
+                    <div className="flex min-w-0 shrink-0 items-center gap-1.5">
+                      <span className="max-w-[180px] truncate whitespace-nowrap text-[13px] font-extrabold text-[#F2C052]">{priceWithCharges(p.price)}</span>
+                      {p.rera && <span className="inline-flex shrink-0 items-center gap-1 rounded bg-[#E6F2EA] px-1.5 py-0.5 text-[9px] font-bold text-[#1E7A46]"><ShieldCheck className="size-3" /> RERA</span>}
                     </div>
                   </div>
                 </div>
+                {p.builderLogo ? <div className="pointer-events-none absolute bottom-3 left-3 flex size-9 items-center justify-center overflow-hidden rounded-full border border-white/70 bg-white/95 shadow"><img src={p.builderLogo} alt="" className="size-full object-contain p-1" /></div> : null}
               </div>
             </Link>
           ))}

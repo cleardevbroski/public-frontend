@@ -55,11 +55,16 @@ export function getHandpickedProjectsByZone(
   properties: Property[],
   zone: BangaloreZone
 ): Property[] {
+  return getHandpickedProjects(properties).filter(
+    (property) => getBangaloreZone(property.locality?.zone) === zone
+  );
+}
+
+export function getHandpickedProjects(properties: Property[]): Property[] {
   return properties.filter(
     (property) =>
       property.published !== false &&
       !["Rent", "Lease"].includes(property.propertyType || "") &&
-      isInHomepageSection(property, "Handpicked") &&
-      getBangaloreZone(property.locality?.zone) === zone
+      isInHomepageSection(property, "Handpicked")
   );
 }
